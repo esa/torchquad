@@ -3,21 +3,19 @@ class BaseIntegrator:
     """
 
     # Function to evaluate
-    fn = None
+    _fn = None
 
     # Dimensionality of function to evaluate
-    dim = None
+    _dim = None
 
     # Integration domain
-    integration_domain = None
+    _integration_domain = None
 
     # Number of function evaluations
-    nr_of_fevals = None
+    _nr_of_fevals = None
 
     def __init__(self):
-        raise (
-            NotImplementedError("This is an abstract base class. Should not be called.")
-        )
+        pass
 
     def integrate(self):
         raise (
