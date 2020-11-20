@@ -1,5 +1,5 @@
-from base_integrator import BaseIntegrator
-from integration_grid import IntegrationGrid
+from .base_integrator import BaseIntegrator
+from .integration_grid import IntegrationGrid
 import torch
 
 
