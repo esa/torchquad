@@ -32,7 +32,7 @@ class Simpson1D(BaseIntegrator):
         logger.debug(
             "Using Simpson1D for integrating a fn with "
             + str(N)
-            + " points  over"
+            + " points over"
             + str(integration_domain)
         )
 

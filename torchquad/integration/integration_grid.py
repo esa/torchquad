@@ -29,7 +29,7 @@ class IntegrationGrid:
             + str(self._dim)
             + "-dimensional integration grid with "
             + str(N)
-            + " points  over"
+            + " points over"
             + str(integration_domain),
         )
 
