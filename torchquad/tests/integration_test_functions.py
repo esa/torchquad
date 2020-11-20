@@ -34,7 +34,7 @@ class IntegrationTestFunction:
             + str(expected_result)
         )
 
-    def evaluate(integrator, integration_args):
+    def evaluate(self, integrator, integration_args):
         """Evaluates the passed integration functions with args
 
         Args:
@@ -44,9 +44,7 @@ class IntegrationTestFunction:
         Returns:
             float: integration result
         """
-        return integrator(
-            f=self.f, dim=self.dim, integration_domain=domain, *integration_args
-        )
+        return integrator(fn=self.f, integration_domain=self.domain, **integration_args)
 
 
 class Polynomial(IntegrationTestFunction):
@@ -68,8 +66,6 @@ class Polynomial(IntegrationTestFunction):
         # compute x^k
         exponentials = torch.pow(x, torch.arange(0, self.order + 1))
 
-        print(exponentials)
-        print(self.coeffs)
         # multiply by coefficients
         vals = torch.multiply(exponentials, self.coeffs)
 

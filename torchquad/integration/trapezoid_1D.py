@@ -11,6 +11,10 @@ class Trapezoid1D(BaseIntegrator):
     """Trapezoidal rule in 1D in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas . 
     """
 
+    def __init__(self):
+        super().__init__()
+        self._convergence_order = 1  # linear approx
+
     def integrate(self, fn, N=2, integration_domain=[[-1, 1]]):
         """Integrates the passed function on the passed domain using the trapezoid method
 

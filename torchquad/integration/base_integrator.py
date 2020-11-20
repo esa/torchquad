@@ -19,8 +19,12 @@ class BaseIntegrator:
     # Number of function evaluations
     _nr_of_fevals = None
 
+    # Convergence order
+    _convergence_order = None
+
     def __init__(self):
         self._nr_of_fevals = 0
+        self._convergence_order = -1
 
     def integrate(self):
         raise (
