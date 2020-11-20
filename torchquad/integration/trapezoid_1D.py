@@ -12,7 +12,7 @@ class Trapezoid1D(BaseIntegrator):
     """
 
     def integrate(self, fn, N=2, integration_domain=[[-1, 1]]):
-        """Integrates the passed function on the passed domain using the trapezoid method
+        """Integrates the passed function on the passed domain using the trapezoid rule
 
         Args:
             fn (func): The function to integrate over

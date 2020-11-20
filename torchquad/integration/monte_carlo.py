@@ -54,7 +54,6 @@ class MonteCarlo(BaseIntegrator):
             self._integration_domain = torch.tensor([[-1, 1]] * dim)
 
         logger.debug("Picking random sampling points")
-        # Pick sample points from integration domain
         sample_points = torch.zeros([N, dim])
         for d in range(dim):
             scale = self._integration_domain[d, 1] - self._integration_domain[d, 0]
@@ -62,11 +61,9 @@ class MonteCarlo(BaseIntegrator):
             sample_points[:, d] = torch.rand(N) * scale + offset
 
         logger.debug("Evaluating integrand")
-        # Evaluate the function at all points
         function_values = fn(sample_points)
 
         logger.debug("Computing integration domain volume")
-        # Compute domain volume
         scales = self._integration_domain[:, 1] - self._integration_domain[:, 0]
         volume = torch.prod(scales)
 

@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 class IntegrationGrid:
-    """This class is used to store the integration grid for methods like Trapezoid or Simpsons which require a grid
+    """This class is used to store the integration grid for methods like Trapezoid or Simpsons, which require a grid.
     """
 
     _points = None  # integration points
@@ -17,11 +17,13 @@ class IntegrationGrid:
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
 
         Args:
-            N (int): Number of points in the grid per dimension
+            N (int): Total desired number of points in the grid (will take next lower root depending on dim)
             integration_domain (list): Domain to choose points in, e.g. [[-1,1],[0,1]].
         """
         self._check_inputs(N, integration_domain)
         self._dim = len(integration_domain)
+
+        # TODO Add that N can be different for each dimension
         self._N = int(N ** (1.0 / self._dim))
 
         logger.debug(
