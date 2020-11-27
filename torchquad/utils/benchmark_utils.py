@@ -13,7 +13,7 @@ def integrate_N_points(method, fn, N, scipy_based=True):
         scipy_based (bool, optional): if True, a scipy-based method is used; otherwise, a torchquad method is used. Defaults to True.
     """
     if scipy_based:
-        sp = torch.linspace(-1, 1, int(N)).cpu()
+        sp = torch.linspace(-1, 1, N).cpu()
         method(y=fn(sp), x=sp)
     else:
         method(fn=fn, N=N)
