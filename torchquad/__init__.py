@@ -8,9 +8,23 @@ if "TORCH_DEVICE" not in os.environ:
 
 # Currently this is the way to expose to the docs
 # hopefully changes with setup.py
-from .integration.base_integrator import BaseIntegrator
+from .integration.monte_carlo import MonteCarlo
+from .integration.trapezoid_1D import Trapezoid1D
+from .integration.simpson_1D import Simpson1D
 
-__all__ = ["BaseIntegrator"]
+from .plots.plot_convergence import plot_convergence
+from .plots.plot_runtime import plot_runtime
+
+from .utils.enable_cuda import enable_cuda
+
+__all__ = [
+    "MonteCarlo",
+    "Trapezoid1D",
+    "Simpson1D",
+    "plot_convergence",
+    "plot_runtime",
+    "enable_cuda",
+]
 
 # Initialize logger
 logger = logging.getLogger(__name__)
