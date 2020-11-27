@@ -25,6 +25,7 @@ class IntegrationGrid:
 
         # TODO Add that N can be different for each dimension
         self._N = int(N ** (1.0 / self._dim))
+        self._h = torch.zeros([self._dim])
 
         logger.debug(
             "Creating "
@@ -34,15 +35,25 @@ class IntegrationGrid:
             + " points over"
             + str(integration_domain),
         )
-
-        # TODO expand to more than one dim
-        grid_1d = torch.linspace(integration_domain[0][0], integration_domain[0][1], N)
-
-        self._h = grid_1d[1] - grid_1d[0]
+        grid_1d = []
+        # Determine for each dimension grid points and mesh width
+        for dim in range(self._dim):
+            grid_1d.append(
+                torch.linspace(
+                    integration_domain[dim][0], integration_domain[dim][1], self._N
+                )
+            )
+            self._h[dim] = grid_1d[dim][1] - grid_1d[dim][0]
 
         logger.debug("Grid mesh width is " + str(self._h))
 
-        self._points = torch.tensor([x for x in grid_1d])
+        # Get grid points
+        points = torch.meshgrid(*grid_1d)
+
+        # Flatten to 1D
+        points = [p.flatten() for p in points]
+
+        self._points = torch.stack((tuple(points))).transpose(0, 1)
 
         logger.info("Integration grid created.")
 
@@ -55,7 +66,10 @@ class IntegrationGrid:
         if dim < 1:
             raise ValueError("len(integration_domain) needs to be 1 or larger.")
 
-        if N ** (1.0 / dim) < 1:
+        if N < 2:
+            raise ValueError("N has to be > 1.")
+
+        if N ** (1.0 / dim) < 2:
             raise ValueError(
                 "Cannot create a ",
                 dim,
