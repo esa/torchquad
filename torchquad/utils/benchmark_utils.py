@@ -13,14 +13,13 @@ def integrate_N_points(method, fn, N, scipy_based=True):
         scipy_based (bool, optional): if True, a scipy-based method is used; otherwise, a torchquad method is used. Defaults to True.
     """
     if scipy_based:
-        sp = torch.linspace(-1, 1, int(N)).cpu()
         method(y=fn(sp), x=sp)
     else:
         method(fn=fn, N=N)
 
 
 def runtime_measure(method, fn, scipy_based=True, N=[10, 100, 1000], iterations=1):
-    """Performing runtime measurement for the integration of fn through method in the [-1, 1] interval, by taking N points. For each N value, the measurment is obtained by performing an average over ""iterations"" iterations.
+    """Performing runtime measurement of integration of fn over the interval [-1, 1] through the method ""method"" by using ""N"" points. For each value ""N"", a number of iterations ""iterations"" is used to calculate the average.
 
     Args:
         method (function): scipy-based or torchquad integration method.
