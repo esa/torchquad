@@ -33,5 +33,5 @@ jobs:
     - name: Test with pytest
       run: |
         cd torchquad/tests
-        pip install pytest
-        pytest
+        conda install pytest
+        $CONDA/bin/pytest
