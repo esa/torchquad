@@ -1,9 +1,9 @@
 .. _autodoc:
  
 .. contents::
- 
-base_integrator.py
-==================
+
+Welcome to torchquad
+====================
  
 .. automodule:: torchquad
   :members:
