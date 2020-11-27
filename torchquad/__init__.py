@@ -6,7 +6,7 @@ if "TORCH_DEVICE" not in os.environ:
     os.environ["TORCH_DEVICE"] = "cpu"
 
 
-# Currently this is the way to expose to the docs
+#TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
 from .integration.monte_carlo import MonteCarlo
 from .integration.trapezoid_1D import Trapezoid1D

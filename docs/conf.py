@@ -13,13 +13,12 @@
 import sys, os
 
 sys.path.insert(0, os.path.abspath("../"))
-# sys.path.insert(0, os.path.abspath("../src_123"))
 
 # -- Project information -----------------------------------------------------
 
 project = "torchquad"
 copyright = "2020, Gabriele Meoni, Håvard Hem Toftevaag, Pablo Gómez"
-author = "Gabriele Meoni, Håvard Hem Toftevaag, and Pablo Gómez"
+author = "ESA Advanced Concepts Team"
 
 # The full version, including alpha/beta/rc tags
 release = "0.1.0"
