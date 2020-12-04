@@ -44,7 +44,7 @@ class Simpson1D(BaseIntegrator):
         self._grid = IntegrationGrid(N, integration_domain)
 
         logger.debug("Evaluating integrand on the grid")
-        function_values = self._eval(self._grid._points)
+        function_values = self._eval(self._grid.points)
 
         logger.debug("Computing areas")
         f0 = function_values[0:-2][::2]
@@ -52,6 +52,6 @@ class Simpson1D(BaseIntegrator):
         f2 = function_values[2:][::2]
         areas = f0 + 4 * f1 + f2
 
-        integral = self._grid._h / 3 * torch.sum(areas)
+        integral = self._grid.h / 3 * torch.sum(areas)
         logger.info("Computed integral was " + str(integral))
         return integral
