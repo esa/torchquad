@@ -10,6 +10,8 @@ from tests.integration_test_utils import compute_test_errors
 
 
 def test_integrate():
+    """Tests the integrate function in integration.Simpson
+    """
     torch.set_default_tensor_type(torch.DoubleTensor)
     simp = Simpson()
     N = 100001
@@ -19,7 +21,7 @@ def test_integrate():
     for error in errors:
         assert error < 1e-7
 
-    N = 3
+    N = 3  # integration points, here 3 for order check (3 points should lead to almost 0 err for low order polynomials)
     errors = compute_test_errors(simp.integrate, {"N": N, "dim": 1})
     print("N =", N, "\n", errors)
     # all polynomials up to degree = 3 should be 0

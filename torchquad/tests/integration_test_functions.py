@@ -17,6 +17,13 @@ class IntegrationTestFunction:
     f = None  # Function to evaluate
 
     def __init__(self, expected_result, dim=1, domain=None):
+        """Initializes domain and stores vars
+
+        Args:
+            expected_result (float): expected integration result
+            dim (int, optional): dimensionality of investigated function. Defaults to 1.
+            domain (list, optional): Integration domain like [[0,1],[1,2]] e.g.. Defaults to None.
+        """
         self.dim = dim
         self.expected_result = expected_result
         # Init domain to [-1,1]^dim if not passed

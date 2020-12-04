@@ -41,7 +41,16 @@ class BaseIntegrator:
         return self._fn(points)
 
     def _check_inputs(self, dim=None, N=None, integration_domain=None):
-        """Used to check input validity"""
+        """Used to check input validity
+
+        Args:
+            dim (int, optional): dimensionality of function to integrate. Defaults to None.
+            N (int, optional): integration points. Defaults to None.
+            integration_domain (list, optional): Integration domain like [[0,1],[1,2]] e.g.. Defaults to None.
+
+        Raises:
+            ValueError: If inputs are not compatible with each other.
+        """
         logger.debug("Checking inputs to Integrator.")
         if dim is not None:
             if dim < 1:

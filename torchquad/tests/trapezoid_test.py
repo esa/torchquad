@@ -10,6 +10,8 @@ from tests.integration_test_utils import compute_test_errors
 
 
 def test_integrate():
+    """Tests the integrate function in integration.Trapezoid
+    """
     torch.set_default_tensor_type(torch.DoubleTensor)
     tp = Trapezoid()
     N = 100000
@@ -20,7 +22,7 @@ def test_integrate():
     for error in errors:
         assert error < 1e-5
 
-    N = 2
+    N = 2  # integration points, here 2 for order check (2 points should lead to almost 0 err for low order polynomials)
     errors = compute_test_errors(tp.integrate, {"N": N, "dim": 1})
     print("N =", N, "\n", errors)
     # all polynomials up to degree = 1 should be 0

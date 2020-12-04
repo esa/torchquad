@@ -36,7 +36,7 @@ class MonteCarlo(BaseIntegrator):
             + str(dim)
             + "-dimensional fn with "
             + str(N)
-            + " points  over"
+            + " points over"
             + str(integration_domain),
         )
 
