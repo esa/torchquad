@@ -12,6 +12,9 @@ class MonteCarlo(BaseIntegrator):
     """Monte Carlo integration in torch. 
     """
 
+    def __init__(self):
+        super().__init__()
+
     def integrate(self, fn, dim, N=1000, integration_domain=None):
         """Integrates the passed function on the passed domain using vanilla Monte Carlo Integration
 
@@ -33,7 +36,7 @@ class MonteCarlo(BaseIntegrator):
             + str(dim)
             + "-dimensional fn with "
             + str(N)
-            + " points  over"
+            + " points over"
             + str(integration_domain),
         )
 
@@ -49,7 +52,11 @@ class MonteCarlo(BaseIntegrator):
                 raise ValueError(
                     "Dimension and length of integration domain don't match. Should be e.g. dim=1 dom=[[-1,1]]"
                 )
-            self._integration_domain = torch.tensor(integration_domain)
+            self._integration_domain = (
+                integration_domain
+                if type(integration_domain) == torch.Tensor
+                else torch.tensor(integration_domain)
+            )
         else:
             self._integration_domain = torch.tensor([[-1, 1]] * dim)
 

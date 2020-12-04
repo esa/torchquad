@@ -6,43 +6,29 @@ import torch
 
 
 from integration.simpson_1D import Simpson1D
-
-
-def _f1(x):
-    return torch.pow(x, 2)
-
-
-def _f2(x):
-    return torch.sin(x)
-
-
-def _f3(x):
-    return torch.exp(x)
-
-
-def _eval(f, integration_domain, N=50001):
-    # Init a trapezoid
-    simp = Simpson1D()
-    return simp.integrate(f, N=N, integration_domain=integration_domain)
-
-
-_max_err = 1e-6
+from tests.integration_test_utils import compute_test_errors
 
 
 def test_integrate():
+    """Tests the integrate function in integration.Simpson
+    """
     torch.set_default_tensor_type(torch.DoubleTensor)
+    simp = Simpson1D()
+    N = 1000001  # integration points
 
-    # F1 , x^2
-    integration_domain = [[-2, 2]]
-    ground_truth = 16 / 3
-    assert torch.abs(_eval(_f1, integration_domain) - ground_truth) < _max_err
+    errors = compute_test_errors(simp.integrate, {"N": N})
+    print("N =", N, "\n", errors)
+    for error in errors:
+        assert error < 1e-7
 
-    # F2 , sin(x)
-    integration_domain = [[-10, -1]]
-    ground_truth = -1.37937383494459
-    assert torch.abs(_eval(_f2, integration_domain) - ground_truth) < _max_err
+    N = 3  # integration points, here 3 for order check (3 points should lead to almost 0 err for low order polynomials)
+    errors = compute_test_errors(simp.integrate, {"N": N})
+    print("N =", N, "\n", errors)
+    # all polynomials up to degree = 3 should be 0
+    # if this breaks check if test functions in integration_test_utils changed.
+    for error in errors[:3]:
+        assert error < 1e-15
 
-    # F3 , exp(x)
-    integration_domain = [[0, 5]]
-    ground_truth = 147.4131599102577
-    assert torch.abs(_eval(_f3, integration_domain) - ground_truth) < _max_err
+
+# used to run this test individually
+test_integrate()

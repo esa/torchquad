@@ -6,44 +6,29 @@ import torch
 
 
 from integration.trapezoid_1D import Trapezoid1D
-
-
-def _f1(x):
-    return torch.pow(x, 2)
-
-
-def _f2(x):
-    return torch.sin(x)
-
-
-def _f3(x):
-    return torch.exp(x)
-
-
-def _eval(f, integration_domain, N=50000):
-    # Init a trapezoid
-    tp = Trapezoid1D()
-    return tp.integrate(f, N=N, integration_domain=integration_domain)
-
-
-_max_err = 1e-6
+from tests.integration_test_utils import compute_test_errors
 
 
 def test_integrate():
+    """Tests the integrate function in integration.Trapezoid
+    """
     torch.set_default_tensor_type(torch.DoubleTensor)
+    tp = Trapezoid1D()
+    N = 10000000  # integration points
 
-    # F1 , x^2
-    integration_domain = [[-2, 2]]
-    ground_truth = 16 / 3
-    assert torch.abs(_eval(_f1, integration_domain) - ground_truth) < _max_err
+    errors = compute_test_errors(tp.integrate, {"N": N})
+    print("N =", N, "\n", errors)
+    for error in errors:
+        assert error < 1e-6
 
-    # F2 , sin(x)
-    integration_domain = [[-10, -1]]
-    ground_truth = -1.37937383494459
-    assert torch.abs(_eval(_f2, integration_domain) - ground_truth) < _max_err
+    N = 2  # integration points, here 2 for order check (2 points should lead to almost 0 err for low order polynomials)
+    errors = compute_test_errors(tp.integrate, {"N": N})
+    print("N =", N, "\n", errors)
+    # all polynomials up to degree = 1 should be 0
+    # if this breaks check if test functions in integration_test_utils changed.
+    for error in errors[:2]:
+        assert error < 1e-15
 
-    # F3 , exp(x)
-    integration_domain = [[0, 5]]
-    ground_truth = 147.4131599102577
-    assert torch.abs(_eval(_f3, integration_domain) - ground_truth) < _max_err
 
+# used to run this test individually
+test_integrate()
