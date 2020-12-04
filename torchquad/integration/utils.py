@@ -15,7 +15,10 @@ def setup_integration_domain(dim, integration_domain):
             raise ValueError(
                 "Dimension and length of integration domain don't match. Should be e.g. dim=1 dom=[[-1,1]]"
             )
-        return torch.tensor(integration_domain)
+        if type(integration_domain) == torch.Tensor:
+            return integration_domain
+        else:
+            return torch.tensor(integration_domain)
     else:
         return torch.tensor([[-1, 1]] * dim)
 

@@ -64,13 +64,18 @@ class Polynomial(IntegrationTestFunction):
 
     def _poly(self, x):
         # compute x^k
-        exponentials = torch.pow(x, torch.arange(0, self.order + 1))
+        exponentials = torch.zeros([x.shape[0], x.shape[1], self.order + 1])
+        for o in range(self.order + 1):
+            exponentials[:, :, o] = torch.pow(x, o)
 
         # multiply by coefficients
-        vals = torch.multiply(exponentials, self.coeffs)
+        exponentials = torch.multiply(exponentials, self.coeffs)
+
+        # Collapse dimensions
+        exponentials = torch.sum(exponentials, dim=2)
 
         # sum all values for each dim
-        return torch.sum(vals, dim=1)
+        return torch.sum(exponentials, dim=1)
 
 
 class Exponential(IntegrationTestFunction):
@@ -87,7 +92,7 @@ class Exponential(IntegrationTestFunction):
 
     def _exp(self, x):
         # compute e^x
-        return torch.exp(x)
+        return torch.sum(torch.exp(x), dim=1)
 
 
 class Sinusoid(IntegrationTestFunction):
@@ -103,4 +108,4 @@ class Sinusoid(IntegrationTestFunction):
         self.f = self._sinusoid
 
     def _sinusoid(self, x):
-        return torch.sin(x)
+        return torch.sum(torch.sin(x), dim=1)
