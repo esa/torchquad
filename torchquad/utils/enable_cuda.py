@@ -7,7 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 def enable_cuda(device=0):
-    """This function will set the default device to CUDA if possible. Call before declaring any variables!"""
+    """This function will set the default device to CUDA if possible. Call before declaring any variables!
+
+    Args:
+        device (int, optional): CUDA device to use. Defaults to 0.
+    """
     if torch.cuda.is_available():
         os.environ["TORCH_DEVICE"] = "cuda:" + str(device)
         logger.info("__pyTorch VERSION:" + str(torch.version))

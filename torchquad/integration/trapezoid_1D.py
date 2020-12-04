@@ -30,7 +30,7 @@ class Trapezoid1D(BaseIntegrator):
         logger.debug(
             "Using Trapezoid1D for integrating a fn with "
             + str(N)
-            + " points  over"
+            + " points over"
             + str(integration_domain)
         )
 

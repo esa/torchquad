@@ -9,6 +9,8 @@ from tests.integration_test_utils import compute_test_errors
 
 
 def test_integrate():
+    """Tests the integrate function in integration.MonteCarlo
+    """
     torch.set_default_tensor_type(torch.DoubleTensor)
     N = 100000000  # integration points to use
     torch.manual_seed(0)  # we have to seed torch to get reproducible results
