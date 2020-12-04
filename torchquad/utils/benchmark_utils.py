@@ -14,9 +14,9 @@ def _integrate_N_points(method, fn, N, scipy_based=True):
     """
     if scipy_based:
         sp = torch.linspace(-1, 1, N).cpu()
-        method(y=fn(sp), x=sp)
+        return method(y=fn(sp), x=sp)
     else:
-        method(fn=fn, N=N)
+        return method(fn=fn, N=N)
 
 
 def _runtime_measure(method, fn, scipy_based=True, N=[10, 100, 1000], iterations=1):
@@ -37,9 +37,33 @@ def _runtime_measure(method, fn, scipy_based=True, N=[10, 100, 1000], iterations
         measure = 0
         for m in range(iterations):
             start_time = perf_counter()
-            integrate_N_points(method, fn, n, scipy_based)
+            _integrate_N_points(method, fn, n, scipy_based)
             stop_time = perf_counter()
             measure = measure + stop_time - start_time
         runtime_measurement.append(measure / iterations)
 
     return np.array(runtime_measurement)
+
+
+def _get_integral(method, fn, scipy_based=True, N=[10, 100, 1000]):
+    """Calculating the integral value of fn over the interval [-1, 1] through the method ""method"" by using ""N"" points.
+
+    Args:
+        method (function): scipy-based or torchquad integration method.
+        fn (function): function to integrate.
+        scipy_based (bool, optional):  if True, a scipy-based method is used; otherwise, a torchquad method is used. Defaults to True.
+        N (list, optional): list containing different number of points in the [-1, 1] interval that should be used for testing the integration method. Defaults to [10, 100, 1000].
+
+    Returns:
+        [numpy]: integral values.
+    """
+    integral_values = []
+    for n in N:
+        if scipy_based:
+            integral_values.append(_integrate_N_points(method, fn, n, scipy_based))
+        else:
+            integral_values.append(
+                _integrate_N_points(method, fn, n, scipy_based).cpu()
+            )
+
+    return np.array(integral_values)
