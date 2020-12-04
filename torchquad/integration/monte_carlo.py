@@ -12,6 +12,9 @@ class MonteCarlo(BaseIntegrator):
     """Monte Carlo integration in torch. 
     """
 
+    def __init__(self):
+        super().__init__()
+
     def integrate(self, fn, dim, N=1000, integration_domain=None):
         """Integrates the passed function on the passed domain using vanilla Monte Carlo Integration
 
