@@ -8,8 +8,8 @@ class IntegrationGrid:
     """This class is used to store the integration grid for methods like Trapezoid or Simpsons, which require a grid.
     """
 
-    _points = None  # integration points
-    _h = None  # mesh width
+    points = None  # integration points
+    h = None  # mesh width
     _N = None  # number of mesh points
     _dim = None  # dimensionality of the grid
 
@@ -24,8 +24,8 @@ class IntegrationGrid:
         self._dim = len(integration_domain)
 
         # TODO Add that N can be different for each dimension
-        self._N = int(N ** (1.0 / self._dim))
-        self._h = torch.zeros([self._dim])
+        self._N = int(N ** (1.0 / self._dim))  # convert to points per dim
+        self.h = torch.zeros([self._dim])
 
         logger.debug(
             "Creating "
@@ -43,9 +43,9 @@ class IntegrationGrid:
                     integration_domain[dim][0], integration_domain[dim][1], self._N
                 )
             )
-            self._h[dim] = grid_1d[dim][1] - grid_1d[dim][0]
+            self.h[dim] = grid_1d[dim][1] - grid_1d[dim][0]
 
-        logger.debug("Grid mesh width is " + str(self._h))
+        logger.debug("Grid mesh width is " + str(self.h))
 
         # Get grid points
         points = torch.meshgrid(*grid_1d)
@@ -53,7 +53,7 @@ class IntegrationGrid:
         # Flatten to 1D
         points = [p.flatten() for p in points]
 
-        self._points = torch.stack((tuple(points))).transpose(0, 1)
+        self.points = torch.stack((tuple(points))).transpose(0, 1)
 
         logger.info("Integration grid created.")
 
