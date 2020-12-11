@@ -4,11 +4,6 @@
 -->
 
 [![Documentation Status](https://readthedocs.org/projects/torchquad/badge/?version=latest)](https://torchquad.readthedocs.io/en/latest/?badge=latest)
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
 
 
 
@@ -21,7 +16,7 @@
   <p align="center">
     High-performance numerical integration on the GPU with PyTorch
     <br />
-    <a href="https://github.com/esa/torchquad"><strong>Explore the docs »</strong></a>
+    <a href="https://torchquad.readthedocs.io"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/esa/torchquad/blob/master/notebooks/Torchquad%20-%20Example%20notebook.ipynb">View Example notebook</a>
@@ -83,8 +78,7 @@ This is a brief example of setting up torchquad.
 We recommend using [conda](https://docs.conda.io/en/latest/), especially if you want to utilize the GPU. It will automatically set up CUDA and the cudatoolkit for you in that case.
 Note that torchquad also works on the CPU. However, it is optimized for GPU usage.
 
-* [conda](https://docs.conda.io/en/latest/)
-* For a detailed list of required packages, please refer to the [conda environment file](https://github.com/esa/torchquad/blob/main/environment.yml).
+* [conda](https://docs.conda.io/en/latest/), which will take care of all requirements for you. For a detailed list of required packages, please refer to the [conda environment file](https://github.com/esa/torchquad/blob/main/environment.yml).
 
 ### Installation
 
@@ -93,7 +87,7 @@ Note that torchquad also works on the CPU. However, it is optimized for GPU usag
    ```sh
    git clone https://github.com/esa/torchquad.git
    ```
-3. Setup environment. This will create a conda environment called `torchquad`
+3. Setup the environment. This will create a conda environment called `torchquad`
    ```sh
    conda env create -f environment.yml
    ```
@@ -140,7 +134,7 @@ See the [open issues](https://github.com/esa/torchquad/issues) for a list of pro
 <!-- CONTRIBUTING -->
 ## Contributing
 
-The project is open to community contributions. Feel free to open an [issue](https://github.com/esa/torchquad/issues) or write us an [email](##Contact) if you would like to discuss a problem or idea first.
+The project is open to community contributions. Feel free to open an [issue](https://github.com/esa/torchquad/issues) or write us an email if you would like to discuss a problem or idea first.
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -170,24 +164,6 @@ Project Link: [https://github.com/esa/torchquad](https://github.com/esa/torchqua
 
 
 
-<!-- ACKNOWLEDGEMENTS -->
-## Acknowledgements
-* [PyTorch](https://pytorch.org/)
-* [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
-
-
-
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/esa/torchquad.svg?style=for-the-badge
-[contributors-url]: https://github.com/esa/torchquad/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/esa/torchquad.svg?style=for-the-badge
-[forks-url]: https://github.com/esa/torchquad/network/members
-[stars-shield]: https://img.shields.io/github/stars/esa/torchquad.svg?style=for-the-badge
-[stars-url]: https://github.com/esa/torchquad/stargazers
-[issues-shield]: https://img.shields.io/github/issues/esa/torchquad.svg?style=for-the-badge
-[issues-url]: https://github.com/esa/torchquad/issues
-[license-shield]: https://img.shields.io/github/license/esa/torchquad.svg?style=for-the-badge
-[license-url]: https://github.com/esa/torchquad/blob/master/LICENSE.txt
-[product-screenshot]: images/screenshot.png
+<!-- ACKNOWLEDGEMENTS 
+This README was based on https://github.com/othneildrew/Best-README-Template
+-->
