@@ -20,8 +20,8 @@ class IntegrationTestFunction:
         """Initializes domain and stores vars
 
         Args:
-            expected_result (float): expected integration result
-            dim (int, optional): dimensionality of investigated function. Defaults to 1.
+            expected_result (float): Expected integration result
+            dim (int, optional): Dimensionality of investigated function. Defaults to 1.
             domain (list, optional): Integration domain like [[0,1],[1,2]] e.g.. Defaults to None.
         """
         self.dim = dim
@@ -46,7 +46,7 @@ class IntegrationTestFunction:
 
         Args:
             integrator (func): Integration function to call
-            integration_args (list): arguments to pass to integrator
+            integration_args (list): Arguments to pass to integrator
 
         Returns:
             float: integration result
