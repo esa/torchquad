@@ -3,7 +3,7 @@ import torch
 from time import perf_counter
 
 
-def integrate_N_points(method, fn, N, scipy_based=True):
+def _integrate_N_points(method, fn, N, scipy_based=True):
     """Performing integration of fn on the integration interval [-1,1] by using N points. 
 
     Args:
@@ -19,7 +19,7 @@ def integrate_N_points(method, fn, N, scipy_based=True):
         method(fn=fn, N=N)
 
 
-def runtime_measure(method, fn, scipy_based=True, N=[10, 100, 1000], iterations=1):
+def _runtime_measure(method, fn, scipy_based=True, N=[10, 100, 1000], iterations=1):
     """Performing runtime measurement of integration of fn over the interval [-1, 1] through the method ""method"" by using ""N"" points. For each value ""N"", a number of iterations ""iterations"" is used to calculate the average.
 
     Args:
