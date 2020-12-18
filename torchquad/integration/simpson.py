@@ -34,7 +34,7 @@ class Simpson(BaseIntegrator):
         logger.debug(
             "Using Simpson for integrating a fn with "
             + str(N)
-            + " points over"
+            + " points over "
             + str(integration_domain)
         )
 
