@@ -17,6 +17,16 @@ TEST_FUNCTIONS_1D = [
     Sinusoid(2 * np.sin(1) * np.sin(1), domain=[[0, 2]]),
 ]
 
+TEST_FUNCTIONS_3D = [
+    Polynomial(48.0, [2.0], dim=3),  # 2
+    Polynomial(0, [0, 1], dim=3),  # y = x
+    Polynomial(8.0, coeffs=[0, 0, 1], dim=3),  # x^2+y^2+z^2
+    Exponential(
+        27 * (np.exp(3) - 1) / np.exp(2), domain=[[-2, 1], [-2, 1], [-2, 1]]
+    ),  # e^x+e^y+e^z
+    Sinusoid(24 * np.sin(1) ** 2, domain=[[0, 2], [0, 2], [0, 2]]),
+]
+
 # Check if convergence order is met
 def check_convergence_prder(integrator, errors, test_functions):
     """Checks for the passed integrator if all errors matched the expected convergence criteria
@@ -46,6 +56,8 @@ def compute_test_errors(integrator, integrator_args, dim=1):
     # get the test functions
     if dim == 1:
         test_functions = TEST_FUNCTIONS_1D
+    elif dim == 3:
+        test_functions = TEST_FUNCTIONS_3D
     else:
         raise ValueError("Not testing functions implemented for dim " + str(dim))
 

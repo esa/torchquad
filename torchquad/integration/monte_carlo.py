@@ -1,6 +1,6 @@
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
-
+from .utils import setup_integration_domain
 import torch
 
 import logging
@@ -20,7 +20,7 @@ class MonteCarlo(BaseIntegrator):
 
         Args:
             fn (func): The function to integrate over
-            dim (int): dimensionality of the function to integrate
+            dim (int): Dimensionality of the function to integrate
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
 
@@ -43,22 +43,7 @@ class MonteCarlo(BaseIntegrator):
         self._dim = dim
         self._nr_of_fevals = 0
         self.fn = fn
-
-        # Store integration_domain
-        # If not specified, create [-1,1]^d bounds
-        logger.debug("Setting up integration domain")
-        if integration_domain is not None:
-            if len(integration_domain) != dim:
-                raise ValueError(
-                    "Dimension and length of integration domain don't match. Should be e.g. dim=1 dom=[[-1,1]]"
-                )
-            self._integration_domain = (
-                integration_domain
-                if type(integration_domain) == torch.Tensor
-                else torch.tensor(integration_domain)
-            )
-        else:
-            self._integration_domain = torch.tensor([[-1, 1]] * dim)
+        self._integration_domain = setup_integration_domain(dim, integration_domain)
 
         logger.debug("Picking random sampling points")
         sample_points = torch.zeros([N, dim])
