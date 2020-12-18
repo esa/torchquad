@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class Simpson(BaseIntegrator):
-    """Simpsons' rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas . 
+
+    """Simpson's rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas . 
     """
 
     def __init__(self):
@@ -18,7 +19,7 @@ class Simpson(BaseIntegrator):
         self._convergence_order = 2  # quadratic approx
 
     def integrate(self, fn, dim, N=3, integration_domain=None):
-        """Integrates the passed function on the passed domain using the simpson method
+        """Integrates the passed function on the passed domain using Simpson's rule
 
         Args:
             fn (func): The function to integrate over
@@ -56,13 +57,15 @@ class Simpson(BaseIntegrator):
         logger.debug("Evaluating integrand on the grid")
         function_values = self._eval(self._grid.points)
 
-        # Reshape the output to instead of [dim*N] points
-        # be [N,N,...] points
+        # Reshape the output to be [N,N,...] points
+        # instead of [dim*N] points
+
         function_values = function_values.reshape([self._grid._N] * dim)
 
         logger.debug("Computing areas")
 
-        # This will contain the simpsons areas per dimension
+
+        # This will contain the simpson's areas per dimension
         cur_dim_areas = function_values
 
         # We collapse dimension by dimension

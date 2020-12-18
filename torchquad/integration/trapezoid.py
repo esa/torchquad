@@ -22,7 +22,7 @@ class Trapezoid(BaseIntegrator):
 
         Args:
             fn (func): The function to integrate over
-            dim (int): dimensionality of the function to integrate
+            dim (int): Dimensionality of the function to integrate
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
 
@@ -48,8 +48,8 @@ class Trapezoid(BaseIntegrator):
         logger.debug("Evaluating integrand on the grid")
         function_values = self._eval(self._grid.points)
 
-        # Reshape the output to instead of [dim*N] points
-        # be [N,N,...] points
+        # Reshape the output to be [N,N,...] points
+        # instead of [dim*N] points
         function_values = function_values.reshape([self._grid._N] * dim)
 
         logger.debug("Computing trapezoid areas")

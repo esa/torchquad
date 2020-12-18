@@ -1,3 +1,169 @@
 # torchquad
+<!--
+*** Based on https://github.com/othneildrew/Best-README-Template
+-->
 
 [![Documentation Status](https://readthedocs.org/projects/torchquad/badge/?version=latest)](https://torchquad.readthedocs.io/en/latest/?badge=latest)
+
+
+
+<!-- PROJECT LOGO -->
+<br />
+<p align="center">
+  <a href="https://github.com/esa/torchquad">
+    <img src="icon.svg" alt="Logo" width="200" height="80">
+  </a>
+  <p align="center">
+    High-performance numerical integration on the GPU with PyTorch
+    <br />
+    <a href="https://torchquad.readthedocs.io"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/esa/torchquad/blob/master/notebooks/Torchquad%20-%20Example%20notebook.ipynb">View Example notebook</a>
+    ·
+    <a href="https://github.com/esa/torchquad/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/esa/torchquad/issues">Request Feature</a>
+  </p>
+</p>
+
+
+
+<!-- TABLE OF CONTENTS -->
+<details open="open">
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+      <ul>
+        <li><a href="#built-with">Built With</a></li>
+      </ul>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#acknowledgements">Acknowledgements</a></li>
+  </ol>
+</details>
+
+
+
+<!-- ABOUT THE PROJECT -->
+## About The Project
+
+This project allows utilizing GPUs for efficient numerical integration with [PyTorch](https://pytorch.org/). 
+
+### Built With
+
+* [PyTorch](https://pytorch.org/)
+* [conda](https://docs.conda.io/en/latest/)
+
+
+<!-- GETTING STARTED -->
+## Getting Started
+
+This is a brief example of setting up torchquad.
+
+### Prerequisites
+
+We recommend using [conda](https://docs.conda.io/en/latest/), especially if you want to utilize the GPU. It will automatically set up CUDA and the cudatoolkit for you in that case.
+Note that torchquad also works on the CPU. However, it is optimized for GPU usage.
+
+* [conda](https://docs.conda.io/en/latest/), which will take care of all requirements for you. For a detailed list of required packages, please refer to the [conda environment file](https://github.com/esa/torchquad/blob/main/environment.yml).
+
+### Installation
+
+1. Get [miniconda](https://docs.conda.io/en/latest/miniconda.html) or similar
+2. Clone the repo
+   ```sh
+   git clone https://github.com/esa/torchquad.git
+   ```
+3. Setup the environment. This will create a conda environment called `torchquad`
+   ```sh
+   conda env create -f environment.yml
+   ```
+
+Alternatively you can use
+   ```sh
+   pip install torchquad
+   ```
+**TODO** Setup and test
+
+<!-- USAGE EXAMPLES -->
+## Usage
+
+This is a brief example how torchquad can be used to compute a simple integral. For a more thorough introduction please refer to the [example notebook](https://github.com/esa/torchquad/blob/master/notebooks/Torchquad%20-%20Example%20notebook.ipynb).
+
+The full documentation  can be found on  [readthedocs](https://torchquad.readthedocs.io/en/latest/).
+
+```python
+# To avoid copying things to GPU memory, 
+# ideally allocate everything in torch on the GPU
+# and avoid non-torch function calls
+import torch 
+from torchquad import MonteCarlo
+
+# The function we want to integrate, in this example f(x,y) = sin(x) + e^y
+def some_function(x):
+    return torch.sin(x[0]) + torch.exp(x[1])
+
+# Declare an integrator, here we use the simple, stochastic Monte Carlo integration method
+mc = MonteCarlo()
+
+# Compute the function integral by sampling 10000 points over domain 
+integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
+```
+
+You can find all available integrators **TODO** Update link [here](https://torchquad.readthedocs.io/en/latest/):
+
+<!-- ROADMAP -->
+## Roadmap
+
+See the [open issues](https://github.com/esa/torchquad/issues) for a list of proposed features (and known issues).
+
+
+<!-- CONTRIBUTING -->
+## Contributing
+
+The project is open to community contributions. Feel free to open an [issue](https://github.com/esa/torchquad/issues) or write us an email if you would like to discuss a problem or idea first.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+
+
+<!-- LICENSE -->
+## License
+
+Distributed under the GPL-3.0 License. See [LICENSE](https://github.com/esa/torchquad/blob/main/LICENSE) for more information.
+
+
+
+<!-- CONTACT -->
+## Contact 
+
+Created by ESA's [Advanced Concepts Team](https://www.esa.int/gsp/ACT/index.html)
+
+Pablo Gómez - `pablo.gomez at esa.int`
+Gabriele Meoni - `gabriele.meoni at esa.int`
+Håvard Hem Toftevaag - `havard.hem.toftevaag at esa.int`
+
+Project Link: [https://github.com/esa/torchquad](https://github.com/esa/torchquad)
+
+
+
+<!-- ACKNOWLEDGEMENTS 
+This README was based on https://github.com/othneildrew/Best-README-Template
+-->

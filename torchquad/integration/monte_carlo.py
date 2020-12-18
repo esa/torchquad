@@ -20,7 +20,7 @@ class MonteCarlo(BaseIntegrator):
 
         Args:
             fn (func): The function to integrate over
-            dim (int): dimensionality of the function to integrate
+            dim (int): Dimensionality of the function to integrate
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
 
