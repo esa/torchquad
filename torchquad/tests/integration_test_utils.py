@@ -28,7 +28,7 @@ TEST_FUNCTIONS_3D = [
 ]
 
 # Check if convergence order is met
-def check_convergence_prder(integrator, errors, test_functions):
+def check_convergence_order(integrator, errors, test_functions):
     """Checks for the passed integrator if all errors matched the expected convergence criteria
 
     Args:

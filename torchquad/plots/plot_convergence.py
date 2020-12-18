@@ -3,7 +3,7 @@ import numpy as np
 
 
 def plot_convergence(evals, fvals, ground_truth, labels, dpi=150):
-    """Plots errors vs fevals, ans shows the convergence ragte.
+    """Plots errors vs fevals, and shows the convergence rate.
 
     Args:
         evals (list of np.array): number of evaluations, for each method a np.array of fevals]
@@ -18,10 +18,8 @@ def plot_convergence(evals, fvals, ground_truth, labels, dpi=150):
     for evals_item, f_item, label in zip(evals, fvals, labels):
         evals_item = np.array(evals_item)
         abs_err = np.abs(np.asarray(f_item) - np.asarray(ground_truth))
-        abs_err_delta = np.mean(
-            np.abs((abs_err[1:] - abs_err[:-1]) / (evals_item[1:] - evals_item[:-1]))
-        )
-        label = label + "\n C.R.: " + str.format("{:.6e}", abs_err_delta)
+        abs_err_delta = np.mean(np.abs((abs_err[:-1]) / (abs_err[1:])))
+        label = label + "\nConvergence Rate: " + str.format("{:.2e}", abs_err_delta)
         plt.semilogy(evals_item, abs_err, label=label)
 
     plt.legend()
