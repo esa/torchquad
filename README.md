@@ -108,7 +108,7 @@ The full documentation  can be found on  [readthedocs](https://torchquad.readthe
 ```python
 # To avoid copying things to GPU memory, 
 # ideally allocate everything in torch on the GPU
-# and avoid non torch function calls
+# and avoid non-torch function calls
 import torch 
 from torchquad import MonteCarlo
 
@@ -116,7 +116,7 @@ from torchquad import MonteCarlo
 def some_function(x):
     return torch.sin(x[0]) + torch.exp(x[1])
 
-# Declare an integrator, here we use the simple, stochastic monte carlo integration method
+# Declare an integrator, here we use the simple, stochastic Monte Carlo integration method
 mc = MonteCarlo()
 
 # Compute the function integral by sampling 10000 points over domain 
@@ -158,7 +158,7 @@ Created by ESA's [Advanced Concepts Team](https://www.esa.int/gsp/ACT/index.html
 
 Pablo Gómez - `pablo.gomez at esa.int`
 Gabriele Meoni - `gabriele.meoni at esa.int`
-Håvard Hem Toftevaag - `havard.toftevaag at esa.int`
+Håvard Hem Toftevaag - `havard.hem.toftevaag at esa.int`
 
 Project Link: [https://github.com/esa/torchquad](https://github.com/esa/torchquad)
 
