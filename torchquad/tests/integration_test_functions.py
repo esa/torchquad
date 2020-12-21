@@ -22,7 +22,7 @@ class IntegrationTestFunction:
         Args:
             expected_result (float): Expected integration result
             dim (int, optional): Dimensionality of investigated function. Defaults to 1.
-            domain (list, optional): Integration domain like [[0,1],[1,2]] e.g.. Defaults to None.
+            domain (list, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
         """
         self.dim = dim
         self.expected_result = expected_result
