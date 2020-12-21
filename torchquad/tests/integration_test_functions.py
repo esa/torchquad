@@ -49,7 +49,7 @@ class IntegrationTestFunction:
             integration_args (list): Arguments to pass to integrator
 
         Returns:
-            float: integration result
+            float: Integration result
         """
         return integrator(fn=self.f, integration_domain=self.domain, **integration_args)
 
