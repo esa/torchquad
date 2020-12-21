@@ -6,24 +6,24 @@ from integration.integration_grid import IntegrationGrid
 
 
 def test_integration_grid():
-    """TODO
-    """
+    """Tests the integration grid 
+    """#TODO add more
+
     # Generate a grid in different dimension with different N
     # on different domains and check if
-    # all points are inside
-    # mesh width is correct
-    # numbers of points is correct
-
     N = 10
-    integration_domain = [[0, 1]]
+    l_bound, r_bound = 0, 1
+    integration_domain = [[l_bound, r_bound]]
     grid = IntegrationGrid(N, integration_grid)
 
     assert grid._N == N
-    assert grid.h == 0.1
+    # mesh width is correct
+    assert grid.h == 1/N
+    # numbers of points is correct
     assert len(grid.points) == N
-    assert grid.point[:, 0] <= 1.0
-    assert grid.point[:, 0] >= 0.0
-
+    # all points are inside
+    assert grid.point[:, 0] >= l_bound
+    assert grid.point[:, 0] <= r_bound
 
 test_integration_grid()
 

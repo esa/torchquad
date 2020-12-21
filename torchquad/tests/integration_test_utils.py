@@ -34,7 +34,7 @@ def check_convergence_prder(integrator, errors, test_functions):
     Args:
         integrator (func): Used integrator
         errors (np.array): Computed error terms
-        test_functions (torchquad.IntegrationTestFunction): utilized test functions
+        test_functions (torchquad.IntegrationTestFunction): Utilized test functions
     """
     # TODO Implement this
     raise NotImplementedError("This is not yet implemented.")
@@ -45,11 +45,11 @@ def compute_test_errors(integrator, integrator_args, dim=1):
 
     Args:
         integrator (torchquad.base_integrator): Integrator to use
-        integrator_args (dict): arguments for the integrator
+        integrator_args (dict): Arguments for the integrator
         dim (int, optional): Dimensionality of test functions to use. Defaults to 1.
 
     Returns:
-        list: absolute errors on all test functions
+        list: Absolute errors on all test functions
     """
     errors = []
 
