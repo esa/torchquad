@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Simpson(BaseIntegrator):
+
     """Simpson's rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas . 
     """
 
@@ -34,7 +35,7 @@ class Simpson(BaseIntegrator):
         logger.debug(
             "Using Simpson for integrating a fn with "
             + str(N)
-            + " points over"
+            + " points over "
             + str(integration_domain)
         )
 
@@ -58,9 +59,11 @@ class Simpson(BaseIntegrator):
 
         # Reshape the output to be [N,N,...] points
         # instead of [dim*N] points
+
         function_values = function_values.reshape([self._grid._N] * dim)
 
         logger.debug("Computing areas")
+
 
         # This will contain the simpson's areas per dimension
         cur_dim_areas = function_values

@@ -6,11 +6,11 @@ if "TORCH_DEVICE" not in os.environ:
     os.environ["TORCH_DEVICE"] = "cpu"
 
 
-#TODO: Currently this is the way to expose to the docs
+# TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
 from .integration.monte_carlo import MonteCarlo
-from .integration.trapezoid_1D import Trapezoid1D
-from .integration.simpson_1D import Simpson1D
+from .integration.trapezoid import Trapezoid
+from .integration.simpson import Simpson
 
 from .plots.plot_convergence import plot_convergence
 from .plots.plot_runtime import plot_runtime
@@ -19,11 +19,12 @@ from .utils.enable_cuda import enable_cuda
 
 __all__ = [
     "MonteCarlo",
-    "Trapezoid1D",
-    "Simpson1D",
+    "Trapezoid",
+    "Simpson",
     "plot_convergence",
     "plot_runtime",
     "enable_cuda",
+    "set_log_level",
 ]
 
 # Initialize logger

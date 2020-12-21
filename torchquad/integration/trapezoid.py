@@ -35,7 +35,7 @@ class Trapezoid(BaseIntegrator):
         logger.debug(
             "Using Trapezoid for integrating a fn with "
             + str(N)
-            + " points over"
+            + " points over "
             + str(integration_domain)
         )
 
