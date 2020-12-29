@@ -10,6 +10,7 @@ if "TORCH_DEVICE" not in os.environ:
 from .integration.monte_carlo import MonteCarlo
 from .integration.trapezoid import Trapezoid
 from .integration.simpson import Simpson
+from .integration.integration_grid import IntegrationGrid
 
 from .plots.plot_convergence import plot_convergence
 from .plots.plot_runtime import plot_runtime
@@ -17,6 +18,7 @@ from .plots.plot_runtime import plot_runtime
 from .utils.enable_cuda import enable_cuda
 
 __all__ = [
+    "IntegrationGrid",
     "MonteCarlo",
     "Trapezoid",
     "Simpson",
