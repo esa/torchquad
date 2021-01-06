@@ -27,19 +27,6 @@ TEST_FUNCTIONS_3D = [
     Sinusoid(24 * np.sin(1) ** 2, domain=[[0, 2], [0, 2], [0, 2]]),
 ]
 
-# Check if convergence order is met
-def check_convergence_prder(integrator, errors, test_functions):
-    """Checks for the passed integrator if all errors matched the expected convergence criteria
-
-    Args:
-        integrator (func): Used integrator
-        errors (np.array): Computed error terms
-        test_functions (torchquad.IntegrationTestFunction): Utilized test functions
-    """
-    # TODO Implement this
-    raise NotImplementedError("This is not yet implemented.")
-
-
 def compute_test_errors(integrator, integrator_args, dim=1):
     """Computes errors on all test functions for given dimension and integrator
 
