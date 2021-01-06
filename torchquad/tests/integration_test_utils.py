@@ -25,6 +25,9 @@ TEST_FUNCTIONS_3D = [
         27 * (np.exp(3) - 1) / np.exp(2), domain=[[-2, 1], [-2, 1], [-2, 1]]
     ),  # e^x+e^y+e^z
     Sinusoid(24 * np.sin(1) ** 2, domain=[[0, 2], [0, 2], [0, 2]]),
+    Exponential(
+        1.756, domain=[[-0.05, 0.1], [-0.25, 0.2], [-np.exp(1), np.exp(1)]]
+    ),  # e^x+e^y+e^z
 ]
 
 # Check if convergence order is met
