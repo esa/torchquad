@@ -10,9 +10,17 @@ from setuptools import setup, find_packages
 setup(
     name="torchquad",
     version="0.1.0",
-    description="Package providing a torch-based integration method.",
+    description="Package providing torch-based numerical integration methods.",
+    long_description=open("README.md").read(),
     url="https://github.com/esa/torchquad",
     author="ESA Advanced Concepts Team",
+    author_email="pablo.gomez@esa.int",
+    install_requires=[
+        "matplotlib>=3.3.3",
+        "scipy>=1.6.0",
+        "tqdm>=4.55.1",
+        "torch>=1.7.1",
+    ],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
@@ -21,7 +29,12 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     keywords="integration, setuptools, development",
-    package_dir="",
+    packages=[
+        "torchquad",
+        "torchquad.integration",
+        "torchquad.plots",
+        "torchquad.utils",
+    ],
     python_requires=">=3.8, <4",
     project_urls={"Source": "https://github.com/esa/torchquad/",},
 )
