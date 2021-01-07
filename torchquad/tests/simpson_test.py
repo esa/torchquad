@@ -30,7 +30,7 @@ def test_integrate():
         assert error < 1e-15
 
     # 3D Tests
-    N = 1000000  # N = 369 per dim
+    N = 1030301  # N = 101 per dim
     errors = compute_test_errors(simp.integrate, {"N": N, "dim": 3}, dim=3)
     print("N =", N, "\n", errors)
     for error in errors[:3]:
