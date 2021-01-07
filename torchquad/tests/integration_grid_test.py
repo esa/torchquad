@@ -28,7 +28,7 @@ def test_integration_grid():
         # test if all points are inside
         assert torch.all(grid.points[:, dim] >= integration_domain[dim][0])
         assert torch.all(grid.points[:, dim] <= integration_domain[dim][1])
-    print("1-D: N = ", N, ", grid_N = ", grid._N)
+    #print("1-D (float) test: N =", N, ", grid_N =", grid._N, ", error:", torch.abs(grid.h[dim] - 1 / (N - 1)))
 
     # test 2
     N = 4**3
@@ -40,12 +40,11 @@ def test_integration_grid():
     for dim in range(len(integration_domain)):
         domain_width = integration_domain[dim][1] - integration_domain[dim][0]
         # test if mesh width is correct
-        print(grid.h[dim], domain_width / (grid._N - 1),"torch.abs(): ", grid.h[dim] - domain_width / (grid._N - 1))
         assert torch.abs(grid.h[dim] - domain_width / (grid._N - 1)) < eps
         # test if all points are inside
         assert torch.all(grid.points[:, dim] >= integration_domain[dim][0])
         assert torch.all(grid.points[:, dim] <= integration_domain[dim][1])
-    print("3-D (int): N = ", N, ", grid_N = N^(1/3) = ", grid._N)
+    #print("3-D (int) test: N =", N, ", grid_N = N^(1/3) =", grid._N, ", error:", torch.abs(grid.h[dim] - domain_width / (grid._N - 1)))
 
     # test 3
     N = 4.0**3
@@ -62,7 +61,7 @@ def test_integration_grid():
         # test if all points are inside
         assert torch.all(grid.points[:, dim] >= integration_domain[dim][0])
         assert torch.all(grid.points[:, dim] <= integration_domain[dim][1])
-    print("3-D (float): N = ", N, ", grid_N = N^(1/3) = ", grid._N)
+    #print("3-D (float) test: N =", N, ", grid_N = N^(1/3) =", grid._N, ", error:", torch.abs(grid.h[dim] - domain_width / (grid._N - 1)))
 
 test_integration_grid()
 
