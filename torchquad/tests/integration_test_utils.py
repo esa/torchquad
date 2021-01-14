@@ -30,29 +30,16 @@ TEST_FUNCTIONS_3D = [
     ),  # e^x+e^y+e^z
 ]
 
-# Check if convergence order is met
-def check_convergence_prder(integrator, errors, test_functions):
-    """Checks for the passed integrator if all errors matched the expected convergence criteria
-
-    Args:
-        integrator (func): Used integrator
-        errors (np.array): Computed error terms
-        test_functions (torchquad.IntegrationTestFunction): utilized test functions
-    """
-    # TODO Implement this
-    raise NotImplementedError("This is not yet implemented.")
-
-
 def compute_test_errors(integrator, integrator_args, dim=1):
     """Computes errors on all test functions for given dimension and integrator
 
     Args:
         integrator (torchquad.base_integrator): Integrator to use
-        integrator_args (dict): arguments for the integrator
+        integrator_args (dict): Arguments for the integrator
         dim (int, optional): Dimensionality of test functions to use. Defaults to 1.
 
     Returns:
-        list: absolute errors on all test functions
+        list: Absolute errors on all test functions
     """
     errors = []
 
