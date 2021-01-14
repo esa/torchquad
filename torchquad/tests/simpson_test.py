@@ -36,7 +36,7 @@ def test_integrate():
     for error in errors[:3]:
         assert error < 1e-12
     for error in errors:
-        assert error < 4e-7
+        assert error < 5e-6
 
 
 # used to run this test individually
