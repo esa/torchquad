@@ -22,7 +22,8 @@ class Simpson(BaseIntegrator):
         """Integrates the passed function on the passed domain using Simpson's rule
 
         Args:
-            fn (func): The function to integrate over
+            fn (func): The function to integrate over.
+            dim (int): Dimensionality of the integration domain.
             N (int, optional): Number of sample points to use for the integration. Has to be odd. Defaults to 3.
             integration_domain (list, optional): Integration domain. Defaults to [-1,1]^dim.
 

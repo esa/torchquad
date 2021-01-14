@@ -22,8 +22,9 @@ class Boole(BaseIntegrator):
         """Integrates the passed function on the passed domain using Boole's rule
 
         Args:
-            fn (func): The function to integrate over
-            N (int, optional): Number of sample points to use for the integration. Defaults to 5.
+            fn (func): The function to integrate over.
+            dim (int): Dimensionality of the integration domain.
+            N (int, optional): Number of sample points to use for the integration. N has to be such as N^(1/dim) - 1 % 4 == 0. Defaults to 5 for dim = 1.
             integration_domain (list, optional): Integration domain. Defaults to [-1,1]^dim.
 
         Returns:
@@ -45,12 +46,18 @@ class Boole(BaseIntegrator):
         # Create grid and assemble evaluation points
         self._grid = IntegrationGrid(N, integration_domain)
 
+        #Check on the grid_N size
+        if (self._grid._N - 1) % 4 > 0:
+            raise (
+                ValueError(
+                    f"N was {self._grid._N}. N has to be such as N^(1/dim) - 1 % 4 == 0."
+                )
+            )
+
         logger.debug("Evaluating integrand on the grid")
         function_values = self._eval(self._grid.points)
 
-        # Reshape the output to be [N,N,...] points
-        # instead of [dim*N] points
-
+        # Reshape the output to be [N,N,...] points instead of [dim*N] points
         function_values = function_values.reshape([self._grid._N] * dim)
 
         logger.debug("Computing areas")

@@ -14,19 +14,19 @@ def test_integrate():
     """
     torch.set_default_tensor_type(torch.DoubleTensor)
     bl = Boole()
-    N = 400
+    N = 401
 
     errors = compute_test_errors(bl.integrate, {"N": N, "dim": 1})
     print("N =", N, "\n", errors)
     for error in errors:
-        assert error < 1e-3
+        assert error < 1e-11
 
     # 3D Tests
-    N = 1000000  # N = 369 per dim
+    N = 1030302
     errors = compute_test_errors(bl.integrate, {"N": N, "dim": 3}, dim=3)
     print("N =", N, "\n", errors)
     for error in errors[:3]:
-        assert error < 1e-12
+        assert error < 2e-13
     for error in errors:
         assert error < 5e-6
 
