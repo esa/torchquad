@@ -25,31 +25,21 @@ TEST_FUNCTIONS_3D = [
         27 * (np.exp(3) - 1) / np.exp(2), domain=[[-2, 1], [-2, 1], [-2, 1]]
     ),  # e^x+e^y+e^z
     Sinusoid(24 * np.sin(1) ** 2, domain=[[0, 2], [0, 2], [0, 2]]),
+    Exponential(
+        1.756, domain=[[-0.05, 0.1], [-0.25, 0.2], [-np.exp(1), np.exp(1)]]
+    ),  # e^x+e^y+e^z
 ]
-
-# Check if convergence order is met
-def check_convergence_prder(integrator, errors, test_functions):
-    """Checks for the passed integrator if all errors matched the expected convergence criteria
-
-    Args:
-        integrator (func): Used integrator
-        errors (np.array): Computed error terms
-        test_functions (torchquad.IntegrationTestFunction): utilized test functions
-    """
-    # TODO Implement this
-    raise NotImplementedError("This is not yet implemented.")
-
 
 def compute_test_errors(integrator, integrator_args, dim=1):
     """Computes errors on all test functions for given dimension and integrator
 
     Args:
         integrator (torchquad.base_integrator): Integrator to use
-        integrator_args (dict): arguments for the integrator
+        integrator_args (dict): Arguments for the integrator
         dim (int, optional): Dimensionality of test functions to use. Defaults to 1.
 
     Returns:
-        list: absolute errors on all test functions
+        list: Absolute errors on all test functions
     """
     errors = []
 
