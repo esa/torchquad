@@ -16,7 +16,6 @@ class Simpson(BaseIntegrator):
 
     def __init__(self):
         super().__init__()
-        self._convergence_order = 2  # quadratic approx
 
     def integrate(self, fn, dim, N=3, integration_domain=None):
         """Integrates the passed function on the passed domain using Simpson's rule

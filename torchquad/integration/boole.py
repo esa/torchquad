@@ -16,7 +16,6 @@ class Boole(BaseIntegrator):
 
     def __init__(self):
         super().__init__()
-        self._convergence_order = 5  # 4th grade approx
 
     def integrate(self, fn, dim, N=5, integration_domain=None):
         """Integrates the passed function on the passed domain using Boole's rule

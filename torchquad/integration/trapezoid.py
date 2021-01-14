@@ -15,7 +15,6 @@ class Trapezoid(BaseIntegrator):
 
     def __init__(self):
         super().__init__()
-        self._convergence_order = 1  # linear approx
 
     def integrate(self, fn, dim, N=2, integration_domain=None):
         """Integrates the passed function on the passed domain using the trapezoid rule
