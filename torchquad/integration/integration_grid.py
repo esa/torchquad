@@ -24,10 +24,10 @@ class IntegrationGrid:
         self._dim = len(integration_domain)
 
         # TODO Add that N can be different for each dimension
-        self._N = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
         # A rounding error occurs for certain numbers with certain powers, 
-        # e.g. (4**3)**(1/3) = 3.99999... 
-        # Because int() floors the number, a little error term is useful
+        # e.g. (4**3)**(1/3) = 3.99999... Because int() floors the number, 
+        # i.e. int(3.99999...) -> 3, a little error term is useful
+        self._N = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
 
         self.h = torch.zeros([self._dim])
 
