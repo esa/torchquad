@@ -13,6 +13,6 @@ def plot_runtime(evals, runtime, labels, dpi=150):
     fig = plt.figure(dpi=dpi)
     for evals_item, rt, label in zip(evals, runtime, labels):
         plt.semilogy(evals_item, rt, label=label)
-    plt.legend()
+    plt.legend(fontsize=6)
     plt.xlabel("Number of evaluations")
     plt.ylabel("Runtime [s]")
