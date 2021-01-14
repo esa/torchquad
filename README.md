@@ -11,7 +11,7 @@
 <br />
 <p align="center">
   <a href="https://github.com/esa/torchquad">
-    <img src="icon.svg" alt="Logo" width="200" height="80">
+    <img src="torchquad_logo_black_background.svg" alt="Logo" width="261" height="102">
   </a>
   <p align="center">
     High-performance numerical integration on the GPU with PyTorch
