@@ -96,12 +96,11 @@ Alternatively you can use
    ```sh
    pip install torchquad
    ```
-**TODO** Setup and test
 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-This is a brief example how torchquad can be used to compute a simple integral. For a more thorough introduction please refer to the [example notebook](https://github.com/esa/torchquad/blob/master/notebooks/Torchquad%20-%20Example%20notebook.ipynb).
+This is a brief example how torchquad can be used to compute a simple integral. For a more thorough introduction please refer to the [example notebook](https://github.com/esa/torchquad/blob/main/notebooks/Example_notebook.ipynb).
 
 The full documentation  can be found on  [readthedocs](https://torchquad.readthedocs.io/en/latest/).
 
@@ -123,7 +122,7 @@ mc = MonteCarlo()
 integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
 ```
 
-You can find all available integrators **TODO** Update link [here](https://torchquad.readthedocs.io/en/latest/):
+You can find all available integrators [here](https://torchquad.readthedocs.io/en/latest/):
 
 <!-- ROADMAP -->
 ## Roadmap
