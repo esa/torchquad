@@ -31,4 +31,4 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
         python setup.py sdist bdist_wheel
-        twine upload -r testpypi  dist/*
+         $CONDA/bin/twine upload -r testpypi  dist/*
