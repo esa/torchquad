@@ -17,33 +17,28 @@ class Boole(BaseIntegrator):
     def __init__(self):
         super().__init__()
 
-    def integrate(self, fn, dim, N=5, integration_domain=None):
-        """Integrates the passed function on the passed domain using Boole's rule
+    def integrate(self, fn, dim, N=None, integration_domain=None):
+        """Integrates the passed function on the passed domain using Boole's rule.
 
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
-            N (int, optional): Number of sample points to use for the integration. N has to be such as N^(1/dim) - 1 % 4 == 0. Defaults to 5 for dim = 1.
-            integration_domain (list, optional): Integration domain. Defaults to [-1,1]^dim.
+            N (int, optional): Total number of sample points to use for the integration. N has to be such that N^(1/dim) - 1 % 4 == 0. Defaults to 5 points per dimension if None is given.
+            integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
 
         Returns:
-            float: Integral value
+            float: Integral value.
         """
-        self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
-        self._integration_domain = setup_integration_domain(dim, integration_domain)
 
-        logger.debug(
-            "Using Boole for integrating a fn with "
-            + str(N)
-            + " points over "
-            + str(integration_domain)
-        )
+        # If N is unspecified, set N to 5 points per dimension
+        if N is None:
+            N = 5**dim
+
+        self._integration_domain = setup_integration_domain(dim, integration_domain)
+        self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
 
         self._dim = dim
         self._fn = fn
-
-        # Create grid and assemble evaluation points
-        self._grid = IntegrationGrid(N, integration_domain)
 
         #Check on the grid_N size
         if (self._grid._N - 1) % 4 > 0:
@@ -52,6 +47,17 @@ class Boole(BaseIntegrator):
                     f"N was {self._grid._N}. N has to be such as N^(1/dim) - 1 % 4 == 0."
                 )
             )
+
+        logger.debug(
+            "Using Boole for integrating a fn with "
+            + str(N)
+            + " points over "
+            + str(integration_domain)
+            + "."
+        )
+
+        # Create grid and assemble evaluation points
+        self._grid = IntegrationGrid(N, integration_domain)
 
         logger.debug("Evaluating integrand on the grid")
         function_values = self._eval(self._grid.points)

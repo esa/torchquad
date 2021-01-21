@@ -5,6 +5,7 @@ from .utils import setup_integration_domain
 import torch
 
 import logging
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -17,44 +18,42 @@ class Simpson(BaseIntegrator):
     def __init__(self):
         super().__init__()
 
-    def integrate(self, fn, dim, N=3, integration_domain=None):
-        """Integrates the passed function on the passed domain using Simpson's rule
+    def integrate(self, fn, dim, N=None, integration_domain=None):
+        """Integrates the passed function on the passed domain using Simpson's rule.
 
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
-            N (int, optional): Number of sample points to use for the integration. Has to be odd. Defaults to 3.
-            integration_domain (list, optional): Integration domain. Defaults to [-1,1]^dim.
+            N (int, optional): Total number of sample points to use for the integration. Should be odd. Defaults to 3 points per dimension if None is given.
+            integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
 
         Returns:
-            float: Integral value
+            float: Integral value.
         """
-        self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
-        self._integration_domain = setup_integration_domain(dim, integration_domain)
 
-        logger.debug(
-            "Using Simpson for integrating a fn with "
-            + str(N)
-            + " points over "
-            + str(integration_domain)
-        )
+        # If N is unspecified, set N to 3 points per dimension
+        if N is None: 
+            N = 3**dim
+
+        self._integration_domain = setup_integration_domain(dim, integration_domain)
+        self._adjust_grid_points(dim=dim, N=N)
+        self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
 
         self._dim = dim
         self._fn = fn
 
+        logger.debug(
+            "Using Simpson for integrating a fn with a total of "
+            + str(N)
+            + " points over "
+            + str(integration_domain)
+            + "."
+        )
+
         # Create grid and assemble evaluation points
         self._grid = IntegrationGrid(N, integration_domain)
 
-        # Simpson requires odd N for correctness. There is a more complex rule
-        # that works for even N as well but it is not implemented here.
-        if self._grid._N % 2 != 1:
-            raise (
-                ValueError(
-                    f"N was {self._grid._N}. N cannot be even due to necessary subdivisions."
-                )
-            )
-
-        logger.debug("Evaluating integrand on the grid")
+        logger.debug("Evaluating integrand on the grid.")
         function_values = self._eval(self._grid.points)
 
         # Reshape the output to be [N,N,...] points
@@ -62,10 +61,10 @@ class Simpson(BaseIntegrator):
 
         function_values = function_values.reshape([self._grid._N] * dim)
 
-        logger.debug("Computing areas")
+        logger.debug("Computing areas.")
 
 
-        # This will contain the simpson's areas per dimension
+        # This will contain the Simpson's areas per dimension
         cur_dim_areas = function_values
 
         # We collapse dimension by dimension
@@ -81,6 +80,32 @@ class Simpson(BaseIntegrator):
             )
             cur_dim_areas = torch.sum(cur_dim_areas, dim=dim - cur_dim - 1)
 
-        logger.info("Computed integral was " + str(cur_dim_areas))
+        logger.info("Computed integral was " + str(cur_dim_areas) + ".")
 
         return cur_dim_areas
+
+        def _adjust_grid_points(dim,N):
+            """Checks if the N is correct, in this case odd.
+
+            Args:
+                dim (int): Dimensionality of the integration domain.
+                N (int): Total number of sample points to use for the integration. Should be odd.
+                
+            Returns:
+                int: An odd N.
+            """
+            Nperdim = int(N ** (1.0 / dim) + 1e-8)
+            logger.debug("Checking inputs to Integrator.")        
+
+            # Simpson's rule requires odd N per dim for correctness. There is a more 
+            # complex rule that works for even N as well but it is not implemented here.
+            if Nperdim % 2 != 1:
+                warnings.warn(
+                        "N per dimension cannot be even due to necessary subdivisions. "
+                        "N per dim will now be changed to the next lower integer, i.e. "
+                        f"{Nperdim} -> {Nperdim - 1}."
+                )
+                N = (Nperdim - 1)**(dim)
+
+            return N
+            
