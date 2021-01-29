@@ -33,10 +33,10 @@ class Boole(BaseIntegrator):
 
         # If N is unspecified, set N to 5 points per dimension
         if N is None:
-            N = 5**dim
+            N = 5 ** dim
 
         self._integration_domain = setup_integration_domain(dim, integration_domain)
-        self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
+        self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
         N = self._adjust_N(dim=dim, N=N)
 
         self._dim = dim
@@ -46,12 +46,12 @@ class Boole(BaseIntegrator):
             "Using Boole for integrating a fn with a total of "
             + str(N)
             + " points over "
-            + str(integration_domain)
+            + str(self._integration_domain)
             + "."
         )
 
         # Create grid and assemble evaluation points
-        self._grid = IntegrationGrid(N, integration_domain)
+        self._grid = IntegrationGrid(N, self._integration_domain)
 
         logger.debug("Evaluating integrand on the grid.")
         function_values = self._eval(self._grid.points)
@@ -93,22 +93,24 @@ class Boole(BaseIntegrator):
             int: An N satisfying N^(1/dim) - 1 % 4 == 0.
         """
         n_per_dim = int(N ** (1.0 / dim) + 1e-8)
-        logger.debug("Checking if N per dim is >=5 and N = 1 + 4n, where n is a positive integer.")        
+        logger.debug(
+            "Checking if N per dim is >=5 and N = 1 + 4n, where n is a positive integer."
+        )
 
-        # Boole's rule requires N per dim >=5 and N = 1 + 4n, 
+        # Boole's rule requires N per dim >=5 and N = 1 + 4n,
         # where n is a positive integer, for correctness.
-        if n_per_dim < 5: 
+        if n_per_dim < 5:
             warnings.warn(
-                    "N per dimension cannot be lower than 5. "
-                    "N per dim will now be changed to 5."
+                "N per dimension cannot be lower than 5. "
+                "N per dim will now be changed to 5."
             )
-            N = 5**dim
+            N = 5 ** dim
         elif (n_per_dim - 1) % 4 != 0:
             new_n_per_dim = n_per_dim - ((n_per_dim - 1) % 4)
             warnings.warn(
-                    "N per dimension must be N = 1 + 4n with n a positive integer due to necessary subdivisions. "
-                    "N per dim will now be changed to the next lower N satisfying this, i.e. "
-                    f"{n_per_dim} -> {new_n_per_dim}."
+                "N per dimension must be N = 1 + 4n with n a positive integer due to necessary subdivisions. "
+                "N per dim will now be changed to the next lower N satisfying this, i.e. "
+                f"{n_per_dim} -> {new_n_per_dim}."
             )
-            N = (new_n_per_dim)**(dim)
+            N = (new_n_per_dim) ** (dim)
         return N
