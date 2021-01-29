@@ -46,8 +46,8 @@ class BaseIntegrator:
         if len(results) != len(points):
             raise ValueError(
                 f"The passed function was given {len(points)} points but only returned {len(results)} value(s)."
-                f" Please ensure that your function is vectorized, i.e. can be called with multiple evaluation points at once. It should return a tensor
-                where first dimension matches length of passed elements. "
+                f"Please ensure that your function is vectorized, i.e. can be called with multiple evaluation points at once. It should return a tensor "
+                f"where first dimension matches length of passed elements. "
             )
 
         return results
