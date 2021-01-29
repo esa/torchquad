@@ -41,16 +41,16 @@ class BaseIntegrator:
             warnings.warn(
                 "The passed function did not return a torch.tensor. Will try to convert. Note that this may be slow as it results in memory transfers between CPU and GPU, if torchquad uses the GPU."
             )
-            results = torch.tensor(result)
+            result = torch.tensor(result)
 
-        if len(results) != len(points):
+        if len(result) != len(points):
             raise ValueError(
-                f"The passed function was given {len(points)} points but only returned {len(results)} value(s)."
+                f"The passed function was given {len(points)} points but only returned {len(result)} value(s)."
                 f"Please ensure that your function is vectorized, i.e. can be called with multiple evaluation points at once. It should return a tensor "
                 f"where first dimension matches length of passed elements. "
             )
 
-        return results
+        return result
 
     def _check_inputs(self, dim=None, N=None, integration_domain=None):
         """Used to check input validity
