@@ -37,7 +37,7 @@ class Boole(BaseIntegrator):
 
         self._integration_domain = setup_integration_domain(dim, integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
-        self._adjust_N(dim=dim, N=N)
+        N = self._adjust_N(dim=dim, N=N)
 
         self._dim = dim
         self._fn = fn
