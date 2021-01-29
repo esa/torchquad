@@ -17,14 +17,14 @@ def test_integrate():
     N = 401
 
     errors = compute_test_errors(bl.integrate, {"N": N, "dim": 1})
-    print("N =", N, "\n", errors)
+    print("Passed N =", N, "\n", errors)
     for error in errors:
         assert error < 1e-11
 
     # 3D Tests
-    N = 1030302
+    N = 1030340 # N = 101.001 per dim
     errors = compute_test_errors(bl.integrate, {"N": N, "dim": 3}, dim=3)
-    print("N =", N, "\n", errors)
+    print("Passed N =", N, "\n", errors)
     for error in errors[:3]:
         assert error < 2e-13
     for error in errors:

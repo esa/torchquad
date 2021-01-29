@@ -36,8 +36,8 @@ class Simpson(BaseIntegrator):
             N = 3**dim
 
         self._integration_domain = setup_integration_domain(dim, integration_domain)
-        self._adjust_grid_points(dim=dim, N=N)
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
+        self._adjust_N(dim=dim, N=N)
 
         self._dim = dim
         self._fn = fn
@@ -56,13 +56,10 @@ class Simpson(BaseIntegrator):
         logger.debug("Evaluating integrand on the grid.")
         function_values = self._eval(self._grid.points)
 
-        # Reshape the output to be [N,N,...] points
-        # instead of [dim*N] points
-
+        # Reshape the output to be [N,N,...] points instead of [dim*N] points
         function_values = function_values.reshape([self._grid._N] * dim)
 
         logger.debug("Computing areas.")
-
 
         # This will contain the Simpson's areas per dimension
         cur_dim_areas = function_values
@@ -79,33 +76,37 @@ class Simpson(BaseIntegrator):
                 )
             )
             cur_dim_areas = torch.sum(cur_dim_areas, dim=dim - cur_dim - 1)
-
         logger.info("Computed integral was " + str(cur_dim_areas) + ".")
 
         return cur_dim_areas
 
-        def _adjust_grid_points(dim,N):
-            """Checks if the N is correct, in this case odd.
+    def _adjust_N(self, dim, N):
+        """Adjusts the current N to an odd integer >=3, if N is not that already. 
 
-            Args:
-                dim (int): Dimensionality of the integration domain.
-                N (int): Total number of sample points to use for the integration. Should be odd.
-                
-            Returns:
-                int: An odd N.
-            """
-            Nperdim = int(N ** (1.0 / dim) + 1e-8)
-            logger.debug("Checking inputs to Integrator.")        
-
-            # Simpson's rule requires odd N per dim for correctness. There is a more 
-            # complex rule that works for even N as well but it is not implemented here.
-            if Nperdim % 2 != 1:
-                warnings.warn(
-                        "N per dimension cannot be even due to necessary subdivisions. "
-                        "N per dim will now be changed to the next lower integer, i.e. "
-                        f"{Nperdim} -> {Nperdim - 1}."
-                )
-                N = (Nperdim - 1)**(dim)
-
-            return N
+        Args:
+            dim (int): Dimensionality of the integration domain.
+            N (int): Total number of sample points to use for the integration.
             
+        Returns:
+            int: An odd N >3.
+        """
+        Nperdim = int(N ** (1.0 / dim) + 1e-8)
+        logger.debug("Checking if N per dim is >=3 and odd.")        
+
+        # Simpson's rule requires odd N per dim >3 for correctness. There is a more 
+        # complex rule that works for even N as well but it is not implemented here.
+        if Nperdim < 3: 
+            warnings.warn(
+                    "N per dimension cannot be lower than 3. "
+                    "N per dim will now be changed to 3."
+            )
+            N = 3**dim
+        elif Nperdim % 2 != 1:
+            warnings.warn(
+                    "N per dimension cannot be even due to necessary subdivisions. "
+                    "N per dim will now be changed to the next lower integer, i.e. "
+                    f"{Nperdim} -> {Nperdim - 1}."
+            )
+            N = (Nperdim - 1)**(dim)
+        return N
+        
