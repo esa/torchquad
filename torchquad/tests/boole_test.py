@@ -3,7 +3,7 @@ import sys
 sys.path.append("../")
 
 import torch
-
+import warnings
 
 from integration.boole import Boole
 from tests.integration_test_utils import compute_test_errors
@@ -22,8 +22,10 @@ def test_integrate():
         assert error < 1e-11
 
     # 3D Tests
-    N = 1030301 # N = 101 per dim
-    errors = compute_test_errors(bl.integrate, {"N": N, "dim": 3}, dim=3)
+    N = 1076890 # N = 102.5 per dim (will change to 101 if all works)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        errors = compute_test_errors(bl.integrate, {"N": N, "dim": 3}, dim=3)
     print("Passed N =", N, "\n", errors)
     for error in errors[:3]:
         assert error < 2e-13

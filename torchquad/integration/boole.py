@@ -92,23 +92,23 @@ class Boole(BaseIntegrator):
         Returns:
             int: An N satisfying N^(1/dim) - 1 % 4 == 0.
         """
-        Nperdim = int(N ** (1.0 / dim) + 1e-8)
+        n_per_dim = int(N ** (1.0 / dim) + 1e-8)
         logger.debug("Checking if N per dim is >=5 and N = 1 + 4n, where n is a positive integer.")        
 
         # Boole's rule requires N per dim >=5 and N = 1 + 4n, 
         # where n is a positive integer, for correctness.
-        if Nperdim < 5: 
+        if n_per_dim < 5: 
             warnings.warn(
                     "N per dimension cannot be lower than 5. "
                     "N per dim will now be changed to 5."
             )
             N = 5**dim
-        elif (Nperdim - 1) % 4 != 0:
-            new_Nperdim = Nperdim - ((Nperdim - 1) % 4)
+        elif (n_per_dim - 1) % 4 != 0:
+            new_n_per_dim = n_per_dim - ((n_per_dim - 1) % 4)
             warnings.warn(
                     "N per dimension must be N = 1 + 4n with n a positive integer due to necessary subdivisions. "
                     "N per dim will now be changed to the next lower N satisfying this, i.e. "
-                    f"{Nperdim} -> {new_Nperdim}."
+                    f"{n_per_dim} -> {new_n_per_dim}."
             )
-            N = (new_Nperdim)**(dim)
+            N = (new_n_per_dim)**(dim)
         return N

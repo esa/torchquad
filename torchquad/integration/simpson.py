@@ -90,23 +90,23 @@ class Simpson(BaseIntegrator):
         Returns:
             int: An odd N >3.
         """
-        Nperdim = int(N ** (1.0 / dim) + 1e-8)
+        n_per_dim = int(N ** (1.0 / dim) + 1e-8)
         logger.debug("Checking if N per dim is >=3 and odd.")        
 
         # Simpson's rule requires odd N per dim >3 for correctness. There is a more 
         # complex rule that works for even N as well but it is not implemented here.
-        if Nperdim < 3: 
+        if n_per_dim < 3: 
             warnings.warn(
                     "N per dimension cannot be lower than 3. "
                     "N per dim will now be changed to 3."
             )
             N = 3**dim
-        elif Nperdim % 2 != 1:
+        elif n_per_dim % 2 != 1:
             warnings.warn(
                     "N per dimension cannot be even due to necessary subdivisions. "
                     "N per dim will now be changed to the next lower integer, i.e. "
-                    f"{Nperdim} -> {Nperdim - 1}."
+                    f"{n_per_dim} -> {n_per_dim - 1}."
             )
-            N = (Nperdim - 1)**(dim)
+            N = (n_per_dim - 1)**(dim)
         return N
         
