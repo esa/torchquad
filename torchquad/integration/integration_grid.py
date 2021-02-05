@@ -1,9 +1,9 @@
 import torch
 import logging
-
+from time import perf_counter
 logger = logging.getLogger(__name__)
 
-from time import perf_counter
+
 
 class IntegrationGrid:
     """This class is used to store the integration grid for methods like Trapezoid or Simpsons, which require a grid.
