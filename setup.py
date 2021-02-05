@@ -12,6 +12,7 @@ setup(
     version="0.1.0",
     description="Package providing torch-based numerical integration methods.",
     long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     url="https://github.com/esa/torchquad",
     author="ESA Advanced Concepts Team",
     author_email="pablo.gomez@esa.int",
@@ -24,11 +25,11 @@ setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
-        "Topic :: Integration Method :: Build Tools",
-        "License :: OSI Approved :: GNU License",
+        "Intended Audience :: Science/Research",
+        "Topic :: Scientific/Engineering :: Mathematics",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: Python :: 3.8",
     ],
-    keywords="integration, setuptools, development",
     packages=[
         "torchquad",
         "torchquad.integration",

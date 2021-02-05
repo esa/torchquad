@@ -39,7 +39,7 @@ python-dateutil==2.8.1
 pytz==2020.5
 requests==2.25.1
 scipy==1.6.0
-setuptools==49.6.0.post20210108
+setuptools==51.3.3
 six==1.15.0
 snowballstemmer==2.0.0
 Sphinx==3.4.3

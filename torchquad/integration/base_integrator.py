@@ -1,4 +1,6 @@
 import logging
+import warnings
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +36,21 @@ class BaseIntegrator:
             points (torch.tensor): Integration points
         """
         self._nr_of_fevals += len(points)
-        return self._fn(points)
+        result = self._fn(points)
+        if type(result) != torch.Tensor:
+            warnings.warn(
+                "The passed function did not return a torch.tensor. Will try to convert. Note that this may be slow as it results in memory transfers between CPU and GPU, if torchquad uses the GPU."
+            )
+            result = torch.tensor(result)
+
+        if len(result) != len(points):
+            raise ValueError(
+                f"The passed function was given {len(points)} points but only returned {len(result)} value(s)."
+                f"Please ensure that your function is vectorized, i.e. can be called with multiple evaluation points at once. It should return a tensor "
+                f"where first dimension matches length of passed elements. "
+            )
+
+        return result
 
     def _check_inputs(self, dim=None, N=None, integration_domain=None):
         """Used to check input validity
