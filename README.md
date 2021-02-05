@@ -50,6 +50,7 @@
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
+    <li><a href="#FAQ">FAQ</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
@@ -148,6 +149,10 @@ The project is open to community contributions. Feel free to open an [issue](htt
 Distributed under the GPL-3.0 License. See [LICENSE](https://github.com/esa/torchquad/blob/main/LICENSE) for more information.
 
 
+<!-- FAQ -->
+## FAQ 
+
+  1. Q: `Error enabling CUDA. cuda.is_available() returned False. CPU will be used.`  <br/>A: This error is due to the fact that `cudatoolkit` is not installed by default. To enable the GPU usage, `cudatoolkit` shall be installed.
 
 <!-- CONTACT -->
 ## Contact 
