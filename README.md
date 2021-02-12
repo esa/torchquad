@@ -152,7 +152,10 @@ Distributed under the GPL-3.0 License. See [LICENSE](https://github.com/esa/torc
 <!-- FAQ -->
 ## FAQ 
 
-  1. Q: `Error enabling CUDA. cuda.is_available() returned False. CPU will be used.`  <br/>A: This error is due to the fact that `cudatoolkit` is not installed by default. To enable the GPU usage, `cudatoolkit` shall be installed.
+  1. Q: `Error enabling CUDA. cuda.is_available() returned False. CPU will be used.`  <br/>A: This error indicates that no CUDA-compatible GPU could be found. Either you have no compatible GPU or the necessary CUDA requirements are missing. Using `conda`, you can install them with `conda install cudatoolkit`. For more detailed installation instructions, please refer to https://pytorch.org/get-started/locally/ .
+
+
+
 
 <!-- CONTACT -->
 ## Contact 
