@@ -32,11 +32,11 @@ class Simpson(BaseIntegrator):
         """
 
         # If N is unspecified, set N to 3 points per dimension
-        if N is None: 
-            N = 3**dim
+        if N is None:
+            N = 3 ** dim
 
         self._integration_domain = setup_integration_domain(dim, integration_domain)
-        self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
+        self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
         N = self._adjust_N(dim=dim, N=N)
 
         self._dim = dim
@@ -46,12 +46,12 @@ class Simpson(BaseIntegrator):
             "Using Simpson for integrating a fn with a total of "
             + str(N)
             + " points over "
-            + str(integration_domain)
+            + str(self._integration_domain)
             + "."
         )
 
         # Create grid and assemble evaluation points
-        self._grid = IntegrationGrid(N, integration_domain)
+        self._grid = IntegrationGrid(N, self._integration_domain)
 
         logger.debug("Evaluating integrand on the grid.")
         function_values = self._eval(self._grid.points)
@@ -91,22 +91,21 @@ class Simpson(BaseIntegrator):
             int: An odd N >3.
         """
         n_per_dim = int(N ** (1.0 / dim) + 1e-8)
-        logger.debug("Checking if N per dim is >=3 and odd.")        
+        logger.debug("Checking if N per dim is >=3 and odd.")
 
-        # Simpson's rule requires odd N per dim >3 for correctness. There is a more 
+        # Simpson's rule requires odd N per dim >3 for correctness. There is a more
         # complex rule that works for even N as well but it is not implemented here.
-        if n_per_dim < 3: 
+        if n_per_dim < 3:
             warnings.warn(
-                    "N per dimension cannot be lower than 3. "
-                    "N per dim will now be changed to 3."
+                "N per dimension cannot be lower than 3. "
+                "N per dim will now be changed to 3."
             )
-            N = 3**dim
+            N = 3 ** dim
         elif n_per_dim % 2 != 1:
             warnings.warn(
-                    "N per dimension cannot be even due to necessary subdivisions. "
-                    "N per dim will now be changed to the next lower integer, i.e. "
-                    f"{n_per_dim} -> {n_per_dim - 1}."
+                "N per dimension cannot be even due to necessary subdivisions. "
+                "N per dim will now be changed to the next lower integer, i.e. "
+                f"{n_per_dim} -> {n_per_dim - 1}."
             )
-            N = (n_per_dim - 1)**(dim)
+            N = (n_per_dim - 1) ** (dim)
         return N
-        

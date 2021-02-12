@@ -29,13 +29,13 @@ class Trapezoid(BaseIntegrator):
             float: Integral value.
         """
         self._integration_domain = setup_integration_domain(dim, integration_domain)
-        self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
+        self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
 
         logger.debug(
             "Using Trapezoid for integrating a fn with "
             + str(N)
             + " points over "
-            + str(integration_domain)
+            + str(self._integration_domain)
             + "."
         )
 
@@ -43,7 +43,7 @@ class Trapezoid(BaseIntegrator):
         self._fn = fn
 
         # Create grid and assemble evaluation points
-        self._grid = IntegrationGrid(N, integration_domain)
+        self._grid = IntegrationGrid(N, self._integration_domain)
 
         logger.debug("Evaluating integrand on the grid.")
         function_values = self._eval(self._grid.points)

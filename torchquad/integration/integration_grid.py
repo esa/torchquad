@@ -1,7 +1,8 @@
 import torch
 import logging
-
+from time import perf_counter
 logger = logging.getLogger(__name__)
+
 
 
 class IntegrationGrid:
@@ -12,6 +13,7 @@ class IntegrationGrid:
     h = None  # mesh width
     _N = None  # number of mesh points
     _dim = None  # dimensionality of the grid
+    _runtime = None # runtime for the creation of the integration grid
 
     def __init__(self, N, integration_domain):
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
@@ -20,6 +22,7 @@ class IntegrationGrid:
             N (int): Total desired number of points in the grid (will take next lower root depending on dim)
             integration_domain (list): Domain to choose points in, e.g. [[-1,1],[0,1]].
         """
+        start = perf_counter()
         self._check_inputs(N, integration_domain)
         self._dim = len(integration_domain)
 
@@ -60,6 +63,8 @@ class IntegrationGrid:
         self.points = torch.stack((tuple(points))).transpose(0, 1)
 
         logger.info("Integration grid created.")
+           
+        self._runtime = perf_counter() - start
 
     def _check_inputs(self, N, integration_domain):
         """Used to check input validity"""
