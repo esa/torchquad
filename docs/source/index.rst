@@ -12,7 +12,7 @@
 Welcome to torchquad's documentation!
 =====================================================
 
-*torchquad* is the Python module for multidimensional numerical integration on the GPU 
+*torchquad* is a Python module for multidimensional numerical integration on the GPU 
 using `PyTorch <https://pytorch.org/>`_.
 
 You can see the latest code at https://github.com/esa/torchquad.

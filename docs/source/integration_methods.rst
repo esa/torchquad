@@ -1,10 +1,10 @@
 Integration methods
 ======================================
 
-This is the list of all available integration methods for the *torchquad* project.
-We are currently implementing new methods in our library.
+This is the list of all available integration methods in *torchquad*.
+We are continuously implementing new methods in our library.
 
-For the code, please see the `code module <https://torchquad.readthedocs.io/en/latest/_modules/index.html>`_ 
+For the code, please see the `torchquad module code <https://torchquad.readthedocs.io/en/latest/_modules/index.html>`_ 
 or find our latest code at https://github.com/esa/torchquad.
 
 .. contents::

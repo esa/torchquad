@@ -9,7 +9,7 @@ Created by ESA's `Advanced Concepts Team <https://www.esa.int/gsp/ACT/index.html
 - Gabriele Meoni - *gabriele.meoni (at) esa.int*
 - Håvard Hem Toftevaag - *havard.hem.toftevaag (at) esa.int*
 
-Project Link: `https://github.com/esa/torchquad <https://github.com/esa/torchquad>`_
+Project Link: `https://github.com/esa/torchquad <https://github.com/esa/torchquad>`_.
 
 Feedback
 --------
