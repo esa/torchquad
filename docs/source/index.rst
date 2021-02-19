@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: Torchquad_logo_white_background.png
-    :width: 494px
+.. image:: Torchquad_RtD_background.png
+    :width: 530px
     :align: center
-    :height: 194px
+    :height: 227px
     :alt: torchquad_logo
 
 Welcome to torchquad's documentation!
