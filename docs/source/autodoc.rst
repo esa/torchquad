@@ -3,11 +3,11 @@
 All content
 ======================================
 
-This is the list of all content for the *torchquad* project.
-We are currently implementing new methods in our library.
+This is the list of all content in *torchquad*.  
 
-For the code, please see the `torchquad module code <https://torchquad.readthedocs.io/en/latest/_modules/index.html>`_ 
-or find our latest code at https://github.com/esa/torchquad.
+We are continuously implementing new content in our library.
+For the code, please see the `code page <https://torchquad.readthedocs.io/en/latest/_modules/index.html>`_ 
+or check out our full code and latest news at https://github.com/esa/torchquad.
 
 .. automodule:: torchquad
    :members:
