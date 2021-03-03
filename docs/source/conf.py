@@ -38,6 +38,9 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
+# The master toctree document.
+master_doc = "index"
+
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
@@ -53,7 +56,7 @@ html_theme = "sphinx_rtd_theme"
 
 html_logo = "Torchquad_logo_white_background.png"
 html_theme_options = {
-    'logo_only': True,
+    "logo_only": True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
