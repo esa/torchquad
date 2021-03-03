@@ -31,6 +31,13 @@ You can see the latest code at https://github.com/esa/torchquad.
    :caption: Contact:
 
    contact
+   contributing
+
+Roadmap
+---------
+
+See the open issues for a list of proposed features (and known issues).
+
 
 Indices and tables
 ==================
