@@ -23,6 +23,14 @@ Monte Carlo Integrator
 Deterministic Methods
 ----------------------
 
+Boole's Rule
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: torchquad.Boole
+   :members:
+   :noindex:
+   
+
 Simpson's Rule
 ^^^^^^^^^^^^^^^^^^^^^^
 
