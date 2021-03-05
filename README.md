@@ -122,7 +122,7 @@ mc = MonteCarlo()
 integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
 ```
 
-You can find all available integrators [here](https://torchquad.readthedocs.io/en/latest/):
+You can find all available integrators [here](https://torchquad.readthedocs.io/en/latest/integration_methods.html).
 
 <!-- ROADMAP -->
 ## Roadmap
