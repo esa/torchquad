@@ -7,10 +7,11 @@ if "TORCH_DEVICE" not in os.environ:
 
 # TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
+from .integration.integration_grid import IntegrationGrid
 from .integration.monte_carlo import MonteCarlo
 from .integration.trapezoid import Trapezoid
 from .integration.simpson import Simpson
-from .integration.integration_grid import IntegrationGrid
+from .integration.boole import Boole
 
 from .plots.plot_convergence import plot_convergence
 from .plots.plot_runtime import plot_runtime
@@ -22,6 +23,7 @@ __all__ = [
     "MonteCarlo",
     "Trapezoid",
     "Simpson",
+    "Boole",
     "plot_convergence",
     "plot_runtime",
     "enable_cuda",
