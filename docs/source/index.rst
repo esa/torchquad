@@ -31,6 +31,19 @@ You can see the latest code at https://github.com/esa/torchquad.
    :caption: Contact:
 
    contact
+   contributing
+
+Roadmap
+---------
+
+See the `open issues <https://github.com/esa/torchquad/issues>`_ for a list of proposed features (and known issues).
+
+
+License
+--------
+
+Distributed under the GPL-3.0 License. See `LICENSE <https://github.com/esa/torchquad/blob/main/LICENSE>`_ for more information.
+
 
 Indices and tables
 ==================
