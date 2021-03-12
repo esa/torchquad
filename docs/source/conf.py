@@ -52,8 +52,12 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "sphinx_rtd_theme"
 
 html_logo = "Torchquad_logo_white_background.png"
+
 html_theme_options = {
     "logo_only": True,
+    "display_version": True,
+    "prev_next_buttons_location": "bottom",
+    "style_nav_header_background": "white",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
