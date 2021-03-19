@@ -1,4 +1,10 @@
-on: [push]
+name: JOSS paper compiler
+
+on:
+  push:
+    paths:
+      - 'paper.md'
+      - 'paper.bib'
 
 jobs:
   paper:
