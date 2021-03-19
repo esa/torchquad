@@ -39,6 +39,7 @@
         <li><a href="#built-with">Built With</a></li>
       </ul>
     </li>
+    <li><a href="#goals">Goals</a></li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
@@ -60,18 +61,29 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-This project allows utilizing GPUs for efficient numerical integration with [PyTorch](https://pytorch.org/). 
+The torchquad module allows utilizing GPUs for efficient numerical integration with [PyTorch](https://pytorch.org/). 
+The software is free to use and is designed for the machine learning community and research groups focusing on topics requiring high-dimensional integration.
 
 ### Built With
+
+This project is built with the following packages:
 
 * [PyTorch](https://pytorch.org/)
 * [conda](https://docs.conda.io/en/latest/)
 
 
+<!-- GOALS -->
+## Goals
+
+* **Progressing science**:  Multidimensional integration is needed in many kinds of physics (from particle physics to astrophysics), in applied finance, in medical statistics, and so on. With torchquad, we wish to reach research groups in such fields, as well as the general machine learning community.
+* **Combatting the curse of dimensionality**: The [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality) makes especially deterministic methods but also stochastic ones extremely slow for large *n*. This gives the researcher a choice between computationally heavy and time-consuming simulations on the one hand and inaccurate evaluations on the other. Luckily, many integration methods are [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel), which means they are predestined for GPU parallelisation. The curse of dimensionality still applies, but GPUs can handle the problem much better than CPUs can.
+* **Delivering a convenient and functional tool**: torchquad is built with [PyTorch](https://pytorch.org/), which means it is [fully differentiable](https://en.wikipedia.org/wiki/Differentiable_programming). The only other currently available GPU-based integration package, [VegasFlow](https://github.com/N3PDF/vegasflow), is built with [TensorFlow](https://www.tensorflow.org/). Furthermore, VegasFlow only offers one integration method that is not ideal for small *n*. In contrast, the library of available and upcoming methods in torchquad offers high-effeciency integration for any need.
+
+
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is a brief example of setting up torchquad.
+This is a brief guide for how to set up torchquad.
 
 ### Prerequisites
 
