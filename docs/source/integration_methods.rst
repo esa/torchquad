@@ -19,6 +19,12 @@ Monte Carlo Integrator
    :members:
    :noindex:
 
+VEGAS Enhanced
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: torchquad.VEGAS
+   :members:
+   :noindex:
    
 Deterministic Methods
 ----------------------
