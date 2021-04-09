@@ -24,4 +24,3 @@ def enable_cuda(device=0):
         logger.warn(
             "Error enabling CUDA. cuda.is_available() returned False. CPU will be used."
         )
-

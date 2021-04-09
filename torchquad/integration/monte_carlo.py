@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class MonteCarlo(BaseIntegrator):
-    """Monte Carlo integration in torch. 
-    """
+    """Monte Carlo integration in torch."""
 
     def __init__(self):
         super().__init__()
@@ -66,4 +65,3 @@ class MonteCarlo(BaseIntegrator):
         integral = volume * torch.sum(function_values) / N
         logger.info("Computed integral was " + str(integral))
         return integral
-

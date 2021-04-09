@@ -37,5 +37,7 @@ setup(
         "torchquad.utils",
     ],
     python_requires=">=3.8, <4",
-    project_urls={"Source": "https://github.com/esa/torchquad/",},
+    project_urls={
+        "Source": "https://github.com/esa/torchquad/",
+    },
 )

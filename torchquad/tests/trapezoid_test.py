@@ -10,8 +10,7 @@ from tests.integration_test_utils import compute_test_errors
 
 
 def test_integrate():
-    """Tests the integrate function in integration.Trapezoid
-    """
+    """Tests the integrate function in integration.Trapezoid"""
     torch.set_default_tensor_type(torch.DoubleTensor)
     tp = Trapezoid()
     N = 100000

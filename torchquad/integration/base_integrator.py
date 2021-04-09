@@ -6,8 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseIntegrator:
-    """The (abstract) integrator that all other integrators inherit from. Provides no explicit definitions for methods.
-    """
+    """The (abstract) integrator that all other integrators inherit from. Provides no explicit definitions for methods."""
 
     # Function to evaluate
     _fn = None
@@ -94,4 +93,3 @@ class BaseIntegrator:
                         integration_domain,
                         " does not specify a valid integration bound.",
                     )
-
