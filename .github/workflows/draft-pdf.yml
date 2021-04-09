@@ -5,7 +5,8 @@ on:
     paths:
       - 'paper.md'
       - 'paper.bib'
-
+  workflow_dispatch:
+  
 jobs:
   paper:
     runs-on: ubuntu-latest
