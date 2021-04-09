@@ -18,10 +18,10 @@ def test_integrate():
 
     # TODO needs to be adjusted for vegas
     # 1D Tests
-    # errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 1, "seed": 0})
-    # print("N =", N, "\n", errors)
-    # for error in errors:
-    #     assert error < 1e-5
+    errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 1, "seed": 0})
+    print("N =", N, "\n", errors)
+    for error in errors:
+        assert error < 1e-5
 
     # TODO needs to be adjusted for vegas
     # 3D Tests
