@@ -6,8 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class VEGASMap:
-    """The map used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112.
-    """
+    """The map used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112."""
 
     def __init__(self) -> None:
         pass
@@ -27,12 +26,17 @@ class VEGASMap:
     def map_accumulate_weight(self, y, f):
         pass
 
-    def _smooth_map(self,):
+    def _smooth_map(
+        self,
+    ):
         pass
 
-    def _reset_weight(self,):
+    def _reset_weight(
+        self,
+    ):
         pass
 
-    def update_map(self,):
+    def update_map(
+        self,
+    ):
         pass
-

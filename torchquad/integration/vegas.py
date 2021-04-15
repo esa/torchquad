@@ -12,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class VEGAS(BaseIntegrator):
-    """VEGAS Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112.
-    """
+    """VEGAS Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112."""
 
     def __init__(self):
         super().__init__()
@@ -38,7 +37,7 @@ class VEGAS(BaseIntegrator):
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
             use_grid_improve (bool, optional): If True will improve the grid after each iteration.
-            eps_rel (float, optional): Relative error to abort at. Defaults to 0. 
+            eps_rel (float, optional): Relative error to abort at. Defaults to 0.
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
 
         Raises:
