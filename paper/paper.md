@@ -27,20 +27,35 @@ bibliography: paper.bib
 
 # Summary
 
-*torchquad* is a Python module for multidimensional numerical integration on the GPU using PyTorch.
+\texttt{torchquad} is a Python module for $n$-dimensional numerical integration on the graphics processing unit (GPU).
+
 
 # Statement of Need
 
-The world needs torchquad ...
+The world needs torchquad because ...
 
-# Software Description
+PyTorch [@NEURIPS2019].
+such as \texttt{quadpy} [@quadpy] and \texttt{nquad} [@scipy]
+\textit{curse of dimensionality} [@ZMCintegral].
+such as \texttt{VegasFlow} [@Carrazza2020rdn; @vegasflow-package] and \texttt{ZMCintegral} [@ZMCintegral; @ZMCintegral-code], their implementation is based on TensorFlow [@Tensorflow].
 
-This part might be unnecessary.
+The following deterministic integration methods are available in \texttt{torchquad} (version 0.2):
+
+\begin{itemize}
+    \item Trapezoid Rule [@sag1964numerical]
+    \item Simpson's Rule [@sag1964numerical]
+    \item Boole's Rule [@ubale2012numerical]
+\end{itemize}
+
+The stochastic integration methods implemented in \texttt{torchquad} are:
+
+\begin{itemize}
+    \item Monte Carlo Integrator [@caflisch1998monte]
+    \item VEGAS Enhanced (VEGAS+) method [@lepage2020adaptive]
+\end{itemize}
 
 # Acknowledgements
 
 We would like to thank ...
 
 # References
-
-Do not put anything here, this should be empty (put in ```paper.bib``` instead)
