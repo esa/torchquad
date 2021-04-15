@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class VEGAS(BaseIntegrator):
-    """Vegas Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112.
+    """VEGAS Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112.
     """
 
     def __init__(self):
