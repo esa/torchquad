@@ -76,7 +76,7 @@ class VEGAS(BaseIntegrator):
         self._improve_grid()
 
         logger.debug("Running VEGAS Iterations")
-        self.results = []  # contains integrations results per iteration
+        self.results = []  # contains integrations' results per iteration
         self.sigma2 = []  # contains variance per iteration
 
         yrnd = torch.zeros(self._dim)
