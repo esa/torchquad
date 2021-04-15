@@ -41,8 +41,7 @@ class VEGASStratification:
         self.strat_counts[idx] += 1
 
     def update_DH(self):
-        """Update the dampened sample counts
-        """
+        """Update the dampened sample counts"""
         d_sum = 0
         d_tmp = 0
         for i in range(self.N_cubes):
@@ -97,7 +96,7 @@ class VEGASStratification:
         return res
 
     def get_Y(self, idx):
-        """Compute randomly sampled points in specified interval 
+        """Compute randomly sampled points in specified interval
 
         Args:
             idx (int): interval index
@@ -112,4 +111,3 @@ class VEGASStratification:
         for i in range(self.dim):
             res[i] = random_uni[i] * dy + ID[i] * dy
         return res
-

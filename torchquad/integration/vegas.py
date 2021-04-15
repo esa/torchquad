@@ -262,7 +262,7 @@ class VEGAS(BaseIntegrator):
         """Estimates error from variance , EQ 31
 
         Returns:
-            float: estimated error 
+            float: estimated error
         """
         res = 0
         for sig in self.sigma2:
