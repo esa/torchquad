@@ -52,6 +52,9 @@ Blaablabla list:
 * Test item  
 * Another item  
 
+Blaablabla list:  
+  ~ Test item  
+  ~ Another item [@ubale2012numerical]  
 
 The stochastic integration methods implemented in \texttt{torchquad} are:
 
