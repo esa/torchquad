@@ -30,6 +30,7 @@ TEST_FUNCTIONS_3D = [
     ),  # e^x+e^y+e^z
 ]
 
+
 def compute_test_errors(integrator, integrator_args, dim=1):
     """Computes errors on all test functions for given dimension and integrator
 

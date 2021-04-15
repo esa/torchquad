@@ -10,8 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Trapezoid(BaseIntegrator):
-    """Trapezoidal rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas . 
-    """
+    """Trapezoidal rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
 
     def __init__(self):
         super().__init__()

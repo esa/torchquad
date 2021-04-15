@@ -12,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Boole(BaseIntegrator):
 
-    """Boole's rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas . 
-    """
+    """Boole's rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
 
     def __init__(self):
         super().__init__()
@@ -83,12 +82,12 @@ class Boole(BaseIntegrator):
         return cur_dim_areas
 
     def _adjust_N(self, dim, N):
-        """Adjusts the total number of points to a valid number, i.e. N satisfies N^(1/dim) - 1 % 4 == 0. 
+        """Adjusts the total number of points to a valid number, i.e. N satisfies N^(1/dim) - 1 % 4 == 0.
 
         Args:
             dim (int): Dimensionality of the integration domain.
             N (int): Total number of sample points to use for the integration.
-            
+
         Returns:
             int: An N satisfying N^(1/dim) - 1 % 4 == 0.
         """
