@@ -52,20 +52,22 @@ class VEGAS(BaseIntegrator):
 
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
         logger.debug(
-            "VEGAS integrating a "
+            "\n VEGAS integrating a "
             + str(dim)
             + "-dimensional fn with "
             + str(N)
             + " points over "
-            + str(integration_domain),
+            + str(integration_domain)
+            + "\n",
         )
 
         self._dim = dim
         self._nr_of_fevals = 0
         self._max_iterations = 10
+        self.N = N
         # TODO think about including warmup and grid improvement in this
-        self._starting_N = N // self._max_iterations
-        self._N_increment = N // self._max_iterations
+        self._starting_N = N // (self._max_iterations * 2)
+        self._N_increment = N // (self._max_iterations * 2)
         self._fn = fn
         self._integration_domain = setup_integration_domain(dim, integration_domain)
         if seed is not None:
@@ -79,10 +81,10 @@ class VEGAS(BaseIntegrator):
         self.sigma2 = []  # contains variance per iteration
 
         it = 0
-        while it < self._max_iterations:
+        while True:
             if use_grid_improve:
                 logger.debug("Running grid improvement")
-                self._improve_grid()
+                self._improve_grid(warmup=(it == 0))  # only warmup on first iteration
 
             it = it + 1
             self.results.append(0)
@@ -91,18 +93,24 @@ class VEGAS(BaseIntegrator):
             logger.debug("Running VEGAS Iteration")
             acc = self._run_iteration()
 
+            if it > self._max_iterations:
+                break
+            if self._nr_of_fevals > self.N:
+                break
+
             if it % 5 == 0:
                 res = self._get_result()
                 err = self._get_error()
                 chi2 = self._get_chisq()
                 acc = err / res
 
-                print(f"Chi2={chi2[0]:.4e}")
+                logger.debug(f"Iteration {it},Chi2={chi2:.4e}")
                 if (acc < eps_rel or err < eps_abs) and chi2 / 5.0 < 1.0:
                     break
+
                 if chi2 / 5.0 < 1.0:
                     self._starting_N = torch.minimum(
-                        self._starting_N + self._N_increment,
+                        torch.tensor(self._starting_N + self._N_increment),
                         self._starting_N * torch.sqrt(acc / eps_rel),
                     )
                     self.results = []
@@ -114,62 +122,64 @@ class VEGAS(BaseIntegrator):
                     self.sigma2 = []
                     continue
 
-            logging.debug(
+            logger.info(
                 f"Iteration {it}, Acc={acc:.4e}, Result={self.results[-1]:.4e},neval={self._nr_of_fevals}"
             )
 
-        logger.info("Computed integral was " + str(self.results[-1][0]) + ".")
-        return -1
+        logger.info(f"Computed integral was {self.results[-1]:.8e}.")
+        return self.results[-1]
 
-    def _improve_grid(self):
+    def _improve_grid(self, warmup=False):
         yrnd = torch.zeros(self._dim)
         y = torch.zeros(self._dim)
         x = torch.zeros(self._dim)
-        neval_start = 1000
         alpha_start = 0.5
         self.alpha = alpha_start
         dV = self.strat.V_cubes
-        # Warmup
-        logger.debug(
-            "|  Iter  |    N_Eval    |     Result     |      Error     |    Acc        |"
-        )
-        for warmup_iter in range(5):
-            self.results.append(0)
-            self.sigma2.append(0)
-            jf = 0
-            jf2 = 0
 
-            for ne in range(neval_start):
-                yrnd = torch.rand(size=[self._dim])
-                x = self.map.get_X(yrnd)
-                f_eval = self._eval(x)[0]
-                jac = self.map.get_Jac(yrnd)
-                if f_eval is None or jac is None:
-                    ne = ne - 1
-                    continue
-                self.map.accumulate_weight(yrnd, f_eval)
-                jf += f_eval * jac
-                jf2 += pow(f_eval * jac, 2)
-            ih = jf / neval_start
-            sig2 = jf2 / neval_start - pow(jf / neval_start, 2)
-            self.results[-1] += ih
-            self.sigma2[-1] += sig2 / neval_start
-            self.map.update_map()
-            acc = torch.sqrt(self.sigma2[-1] / self.results[-1])
+        if warmup:
+
+            # Warmup
             logger.debug(
-                f"|\t{warmup_iter}|         {neval_start}|  {self.results[-1]:5e}  |  {self.sigma2[-1]:5e}  |  {acc:4e}%|"
+                "|  Iter  |    N_Eval    |     Result     |      Error     |    Acc        | Total Evals"
             )
+            for warmup_iter in range(5):
+                self.results.append(0)
+                self.sigma2.append(0)
+                jf = 0
+                jf2 = 0
 
-        res = self._get_result()
-        err = self._get_error()
-        acc = err / res
+                for ne in range(self._starting_N):
+                    yrnd = torch.rand(size=[self._dim])
+                    x = self.map.get_X(yrnd)
+                    f_eval = self._eval(x)[0]
+                    jac = self.map.get_Jac(yrnd)
+                    if f_eval is None or jac is None:
+                        ne = ne - 1
+                        continue
+                    self.map.accumulate_weight(yrnd, f_eval)
+                    jf += f_eval * jac
+                    jf2 += pow(f_eval * jac, 2)
+                ih = jf / self._starting_N
+                sig2 = jf2 / self._starting_N - pow(jf / self._starting_N, 2)
+                self.results[-1] += ih
+                self.sigma2[-1] += sig2 / self._starting_N
+                self.map.update_map()
+                acc = torch.sqrt(self.sigma2[-1] / self.results[-1])
+                logger.debug(
+                    f"|\t{warmup_iter}|         {self._starting_N}|  {self.results[-1]:5e}  |  {self.sigma2[-1]:5e}  |  {acc:4e}%| {self._nr_of_fevals}"
+                )
 
-        self.results.clear()
-        self.sigma2.clear()
+            res = self._get_result()
+            err = self._get_error()
+            acc = err / res
+
+            self.results.clear()
+            self.sigma2.clear()
 
         it = 0
         logger.debug(
-            "|  Iter  |    N_Eval    |     Result     |      Error     |    Acc        |"
+            "|  Iter  |    N_Eval    |     Result     |      Error     |    Acc        | Total Evals"
         )
         while True:
             it += 1
@@ -178,7 +188,7 @@ class VEGAS(BaseIntegrator):
             for i_cube in range(self.strat.N_cubes):
                 jf = 0
                 jf2 = 0
-                neval = self.strat.get_NH(i_cube, neval_start)
+                neval = self.strat.get_NH(i_cube, self._starting_N)
                 for ne in range(neval):
                     y = self.strat.get_Y(i_cube)
                     x = self.map.get_X(y)
@@ -199,18 +209,22 @@ class VEGAS(BaseIntegrator):
                 self.map.update_map()
             else:
                 self.strat.update_DH()
-            acc = torch.sqrt(self.sigma2[-1] / self.results[-1])
+            acc = torch.sqrt(self.sigma2[-1] / (self.results[-1]))
             logger.debug(
-                f"|\t{it}|         {neval_start}|  {self.results[-1]:5e}  |  {self.sigma2[-1]:5e}  |  {acc:4e}%|"
+                f"|\t{it}|         {self._starting_N}|  {self.results[-1]:5e}  |  {self.sigma2[-1]:5e}  |  {acc:4e}%| {self._nr_of_fevals}"
             )
+            if it > self._max_iterations:
+                break
+            if self._nr_of_fevals > self.N:
+                break
             if it % 5 == 0:
                 res = self._get_result()
                 err = self._get_error()
                 acc = err / res
 
-                if acc < 0.01:
+                if acc < 0.01 or torch.isnan(acc):
                     break
-                neval_start = neval_start * torch.sqrt(acc / 0.01)
+                self._starting_N = int(self._starting_N * torch.sqrt(acc / 0.01))
                 self.results = []
                 self.sigma2 = []
 
@@ -243,7 +257,7 @@ class VEGAS(BaseIntegrator):
             self.sigma2[-1] += sig2 / neval
 
         self.strat.update_DH()
-        acc = torch.sqrt(self.sigma2[-1] / self.results[-1])
+        acc = torch.sqrt(self.sigma2[-1] / (self.results[-1]))
 
         return acc
 

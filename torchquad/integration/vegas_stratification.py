@@ -35,8 +35,12 @@ class VEGASStratification:
                 - (self.V_cubes / self.strat_counts[i] * self.JF[i]) ** 2
             )
             self.dh[i] = d_tmp ** self.beta
+
+            # for very small d_tmp d_tmp ** self.beta becomes NaN
+            if torch.isnan(self.dh[i]):
+                self.dh[i] = 0
         d_sum = sum(self.dh)
-        print(d_tmp)
+
         self.dh = self.dh / d_sum
 
     def get_NH(self, idx, nevals_exp):
@@ -44,11 +48,6 @@ class VEGASStratification:
         if nh < 2:
             return 2
         else:
-            import math
-
-            if math.isnan(nh):
-                print(self.dh[idx], nevals_exp, idx)
-                print(self.dh)
             return int(nh)
 
     def _get_indices(self, idx):

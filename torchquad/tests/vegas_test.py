@@ -14,7 +14,7 @@ def test_integrate():
     torch.set_default_tensor_type(torch.DoubleTensor)
     vegas = VEGAS()
 
-    N = 100000
+    N = 10000
 
     # TODO needs to be adjusted for vegas
     # 1D Tests
