@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class VEGASMap:
-    """The map used for Vegas Enhanced. Refer to https://arxiv.org/abs/2009.05112.
+    """The map used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112.
     Implementation is inspired by https://github.com/ycwu1030/CIGAR/ .
     EQ refers to equation in the paper.
     """

@@ -6,8 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class IntegrationTestFunction:
-    """Wrapper class for test functions
-    """
+    """Wrapper class for test functions"""
 
     domain = None  # Domain that is integrated over
     dim = None  # Expected input dimension of the function

@@ -12,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 class Simpson(BaseIntegrator):
 
-    """Simpson's rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas . 
-    """
+    """Simpson's rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
 
     def __init__(self):
         super().__init__()
@@ -81,12 +80,12 @@ class Simpson(BaseIntegrator):
         return cur_dim_areas
 
     def _adjust_N(self, dim, N):
-        """Adjusts the current N to an odd integer >=3, if N is not that already. 
+        """Adjusts the current N to an odd integer >=3, if N is not that already.
 
         Args:
             dim (int): Dimensionality of the integration domain.
             N (int): Total number of sample points to use for the integration.
-            
+
         Returns:
             int: An odd N >3.
         """

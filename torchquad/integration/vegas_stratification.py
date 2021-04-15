@@ -6,13 +6,13 @@ logger = logging.getLogger(__name__)
 
 
 class VEGASStratification:
-    """The stratification used for Vegas Enhanced. Refer to https://arxiv.org/abs/2009.05112.
+    """The stratification used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112.
     Implementation inspired by https://github.com/ycwu1030/CIGAR/ .
     EQ refers to equation in the paper.
     """
 
     def __init__(self, dim=1, N_strat=10, beta=0.75):
-        """Initialize the vegas stratification
+        """Initialize the VEGAS stratification
 
         Args:
             dim (int, optional): Dimensionality. Defaults to 1.

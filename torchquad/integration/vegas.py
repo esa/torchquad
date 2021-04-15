@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class VEGAS(BaseIntegrator):
-    """Vegas Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112.
+    """VEGAS Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112.
     Implementation inspired by https://github.com/ycwu1030/CIGAR/ .
     EQ refers to equation in the paper.
     """
@@ -43,7 +43,7 @@ class VEGAS(BaseIntegrator):
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
             use_grid_improve (bool, optional): If True will improve the grid after each iteration.
-            eps_rel (float, optional): Relative error to abort at. Defaults to 0. 
+            eps_rel (float, optional): Relative error to abort at. Defaults to 0.
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
             max_iterations (int, optional): Maximum number of vegas iterations to perform. Defaults to 32.
             use_warmup (bool, optional): If a warmup should be used to initialize the map. Defaults to True

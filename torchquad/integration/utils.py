@@ -31,4 +31,3 @@ def setup_integration_domain(dim, integration_domain):
             return torch.tensor(integration_domain)
     else:
         return torch.tensor([[-1, 1]] * dim)
-
