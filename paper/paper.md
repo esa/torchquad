@@ -40,12 +40,9 @@ such as \texttt{quadpy} [@quadpy] and \texttt{nquad} [@scipy]
 such as \texttt{VegasFlow} [@Carrazza2020rdn; @vegasflow-package] and \texttt{ZMCintegral} [@ZMCintegral; @ZMCintegral-code], their implementation is based on TensorFlow [@Tensorflow].
 
 The following deterministic integration methods are available in \texttt{torchquad} (version 0.2):
-
-\begin{itemize}
-    \item Trapezoid Rule [@sag1964numerical]
-    \item Simpson's Rule [@sag1964numerical]
-    \item Boole's Rule [@ubale2012numerical]
-\end{itemize}
+- Trapezoid Rule [@sag1964numerical]
+- Simpson's Rule [@sag1964numerical]
+- Boole's Rule [@ubale2012numerical]
 
 The stochastic integration methods implemented in \texttt{torchquad} are:
 
