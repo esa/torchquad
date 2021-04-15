@@ -20,7 +20,7 @@ authors:
 affiliations:
  - name: Advanced Concepts Team, European Space Agency
    index: 1
-date: 1 July 2021
+date: 15 April 2021
 bibliography: paper.bib
 
 ---
@@ -28,34 +28,47 @@ bibliography: paper.bib
 # Summary
 
 \texttt{torchquad} is a Python module for $n$-dimensional numerical integration on the graphics processing unit (GPU).
-
+Various deterministic and stochastic integration methods are available, such as Simpson's rule and Monte Carlo integration, allowing of high-efficiency integration for any dimensionality, $n$.
+Because it is based on PyTorch [@PyTorch2019], \texttt{torchquad} provides full automatic differentiation throughout the integration, which is essential for machine learning purposes.
 
 # Statement of Need
 
-The world needs torchquad because ...
+Multidimensional integration is needed in many fields, such as physics (everything from particle physics [@ParticlePhysics-Paper] to astrophysics [@Astrophysics-Paper]), applied finance [@AppliedFinance-Paper], medical statistics [@MedicalStatistics-Paper], and machine learning [@VEGASinMachineLearning-Paper]. 
+Many of the conventional Python packages for multidimensional integration, such as \texttt{quadpy} [@quadpy] and \texttt{nquad} [@scipy], rely on the utilization of the central processing unit (CPU). However, CPUs have demonstrated limited performances compared with GPUs for the implementation of integration methods, which suffer from the so-called \textit{curse of dimensionality} [@ZMCintegral]. 
+The complexity of the integration grows, indeed, exponentially with the number of dimensions [@CurseOfDim-Book]. Because of that, CPU-based implementations feature bad trade-offs between accuracy and speed in the calculation. Limiting the error in the integration value requires increasing the number of function evaluation points $N$, which increases the latency of the computation, especially for higher dimensions.
+Previous work has demonstrated that this problem can be mitigated by leveraging on \textit{single instruction, multiple data} parallelization of GPUs [@ZMCintegral].
 
-PyTorch [@NEURIPS2019].
-such as \texttt{quadpy} [@quadpy] and \texttt{nquad} [@scipy]
-\textit{curse of dimensionality} [@ZMCintegral].
-such as \texttt{VegasFlow} [@Carrazza2020rdn; @vegasflow-package] and \texttt{ZMCintegral} [@ZMCintegral; @ZMCintegral-code], their implementation is based on TensorFlow [@Tensorflow].
+Although some GPU-based implementations exist, such as \texttt{VegasFlow} [@VegasFlow-Paper; @VegasFlow-Package] and \texttt{ZMCintegral} [@ZMCintegral; @ZMCintegral-code], their implementation is based on TensorFlow [@Tensorflow], which is just one of the existing deep-learning softwares in Python. 
+Additionally, the available GPU-based Python packages rely solely on Monte Carlo [@ZMCintegral] and \mbox{\texttt{VEGAS}} [@VegasFlow-Paper] methods. Even though such methods offer good speed/accuracy trade-offs for high values of $n$, the efficiency of other methods are better for small values of $n$ [@Vegas-paper].
 
-The following deterministic integration methods are available in \texttt{torchquad} (version 0.2):
+In contrast, \texttt{torchquad} is, to the best of the authors' knowledge, the first implementation based on PyTorch. 
+Furthermore, it incorporates several deterministic and stochastic methods, including \mbox{\texttt{VEGAS}} and Monte Carlo, which allow obtaining high accuracy for various dimensions and values of $N$. 
+In addition, the value of $n$ used is programmable for each method.
 
-\begin{itemize}
-    \item Trapezoid Rule [@sag1964numerical]
-    \item Simpson's Rule [@sag1964numerical]
-    \item Boole's Rule [@ubale2012numerical]
-\end{itemize}
+Finally, being PyTorch-based, \texttt{torchquad} is fully differentiable, extending its usability to applications such as those based on machine learning.
 
-The stochastic integration methods implemented in \texttt{torchquad} are:
 
-\begin{itemize}
-    \item Monte Carlo Integrator [@caflisch1998monte]
-    \item VEGAS Enhanced (VEGAS+) method [@lepage2020adaptive]
-\end{itemize}
+# Implemented integration methods
 
-# Acknowledgements
+The following deterministic integration methods are available in \texttt{torchquad} (version 0.2):  
 
-We would like to thank ...
+* Trapezoid Rule [@sag1964numerical],  
+* Simpson's Rule [@sag1964numerical], and  
+* Boole's Rule [@ubale2012numerical],  
+
+while the stochastic integration methods implemented in \texttt{torchquad} so far are: 
+
+* Monte Carlo Integrator [@caflisch1998monte], and  
+* VEGAS Enhanced (\mbox{\texttt{VEGAS+}}) method [@VegasEnhanced-paper].  
+
+As previously specified, the number of domain evaluation points can be tuned for each integration method to ensure flexible trade-offs between computational complexity and accuracy. 
+
+# Installation \& Contribution
+
+The \texttt{torchquad} package is implemented in Python 3.8 and is openly accessible under a GPL-3 license. Users wishing to contribute to \texttt{torchquad} can submit issues or pull requests to our GitHub repository following the contribution guidelines outlined there.
+
+# Tutorials 
+
+The \texttt{torchquad} Github repository includes the ```Example_Notebook.ipynb```, which provides some examples of the use of \texttt{torchquad} for one-dimensional and multidimensional integration. Moreover, a benchmark with \texttt{nquad} [@scipy] is shown in terms of runtime and absolute error compared to a ground truth value.
 
 # References
