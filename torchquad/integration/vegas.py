@@ -90,7 +90,7 @@ class VEGAS(BaseIntegrator):
 
         logger.debug("Starting VEGAS")
 
-        self.results = []  # contains integrations results per iteration
+        self.results = []  # contains integration results per iteration
         self.sigma2 = []  # contains variance per iteration
 
         it = 0  # iteration
