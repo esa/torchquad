@@ -18,7 +18,7 @@ class VEGAS(BaseIntegrator):
 
     def __init__(self):
         super().__init__()
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.INFO)
 
     def integrate(
         self,
@@ -30,6 +30,7 @@ class VEGAS(BaseIntegrator):
         use_grid_improve=True,
         eps_rel=0,
         eps_abs=0,
+        max_iterations=10,
     ):
         """Integrates the passed function on the passed domain using VEGAS
 
@@ -42,6 +43,7 @@ class VEGAS(BaseIntegrator):
             use_grid_improve (bool, optional): If True will improve the grid after each iteration.
             eps_rel (float, optional): Relative error to abort at. Defaults to 0. 
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
+            max_iterations (int, optional): Maximum number of vegas iterations to perform.
 
         Raises:
             ValueError: If len(integration_domain) != dim
@@ -63,11 +65,11 @@ class VEGAS(BaseIntegrator):
 
         self._dim = dim
         self._nr_of_fevals = 0
-        self._max_iterations = 10
+        self._max_iterations = max_iterations
         self.N = N
         # TODO think about including warmup and grid improvement in this
-        self._starting_N = N // (self._max_iterations * 2)
-        self._N_increment = N // (self._max_iterations * 2)
+        self._starting_N = N // (self._max_iterations * 10)
+        self._N_increment = N // (self._max_iterations * 10)
         self._fn = fn
         self._integration_domain = setup_integration_domain(dim, integration_domain)
         if seed is not None:

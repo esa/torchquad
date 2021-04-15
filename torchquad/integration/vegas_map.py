@@ -11,7 +11,7 @@ class VEGASMap:
     Implementation is inspired by https://github.com/ycwu1030/CIGAR/ .
     """
 
-    def __init__(self, dim, integration_domain, N_intervals=100, alpha=0.5) -> None:
+    def __init__(self, dim, integration_domain, N_intervals=1000, alpha=0.5) -> None:
         self.dim = dim
         self.N_intervals = N_intervals  # subdivision?
         self.N_edges = self.N_intervals + 1  # points per dim?
