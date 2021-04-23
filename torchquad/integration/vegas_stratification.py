@@ -43,8 +43,7 @@ class VEGASStratification:
         self.strat_counts[idx] += 1
 
     def update_DH(self):
-        """Update the dampened sample counts.
-        """
+        """Update the dampened sample counts."""
         d_sum = 0
         d_tmp = 0
         for i in range(self.N_cubes):
