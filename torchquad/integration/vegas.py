@@ -82,7 +82,7 @@ class VEGAS(BaseIntegrator):
         # Initialize the adaptive VEGAS map,
         # Note that a larger number of intervals may lead to problems if only few evals are allowed
         # Paper section II B
-        self.map = VEGASMap(self._dim, self._integration_domain, N_intervals=100)
+        self.map = VEGASMap(self._dim, self._integration_domain, N_intervals=5)
 
         # Initialize VEGAS' stratification
         # Paper section III
@@ -178,7 +178,15 @@ class VEGAS(BaseIntegrator):
             jf2 = 0
 
             # TODO vectorize
-            for ne in range(N_samples):  # iterated over sample
+            yrnd = torch.rand(size=[N_samples, self._dim])
+            x = self.map.get_X_vec(yrnd)
+            f_eval = self._eval(x)
+            jac = self.map.get_Jac_vec(yrnd)
+            self.map.accumulate_weight_vec(yrnd, f_eval)  # update map weights
+            jf = (f_eval * jac).sum()
+            jf2 = pow(f_eval * jac, 2).sum()
+            exit()
+            for _ in range(N_samples):  # iterated over sample
                 yrnd = torch.rand(size=[self._dim])  # sample point
                 x = self.map.get_X(yrnd)  # map to transforms
                 f_eval = self._eval(x)[0]  # evaluate integrand
@@ -186,6 +194,7 @@ class VEGAS(BaseIntegrator):
                 self.map.accumulate_weight(yrnd, f_eval)  # update map weights
                 jf += f_eval * jac
                 jf2 += pow(f_eval * jac, 2)
+            exit()
             ih = jf / N_samples  # integral in this step
             sig2 = jf2 / N_samples - pow(jf / N_samples, 2)  # estimated variance
             self.results[-1] += ih  # store results

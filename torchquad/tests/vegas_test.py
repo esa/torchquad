@@ -3,6 +3,7 @@ import sys
 sys.path.append("../")
 
 import torch
+import timeit
 
 from integration.vegas import VEGAS
 from tests.integration_test_utils import compute_test_errors
@@ -13,26 +14,29 @@ def test_integrate():
     torch.set_default_tensor_type(torch.DoubleTensor)
     vegas = VEGAS()
 
-    # 1D Tests
-    N = 10000
-    errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 1, "seed": 0})
-    print("N =", N, "\n", errors)
-    for error in errors[:3]:
-        assert error < 1e-2
+    # # 1D Tests
+    # N = 10000
+    # errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 1, "seed": 0})
+    # print("N =", N, "\n", errors)
+    # for error in errors[:3]:
+    #     assert error < 5e-3
 
-    for error in errors[3:6]:
-        assert error < 9.0
+    # for error in errors:
+    #     assert error < 3.0
 
-    for error in errors[6:]:
-        assert error < 1e-2
+    # for error in errors[6:]:
+    #     assert error < 6e-3
 
     # 3D Tests
     N = 10000
     errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 3, "seed": 0}, dim=3)
     print("N =", N, "\n", errors)
     for error in errors:
-        assert error < 1.1
+        assert error < 0.61
 
 
 # used to run this test individually
+start = timeit.default_timer()
 test_integrate()
+stop = timeit.default_timer()
+print("Test ran for ", stop - start, " seconds.")

@@ -49,6 +49,22 @@ class VEGASMap:
         # numbers of random samples in specific interval
         self.counts = torch.zeros((self.dim, self.N_intervals))
 
+    def get_X_vec(self, y):
+        """Get mapped sampling points, EQ 9.
+
+        Args:
+            y (torch.tensor): Randomly sampled location(s)
+
+        Returns:
+            torch.tensor: Mapped points.
+        """
+        ID, offset = self._get_interval_ID(y), self._get_interval_offset(y)
+        res = torch.zeros_like(y)
+        for i in range(self.dim):
+            ID_i = torch.floor(ID[:, i]).long()
+            res[:, i] = self.x_edges[i, ID_i] + self.dx_edges[i, ID_i] * offset[:, i]
+        return res
+
     def get_X(self, y):
         """Get mapped sampling points, EQ 9.
 
@@ -64,6 +80,22 @@ class VEGASMap:
             ID_i = int(ID[i])
             res[0][i] = self.x_edges[i][ID_i] + self.dx_edges[i][ID_i] * offset[i]
         return res
+
+    def get_Jac_vec(self, y):
+        """Computes the jacobian of the mapping transformation, EQ 12.
+
+        Args:
+            y ([type]): Sampled locations.
+
+        Returns:
+            torch.tensor: Jacobian
+        """
+        ID = self._get_interval_ID(y)
+        jac = torch.ones(y.shape[0])
+        for i in range(self.dim):
+            ID_i = torch.floor(ID[:, i]).long()
+            jac *= self.N_intervals * self.dx_edges[i][ID_i]
+        return jac
 
     def get_Jac(self, y):
         """Computes the jacobian of the mapping transformation, EQ 12.
@@ -103,6 +135,23 @@ class VEGASMap:
         """
         return (y * self.N_intervals) - self._get_interval_ID(y)
 
+    def accumulate_weight_vec(self, y, f):
+        """Accumulate weights and counts of the map.
+
+        Args:
+            y (float): Sampled point.
+            f (float): Function evaluation.
+        """
+        ID = self._get_interval_ID(y)
+        for i in range(self.dim):
+            ID_i = torch.floor(ID[:, i]).long()
+            print()
+            # need to figure this one out
+            self.weights[i][ID_i] += (f * self.get_Jac_vec(y)) ** 2
+            self.counts[i] = torch.unique(ID_i, return_counts=True)[1]
+        print(self.weights)
+        print(self.counts)
+
     def accumulate_weight(self, y, f):
         """Accumulate weights and counts of the map.
 
@@ -115,6 +164,8 @@ class VEGASMap:
             ID_i = int(ID[i])
             self.weights[i][ID_i] += (f * self.get_Jac(y)) ** 2
             self.counts[i][ID_i] += 1
+        print(self.weights)
+        print(self.counts)
 
     def _smooth_map(
         self,
