@@ -116,9 +116,10 @@ class VEGASMap:
             self.weights[i][ID_i] += (f * self.get_Jac(y)) ** 2
             self.counts[i][ID_i] += 1
 
-    def _smooth_map(self,):
-        """Smooth the weights in the map, EQ 18 - 22.
-        """
+    def _smooth_map(
+        self,
+    ):
+        """Smooth the weights in the map, EQ 18 - 22."""
         # EQ 18
         for i in range(self.dim):
             for i_interval in range(len(self.weights[i])):
@@ -156,15 +157,17 @@ class VEGASMap:
             # EQ 20
             self.delta_weights[dim] = self.summed_weights[dim] / self.N_intervals
 
-    def _reset_weight(self,):
-        """Resets weights.
-        """
+    def _reset_weight(
+        self,
+    ):
+        """Resets weights."""
         self.weights = torch.zeros((self.dim, self.N_intervals))
         self.counts = torch.zeros((self.dim, self.N_intervals))
 
-    def update_map(self,):
-        """Update the adaptive map, Section II C.
-        """
+    def update_map(
+        self,
+    ):
+        """Update the adaptive map, Section II C."""
         self._smooth_map()
 
         # Initialize new locations
@@ -201,4 +204,3 @@ class VEGASMap:
             )
 
         self._reset_weight()
-

@@ -114,4 +114,3 @@ class VEGASStratification:
         for i in range(self.dim):
             res[i] = random_uni[i] * dy + ID[i] * dy
         return res
-
