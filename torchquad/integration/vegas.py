@@ -203,7 +203,7 @@ class VEGAS(BaseIntegrator):
         self.sigma2.clear()
 
     def _run_iteration(self):
-        """Runs one iteration of VEGAS including stratification (and if enable adaptive map).
+        """Runs one iteration of VEGAS including stratification and updates the VEGAS map if use_grid_improve is set.
 
         Returns:
             float: Estimated accuracy.
