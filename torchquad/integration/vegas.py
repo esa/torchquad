@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 class VEGAS(BaseIntegrator):
     """VEGAS Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112.
     Implementation inspired by https://github.com/ycwu1030/CIGAR/ .
-    EQ refers to equation in the paper.
+    EQ <n> refers to equation <n> in the above paper.
     """
 
     def __init__(self):
         super().__init__()
-        # logger.setLevel(logging.INFO)
+        logger.setLevel(logging.INFO)
 
     def integrate(
         self,
@@ -34,11 +34,11 @@ class VEGAS(BaseIntegrator):
         max_iterations=32,
         use_warmup=True,
     ):
-        """Integrates the passed function on the passed domain using VEGAS
+        """Integrates the passed function on the passed domain using VEGAS.
 
         Args:
-            fn (func): The function to integrate over
-            dim (int): Dimensionality of the function to integrate
+            fn (func): The function to integrate over.
+            dim (int): Dimensionality of the function to integrate.
             N (int, optional): Maximum number of function evals to use for the integration. Defaults to 10000.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
@@ -46,7 +46,7 @@ class VEGAS(BaseIntegrator):
             eps_rel (float, optional): Relative error to abort at. Defaults to 0.
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
             max_iterations (int, optional): Maximum number of vegas iterations to perform. Defaults to 32.
-            use_warmup (bool, optional): If a warmup should be used to initialize the map. Defaults to True
+            use_warmup (bool, optional): If a warmup should be used to initialize the map. Defaults to True.
 
         Raises:
             ValueError: If len(integration_domain) != dim
@@ -86,7 +86,7 @@ class VEGAS(BaseIntegrator):
 
         # Initialize VEGAS' stratification
         # Paper section III
-        self.strat = VEGASStratification(self._dim)
+        self.strat = VEGASStratification(self._N_increment, dim=self._dim)
 
         logger.debug("Starting VEGAS")
 
@@ -151,7 +151,7 @@ class VEGAS(BaseIntegrator):
         return self._get_result()
 
     def _warmup_grid(self, warmup_N_it=5, N_samples=1000):
-        """This function warms up the adaptive map of VEGAS over some iterations and samples
+        """This function warms up the adaptive map of VEGAS over some iterations and samples.
 
         Args:
             warmup_N_it (int, optional): Number of warmup iterations. Defaults to 5.
@@ -171,7 +171,7 @@ class VEGAS(BaseIntegrator):
         logger.debug(
             "|  Iter  |    N_Eval    |     Result     |      Error     |    Acc        | Total Evals"
         )
-        for warmup_iter in range(5):
+        for warmup_iter in range(warmup_N_it):
             self.results.append(0)
             self.sigma2.append(0)
             jf = 0  # jacobians * function
@@ -206,7 +206,7 @@ class VEGAS(BaseIntegrator):
         """Runs one iteration of VEGAS including stratification (and if enable adaptive map).
 
         Returns:
-            float: estimated accuracy
+            float: Estimated accuracy.
         """
         y = torch.zeros(self._dim)  # stratified sampling points
         x = torch.zeros(self._dim)  # transformed sample points
@@ -222,7 +222,7 @@ class VEGAS(BaseIntegrator):
                 f_eval = self._eval(x)[0]  # eval integrand
                 jac = self.map.get_Jac(y)  # compute jacobian
                 if self.use_grid_improve:  # if adaptive map is used, acc weight
-                    self.map.accumulate_weight(y, f_eval)  # EQ
+                    self.map.accumulate_weight(y, f_eval)  # EQ 25
                 self.strat.accumulate_weight(i_cube, f_eval * jac)  # update strat
                 jf += f_eval * jac
                 jf2 += pow(f_eval * jac, 2)
@@ -246,10 +246,10 @@ class VEGAS(BaseIntegrator):
 
     # Helper funcs
     def _get_result(self):
-        """Computes mean of results to estimate integral, EQ 30
+        """Computes mean of results to estimate integral, EQ 30.
 
         Returns:
-            float: estimated integral
+            float: Estimated integral.
         """
         res_num = 0
         res_den = 0
@@ -259,10 +259,10 @@ class VEGAS(BaseIntegrator):
         return res_num / res_den
 
     def _get_error(self):
-        """Estimates error from variance , EQ 31
+        """Estimates error from variance , EQ 31.
 
         Returns:
-            float: estimated error 
+            float: Estimated error.
         """
         res = 0
         for sig in self.sigma2:
@@ -270,10 +270,10 @@ class VEGAS(BaseIntegrator):
         return 1.0 / torch.sqrt(res)
 
     def _get_chisq(self):
-        """Computes chi square from estimated integral and variance, EQ 32
+        """Computes chi square from estimated integral and variance, EQ 32.
 
         Returns:
-            float: chi2
+            float: Chi squared.
         """
         I_final = self._get_result()
         chi2 = 0

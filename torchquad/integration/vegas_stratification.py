@@ -1,4 +1,5 @@
 import torch
+import math
 
 import logging
 
@@ -8,19 +9,20 @@ logger = logging.getLogger(__name__)
 class VEGASStratification:
     """The stratification used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112.
     Implementation inspired by https://github.com/ycwu1030/CIGAR/ .
-    EQ refers to equation in the paper.
+    EQ <n> refers to equation <n> in the above paper.
     """
 
-    def __init__(self, dim=1, N_strat=10, beta=0.75):
-        """Initialize the VEGAS stratification
+    def __init__(self, N_increment, dim=1, beta=0.75):
+        """Initialize the VEGAS stratification.
 
         Args:
+            N_increment (int, optional): Number of evaluations per iteration.
             dim (int, optional): Dimensionality. Defaults to 1.
-            N_strat (int, optional): Number of stratification steps per dim. Defaults to 10.
             beta (float, optional): Beta parameter from VEGAS Enhanced. Defaults to 0.75.
         """
         self.dim = dim
-        self.N_strat = N_strat  # stratification steps per dim
+        # stratification steps per dim, EQ 33
+        self.N_strat = math.floor((N_increment / 2.0) ** (1.0 / dim))
         self.beta = beta  # variable controlling adaptiveness in stratification 0 to 1
         self.N_cubes = self.N_strat ** self.dim  # total number of subdomains
         self.V_cubes = (1.0 / self.N_strat) ** self.dim  # volume of hypercubes
@@ -30,18 +32,18 @@ class VEGASStratification:
         self.strat_counts = torch.zeros(self.N_cubes)  # current index counts
 
     def accumulate_weight(self, idx, weight):
-        """Accumulate weights for this index + weight
+        """Accumulate weights for this index + weight.
 
         Args:
-            idx (int): current index
-            weight (float): function value
+            idx (int): Current index.
+            weight (float): Function value.
         """
         self.JF2[idx] += weight * weight
         self.JF[idx] += weight
         self.strat_counts[idx] += 1
 
     def update_DH(self):
-        """Update the dampened sample counts
+        """Update the dampened sample counts.
         """
         d_sum = 0
         d_tmp = 0
@@ -63,14 +65,14 @@ class VEGASStratification:
         self.dh = self.dh / d_sum
 
     def get_NH(self, idx, nevals_exp):
-        """Recalculate sample points per hypercube , EQ 44
+        """Recalculate sample points per hypercube, EQ 44.
 
         Args:
-            idx (int): current index
-            nevals_exp (int): expected number of evaluations
+            idx (int): Current index.
+            nevals_exp (int): Expected number of evaluations.
 
         Returns:
-            int: stratified sample counts
+            int: Stratified sample counts.
         """
         nh = self.dh[idx] * nevals_exp
         if nh < 2:
@@ -79,13 +81,13 @@ class VEGASStratification:
             return int(nh)
 
     def _get_indices(self, idx):
-        """Maps point to stratified point
+        """Maps point to stratified point.
 
         Args:
-            idx (int): target points index
+            idx (int): Target points index.
 
         Returns:
-            torch.tensor: mapped point
+            torch.tensor: Mapped point.
         """
         res = torch.zeros([self.dim])
         tmp = idx
@@ -97,13 +99,13 @@ class VEGASStratification:
         return res
 
     def get_Y(self, idx):
-        """Compute randomly sampled points in specified interval 
+        """Compute randomly sampled points in specified interval.
 
         Args:
-            idx (int): interval index
+            idx (int): Interval index.
 
         Returns:
-            torch.tensor: sampled point
+            torch.tensor: Sampled point.
         """
         dy = 1.0 / self.N_strat
         res = torch.zeros([self.dim])

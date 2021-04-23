@@ -7,16 +7,16 @@ logger = logging.getLogger(__name__)
 
 
 class VEGASMap:
-    """The map used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112.
+    """The map used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112 .
     Implementation is inspired by https://github.com/ycwu1030/CIGAR/ .
-    EQ refers to equation in the paper.
+    EQ <n> refers to equation <n> in the above paper.
     """
 
     def __init__(self, dim, integration_domain, N_intervals=100, alpha=0.5) -> None:
-        """Initializes VEGAS' Enhanced adaptive map
+        """Initializes VEGAS Enhanced' adaptive map
 
         Args:
-            dim (int): dimensionality of the integrand.
+            dim (int): Dimensionality of the integrand.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
             N_intervals (int, optional): Number of intervals to split the domain in. Defaults to 100.
             alpha (float, optional): Alpha from the paper, EQ 19. Defaults to 0.5.
@@ -44,19 +44,19 @@ class VEGASMap:
         self.smoothed_weights = torch.zeros((self.dim, self.N_intervals))
         self.summed_weights = torch.zeros(self.dim)  # sum of weights per dim
         self.delta_weights = torch.zeros(self.dim)  # EQ 11
-        self.avg_weight = torch.zeros(self.dim)  # EQ 14
         self.std_weight = torch.zeros(self.dim)  # EQ 13
+        self.avg_weight = torch.zeros(self.dim)  # EQ 14
         # numbers of random samples in specific interval
         self.counts = torch.zeros((self.dim, self.N_intervals))
 
     def get_X(self, y):
-        """Get mapped sampling points, EQ 9
+        """Get mapped sampling points, EQ 9.
 
         Args:
-            y (torch.tensor): randomly sampled location(s)
+            y (torch.tensor): Randomly sampled location(s)
 
         Returns:
-            torch.tensor: mapped points
+            torch.tensor: Mapped points.
         """
         ID, offset = self._get_interval_ID(y), self._get_interval_offset(y)
         res = torch.zeros([1, self.dim])
@@ -66,13 +66,13 @@ class VEGASMap:
         return res
 
     def get_Jac(self, y):
-        """Computes the jacobian of the mapping transformation, EQ 12
+        """Computes the jacobian of the mapping transformation, EQ 12.
 
         Args:
-            y ([type]): sampled locations
+            y ([type]): Sampled locations.
 
         Returns:
-            torch.tensor: jacobian
+            torch.tensor: Jacobian
         """
         ID = self._get_interval_ID(y)
         jac = 1
@@ -82,33 +82,33 @@ class VEGASMap:
         return jac
 
     def _get_interval_ID(self, y):
-        """Get the integer part of the desired mapping , EQ 10
+        """Get the integer part of the desired mapping , EQ 10.
 
         Args:
-            y (float): sampled point
+            y (float): Sampled point
 
         Returns:
-            int: integer part of mapped point
+            int: Integer part of mapped point.
         """
         return torch.floor(y * float(self.N_intervals))
 
     def _get_interval_offset(self, y):
-        """Get the fractional part of the desired mapping , EQ 11
+        """Get the fractional part of the desired mapping , EQ 11.
 
         Args:
-            y (float): sampled point
+            y (float): Sampled point.
 
         Returns:
-            float: fractional part of mapped point
+            float: Fractional part of mapped point.
         """
         return (y * self.N_intervals) - self._get_interval_ID(y)
 
     def accumulate_weight(self, y, f):
-        """Accumulate weights and counts of the map, 
+        """Accumulate weights and counts of the map.
 
         Args:
-            y (float): sampled point
-            f (float): feval
+            y (float): Sampled point.
+            f (float): Function evaluation.
         """
         ID = self._get_interval_ID(y)
         for i in range(self.dim):
@@ -117,7 +117,7 @@ class VEGASMap:
             self.counts[i][ID_i] += 1
 
     def _smooth_map(self,):
-        """Smooth the weights in the map, EQ 18 - 22
+        """Smooth the weights in the map, EQ 18 - 22.
         """
         # EQ 18
         for i in range(self.dim):
@@ -153,17 +153,17 @@ class VEGASMap:
                 self.smoothed_weights[dim][i] = d_tmp
                 self.summed_weights[dim] += d_tmp
 
-            # Eq 20
+            # EQ 20
             self.delta_weights[dim] = self.summed_weights[dim] / self.N_intervals
 
     def _reset_weight(self,):
-        """Resets weights
+        """Resets weights.
         """
         self.weights = torch.zeros((self.dim, self.N_intervals))
         self.counts = torch.zeros((self.dim, self.N_intervals))
 
     def update_map(self,):
-        """Update the adaptive map, Section II C
+        """Update the adaptive map, Section II C.
         """
         self._smooth_map()
 
