@@ -18,6 +18,7 @@ from .plots.plot_convergence import plot_convergence
 from .plots.plot_runtime import plot_runtime
 
 from .utils.enable_cuda import enable_cuda
+from .utils.set_precision import set_precision
 
 __all__ = [
     "IntegrationGrid",
@@ -29,6 +30,7 @@ __all__ = [
     "plot_convergence",
     "plot_runtime",
     "enable_cuda",
+    "set_precision",
     "set_log_level",
 ]
 
