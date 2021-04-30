@@ -13,7 +13,7 @@ class VEGASMap:
     """
 
     def __init__(self, dim, integration_domain, N_intervals=100, alpha=0.5) -> None:
-        """Initializes VEGAS Enhanced' adaptive map
+        """Initializes VEGAS Enhanced's adaptive map
 
         Args:
             dim (int): Dimensionality of the integrand.
