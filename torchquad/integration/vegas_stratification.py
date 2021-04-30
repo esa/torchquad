@@ -31,7 +31,7 @@ class VEGASStratification:
         self.dh = torch.ones(self.N_cubes) * 1.0 / self.N_cubes  # dampened counts
         self.strat_counts = torch.zeros(self.N_cubes)  # current index counts
 
-    def accumulate_weight_vec(self, idx, weight):
+    def accumulate_weight(self, idx, weight):
         """Accumulate weights for this index + weight.
 
         Args:
@@ -42,34 +42,22 @@ class VEGASStratification:
         self.JF[idx] += weight.sum()
         self.strat_counts[idx] += len(weight)
 
-    def accumulate_weight(self, idx, weight):
-        """Accumulate weights for this index + weight.
-
-        Args:
-            idx (int): Current index.
-            weight (float): Function value.
-        """
-        self.JF2[idx] += weight * weight
-        self.JF[idx] += weight
-        self.strat_counts[idx] += 1
-
     def update_DH(self):
         """Update the dampened sample counts."""
         d_sum = 0
         d_tmp = 0
 
-        for i in range(self.N_cubes):
-            # EQ 42
-            d_tmp = (
-                self.V_cubes * self.V_cubes / self.strat_counts[i] * self.JF2[i]
-                - (self.V_cubes / self.strat_counts[i] * self.JF[i]) ** 2
-            )
+        # EQ 42
+        V2 = self.V_cubes * self.V_cubes
+        d_tmp = (
+            V2 * self.JF2 / self.strat_counts
+            - (self.V_cubes * self.JF / self.strat_counts) ** 2
+        )
 
-            self.dh[i] = d_tmp ** self.beta  # dampening (EQ 43)
+        self.dh = d_tmp ** self.beta
 
-            # for very small d_tmp d_tmp ** self.beta becomes NaN
-            if torch.isnan(self.dh[i]):
-                self.dh[i] = 0
+        # for very small d_tmp d_tmp ** self.beta becomes NaN
+        self.dh[torch.isnan(self.dh)] = 0
 
         # Normalize dampening
         d_sum = sum(self.dh)
@@ -111,7 +99,7 @@ class VEGASStratification:
             tmp = q
         return res
 
-    def get_Y_vec(self, idx, N):
+    def get_Y(self, idx, N):
         """Compute randomly sampled points in specified interval.
 
         Args:
@@ -125,21 +113,4 @@ class VEGASStratification:
         ID = self._get_indices(idx)
         random_uni = torch.rand(size=[N, self.dim])
         res = random_uni * dy + ID * dy
-        return res
-
-    def get_Y(self, idx):
-        """Compute randomly sampled points in specified interval.
-
-        Args:
-            idx (int): Interval index.
-
-        Returns:
-            torch.tensor: Sampled point.
-        """
-        dy = 1.0 / self.N_strat
-        res = torch.zeros([self.dim])
-        ID = self._get_indices(idx)
-        random_uni = torch.rand(size=[self.dim])
-        for i in range(self.dim):
-            res[i] = random_uni[i] * dy + ID[i] * dy
         return res

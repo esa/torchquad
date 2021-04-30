@@ -5,16 +5,18 @@ sys.path.append("../")
 import torch
 import timeit
 
+import cProfile
+
 from integration.vegas import VEGAS
 from tests.integration_test_utils import compute_test_errors
 
 
 def test_integrate():
     """Tests the integrate function in integration.Trapezoid"""
-    torch.set_default_tensor_type(torch.DoubleTensor)
+    torch.set_default_tensor_type(torch.FloatTensor)
     vegas = VEGAS()
 
-    # # 1D Tests
+    # 1D Tests
     # N = 10000
     # errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 1, "seed": 0})
     # print("N =", N, "\n", errors)
@@ -37,6 +39,6 @@ def test_integrate():
 
 # used to run this test individually
 start = timeit.default_timer()
-test_integrate()
+cProfile.run("test_integrate()")
 stop = timeit.default_timer()
 print("Test ran for ", stop - start, " seconds.")
