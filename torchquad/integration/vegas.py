@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class VEGAS(BaseIntegrator):
-    """VEGAS Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112.
+    """VEGAS Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112 .
     Implementation inspired by https://github.com/ycwu1030/CIGAR/ .
     EQ <n> refers to equation <n> in the above paper.
     """
