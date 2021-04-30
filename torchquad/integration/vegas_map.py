@@ -103,23 +103,21 @@ class VEGASMap:
         """
         return (y * self.N_intervals) - self._get_interval_ID(y)
 
-    def accumulate_weight(self, y, f):
+    def accumulate_weight(self, y, jf_vec2):
         """Accumulate weights and counts of the map.
 
         Args:
             y (float): Sampled point.
-            f (float): Function evaluation.
+            jf_vec2 (float): Square of the product of function value and jacobian
         """
         ID = self._get_interval_ID(y)
-        jac = self.get_Jac(y)
         for i in range(self.dim):
             ID_i = torch.floor(ID[:, i]).long()
             unique_vals, unique_counts = torch.unique(ID_i, return_counts=True)
-            weights_vals = (torch.multiply(f, jac)) ** 2
+            weights_vals = jf_vec2
             for val, count in zip(unique_vals, unique_counts):
                 self.weights[i][val] += weights_vals[ID_i == val].sum()
-            idx = unique_vals.long()
-            self.counts[i, idx] += unique_counts
+            self.counts[i, unique_vals.long()] += unique_counts
 
     def _smooth_map(self):
         """Smooth the weights in the map, EQ 18 - 22."""

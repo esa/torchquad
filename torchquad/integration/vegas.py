@@ -186,9 +186,11 @@ class VEGAS(BaseIntegrator):
             x = self.map.get_X(yrnd)
             f_eval = self._eval(x)
             jac = self.map.get_Jac(yrnd)
-            self.map.accumulate_weight(yrnd, f_eval)  # update map weights
-            jf = (f_eval * jac).sum()
-            jf2 = pow(f_eval * jac, 2).sum()
+            jf_vec = f_eval * jac
+            jf_vec2 = jf_vec ** 2
+            self.map.accumulate_weight(yrnd, jf_vec2)  # update map weights
+            jf = jf_vec.sum()
+            jf2 = jf_vec2.sum()
 
             ih = jf / N_samples  # integral in this step
             sig2 = jf2 / N_samples - pow(jf / N_samples, 2)  # estimated variance
@@ -227,11 +229,13 @@ class VEGAS(BaseIntegrator):
             x = self.map.get_X(y)  # transform, EQ 8+9
             f_eval = self._eval(x)  # eval integrand
             jac = self.map.get_Jac(y)  # compute jacobian
+            jf_vec = f_eval * jac  # precompute product once
+            jf_vec2 = jf_vec ** 2
             if self.use_grid_improve:  # if adaptive map is used, acc weight
-                self.map.accumulate_weight(y, f_eval)  # EQ 25
-            self.strat.accumulate_weight(i_cube, f_eval * jac)  # update strat
-            jf = (f_eval * jac).sum()
-            jf2 = pow(f_eval * jac, 2).sum()
+                self.map.accumulate_weight(y, jf_vec2)  # EQ 25
+            self.strat.accumulate_weight(i_cube, jf_vec)  # update strat
+            jf = jf_vec.sum()
+            jf2 = jf_vec2.sum()
 
             ih = jf / neval * self.strat.V_cubes  # compute integral
 
