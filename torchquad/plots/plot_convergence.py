@@ -3,14 +3,14 @@ import numpy as np
 
 
 def plot_convergence(evals, fvals, ground_truth, labels, dpi=150):
-    """Plots errors vs fevals, and shows the convergence rate.
+    """Plots errors vs. function evaluations (fevals) and shows the convergence rate.
 
     Args:
-        evals (list of np.array): number of evaluations, for each method a np.array of ints
-        fvals (list of np.array): function values for evals
-        ground_truth (np.array): ground_truth values
-        labels (list): method names
-        dpi (int, optional): plot dpi. Defaults to 150.
+        evals (list of np.array): Number of evaluations, for each method a np.array of ints.
+        fvals (list of np.array): Function values for evals.
+        ground_truth (np.array): Ground truth values.
+        labels (list): Method names.
+        dpi (int, optional): Plot dpi. Defaults to 150.
     """
     fig = plt.figure(dpi=dpi)
     n = 0

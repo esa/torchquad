@@ -15,11 +15,11 @@ class MonteCarlo(BaseIntegrator):
         super().__init__()
 
     def integrate(self, fn, dim, N=1000, integration_domain=None, seed=None):
-        """Integrates the passed function on the passed domain using vanilla Monte Carlo Integration
+        """Integrates the passed function on the passed domain using vanilla Monte Carlo Integration.
 
         Args:
-            fn (func): The function to integrate over
-            dim (int): Dimensionality of the function to integrate
+            fn (func): The function to integrate over.
+            dim (int): Dimensionality of the function to integrate.
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
@@ -28,7 +28,7 @@ class MonteCarlo(BaseIntegrator):
             ValueError: If len(integration_domain) != dim
 
         Returns:
-            float: Integral value
+            float: integral value
         """
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
         logger.debug(
