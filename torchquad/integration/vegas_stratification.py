@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class VEGASStratification:
-    """The stratification used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112.
+    """The stratification used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112 .
     Implementation inspired by https://github.com/ycwu1030/CIGAR/ .
     EQ <n> refers to equation <n> in the above paper.
     """
@@ -43,8 +43,7 @@ class VEGASStratification:
         self.strat_counts[idx] += 1
 
     def update_DH(self):
-        """Update the dampened sample counts.
-        """
+        """Update the dampened sample counts."""
         d_sum = 0
         d_tmp = 0
         for i in range(self.N_cubes):

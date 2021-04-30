@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class VEGAS(BaseIntegrator):
-    """VEGAS Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112.
+    """VEGAS Enhanced in torch. Refer to https://arxiv.org/abs/2009.05112 .
     Implementation inspired by https://github.com/ycwu1030/CIGAR/ .
     EQ <n> refers to equation <n> in the above paper.
     """
@@ -212,7 +212,7 @@ class VEGAS(BaseIntegrator):
         self.sigma2.clear()
 
     def _run_iteration(self):
-        """Runs one iteration of VEGAS including stratification (and if enable adaptive map).
+        """Runs one iteration of VEGAS including stratification and updates the VEGAS map if use_grid_improve is set.
 
         Returns:
             float: Estimated accuracy.
