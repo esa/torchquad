@@ -82,7 +82,9 @@ class VEGAS(BaseIntegrator):
         # Initialize the adaptive VEGAS map,
         # Note that a larger number of intervals may lead to problems if only few evals are allowed
         # Paper section II B
-        self.map = VEGASMap(self._dim, self._integration_domain, N_intervals=5)
+        self.map = VEGASMap(
+            self._dim, self._integration_domain, N_intervals=self._N_increment // 10
+        )
 
         # Initialize VEGAS' stratification
         # Paper section III
@@ -93,14 +95,14 @@ class VEGAS(BaseIntegrator):
         self.results = []  # contains integration results per iteration
         self.sigma2 = []  # contains variance per iteration
 
-        it = 0  # iteration
+        self.it = 0  # iteration
 
         if use_warmup:  # warmup the adaptive map
             self._warmup_grid(5, self._starting_N // 5)
 
         # Main loop
         while True:
-            it = it + 1
+            self.it = self.it + 1
             self.results.append(0)
             self.sigma2.append(0)
 
@@ -108,24 +110,24 @@ class VEGAS(BaseIntegrator):
             acc = self._run_iteration()
 
             logger.info(
-                f"Iteration {it}, Acc={acc:.4e}, Result={self.results[-1]:.4e},neval={self._nr_of_fevals}"
+                f"Iteration {self.it}, Acc={acc:.4e}, Result={self.results[-1]:.4e},neval={self._nr_of_fevals}"
             )
 
             # Abort conditions
-            if it > self._max_iterations:
+            if self.it > self._max_iterations:
                 break
             if self._nr_of_fevals > self.N:
                 break
 
             # Adidtional abort conditions depending on achieved errors
-            if it % 5 == 0:
+            if self.it % 5 == 0:
                 res = self._get_result()
                 err = self._get_error()
                 chi2 = self._get_chisq()
                 acc = err / res
 
                 # Abort if errors acceptable
-                logger.debug(f"Iteration {it},Chi2={chi2:.4e}")
+                logger.debug(f"Iteration {self.it},Chi2={chi2:.4e}")
                 if (acc < eps_rel or err < eps_abs) and chi2 / 5.0 < 1.0:
                     break
 
@@ -185,16 +187,14 @@ class VEGAS(BaseIntegrator):
             self.map.accumulate_weight_vec(yrnd, f_eval)  # update map weights
             jf = (f_eval * jac).sum()
             jf2 = pow(f_eval * jac, 2).sum()
-            exit()
-            for _ in range(N_samples):  # iterated over sample
-                yrnd = torch.rand(size=[self._dim])  # sample point
-                x = self.map.get_X(yrnd)  # map to transforms
-                f_eval = self._eval(x)[0]  # evaluate integrand
-                jac = self.map.get_Jac(yrnd)  # compute the jacobian
-                self.map.accumulate_weight(yrnd, f_eval)  # update map weights
-                jf += f_eval * jac
-                jf2 += pow(f_eval * jac, 2)
-            exit()
+            # for _ in range(N_samples):  # iterated over sample
+            #     yrnd = torch.rand(size=[self._dim])  # sample point
+            #     x = self.map.get_X(yrnd)  # map to transforms
+            #     f_eval = self._eval(x)[0]  # evaluate integrand
+            #     jac = self.map.get_Jac(yrnd)  # compute the jacobian
+            #     self.map.accumulate_weight(yrnd, f_eval)  # update map weights
+            #     jf += f_eval * jac
+            #     jf2 += pow(f_eval * jac, 2)
             ih = jf / N_samples  # integral in this step
             sig2 = jf2 / N_samples - pow(jf / N_samples, 2)  # estimated variance
             self.results[-1] += ih  # store results
@@ -217,6 +217,7 @@ class VEGAS(BaseIntegrator):
         Returns:
             float: Estimated accuracy.
         """
+
         y = torch.zeros(self._dim)  # stratified sampling points
         x = torch.zeros(self._dim)  # transformed sample points
 
@@ -225,16 +226,28 @@ class VEGAS(BaseIntegrator):
             jf2 = 0
             neval = self.strat.get_NH(i_cube, self._starting_N)
             self._nr_of_fevals += neval
-            for ne in range(neval):
-                y = self.strat.get_Y(i_cube)  # get points (stratified)
-                x = self.map.get_X(y)  # transform, EQ 8+9
-                f_eval = self._eval(x)[0]  # eval integrand
-                jac = self.map.get_Jac(y)  # compute jacobian
-                if self.use_grid_improve:  # if adaptive map is used, acc weight
-                    self.map.accumulate_weight(y, f_eval)  # EQ 25
-                self.strat.accumulate_weight(i_cube, f_eval * jac)  # update strat
-                jf += f_eval * jac
-                jf2 += pow(f_eval * jac, 2)
+
+            y = self.strat.get_Y_vec(i_cube, neval)  # get points (stratified)
+            x = self.map.get_X_vec(y)  # transform, EQ 8+9
+            f_eval = self._eval(x)  # eval integrand
+            jac = self.map.get_Jac_vec(y)  # compute jacobian
+            if self.use_grid_improve:  # if adaptive map is used, acc weight
+                self.map.accumulate_weight_vec(y, f_eval)  # EQ 25
+            self.strat.accumulate_weight_vec(i_cube, f_eval * jac)  # update strat
+            jf = (f_eval * jac).sum()
+            jf2 = pow(f_eval * jac, 2).sum()
+
+            # for ne in range(neval):
+            #     y = self.strat.get_Y(i_cube)  # get points (stratified)
+            #     x = self.map.get_X(y)  # transform, EQ 8+9
+            #     f_eval = self._eval(x)[0]  # eval integrand
+            #     jac = self.map.get_Jac(y)  # compute jacobian
+            #     if self.use_grid_improve:  # if adaptive map is used, acc weight
+            #         self.map.accumulate_weight(y, f_eval)  # EQ 25
+            #     self.strat.accumulate_weight(i_cube, f_eval * jac)  # update strat
+            #     jf += f_eval * jac
+            #     jf2 += pow(f_eval * jac, 2)
+
             ih = jf / neval * self.strat.V_cubes  # compute integral
 
             # estimated variance
@@ -251,6 +264,9 @@ class VEGAS(BaseIntegrator):
         self.strat.update_DH()  # update stratification
         acc = torch.sqrt(self.sigma2[-1] / (self.results[-1]))  # estimate accuracy
 
+        # if self.it > 1:
+        #     exit()
+
         return acc
 
     # Helper funcs
@@ -265,7 +281,11 @@ class VEGAS(BaseIntegrator):
         for idx, res in enumerate(self.results):
             res_num += res / self.sigma2[idx]
             res_den += 1.0 / self.sigma2[idx]
-        return res_num / res_den
+
+        if torch.isnan(res_num / res_den):  # if variance is 0 just return mean result
+            return torch.mean(torch.tensor(self.results))
+        else:
+            return res_num / res_den
 
     def _get_error(self):
         """Estimates error from variance , EQ 31.

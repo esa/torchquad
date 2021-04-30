@@ -47,7 +47,7 @@ class VEGASMap:
         self.std_weight = torch.zeros(self.dim)  # EQ 13
         self.avg_weight = torch.zeros(self.dim)  # EQ 14
         # numbers of random samples in specific interval
-        self.counts = torch.zeros((self.dim, self.N_intervals))
+        self.counts = torch.zeros((self.dim, self.N_intervals)).long()
 
     def get_X_vec(self, y):
         """Get mapped sampling points, EQ 9.
@@ -143,14 +143,15 @@ class VEGASMap:
             f (float): Function evaluation.
         """
         ID = self._get_interval_ID(y)
+        jac = self.get_Jac_vec(y)
         for i in range(self.dim):
             ID_i = torch.floor(ID[:, i]).long()
-            print()
-            # need to figure this one out
-            self.weights[i][ID_i] += (f * self.get_Jac_vec(y)) ** 2
-            self.counts[i] = torch.unique(ID_i, return_counts=True)[1]
-        print(self.weights)
-        print(self.counts)
+            unique_vals, unique_counts = torch.unique(ID_i, return_counts=True)
+            weights_vals = (torch.multiply(f, jac)) ** 2
+            for val, count in zip(unique_vals, unique_counts):
+                self.weights[i][val] += weights_vals[ID_i == val].sum()
+            idx = unique_vals.long()
+            self.counts[i, idx] += unique_counts
 
     def accumulate_weight(self, y, f):
         """Accumulate weights and counts of the map.
@@ -164,8 +165,54 @@ class VEGASMap:
             ID_i = int(ID[i])
             self.weights[i][ID_i] += (f * self.get_Jac(y)) ** 2
             self.counts[i][ID_i] += 1
-        print(self.weights)
-        print(self.counts)
+
+    def _smooth_map_vec(self):
+        """Smooth the weights in the map, EQ 18 - 22."""
+        # EQ 18
+        for dim in range(self.dim):
+            nnz_idx = self.counts[dim] != 0  # non zero count indices
+            self.weights[dim][nnz_idx] = (
+                self.weights[dim][nnz_idx] / self.counts[dim][nnz_idx]
+            )
+
+        # EQ 18, 19
+        for dim in range(self.dim):
+            d_sum = sum(self.weights[dim])
+            self.summed_weights[dim] = 0
+
+            # i == 0
+            d_tmp = (7.0 * self.weights[dim][0] + self.weights[dim][1]) / (8.0 * d_sum)
+            d_tmp = (
+                pow((d_tmp - 1.0) / torch.log(d_tmp), self.alpha) if d_tmp != 0 else 0
+            )
+            self.smoothed_weights[dim][0] = d_tmp
+
+            # i == last
+            d_tmp = (
+                self.weights[dim][self.N_intervals - 2]
+                + 7.0 * self.weights[dim][self.N_intervals - 1]
+            ) / (8.0 * d_sum)
+            d_tmp = (
+                pow((d_tmp - 1.0) / torch.log(d_tmp), self.alpha) if d_tmp != 0 else 0
+            )
+            self.smoothed_weights[dim][-1] = d_tmp
+
+            # rest
+            d_tmp = (
+                self.weights[dim][:-2]
+                + 6.0 * self.weights[dim][1:-1]
+                + self.weights[dim][2:]
+            ) / (8.0 * d_sum)
+            d_tmp[d_tmp != 0] = pow(
+                (d_tmp[d_tmp != 0] - 1.0) / torch.log(d_tmp[d_tmp != 0]), self.alpha
+            )
+            self.smoothed_weights[dim][1:-1] = d_tmp
+
+            # sum all weights
+            self.summed_weights[dim] = self.smoothed_weights[dim].sum()
+
+            # EQ 20
+            self.delta_weights[dim] = self.summed_weights[dim] / self.N_intervals
 
     def _smooth_map(
         self,
@@ -183,6 +230,7 @@ class VEGASMap:
         for dim in range(self.dim):
             d_sum = sum(self.weights[dim])
             self.summed_weights[dim] = 0
+
             for i in range(self.N_intervals):
                 if i == 0:
                     d_tmp = (7.0 * self.weights[dim][0] + self.weights[dim][1]) / (
@@ -213,18 +261,22 @@ class VEGASMap:
     ):
         """Resets weights."""
         self.weights = torch.zeros((self.dim, self.N_intervals))
-        self.counts = torch.zeros((self.dim, self.N_intervals))
+        self.counts = torch.zeros((self.dim, self.N_intervals)).long()
 
     def update_map(
         self,
     ):
         """Update the adaptive map, Section II C."""
-        self._smooth_map()
+        self._smooth_map_vec()
 
         # Initialize new locations
         x_edges_last = deepcopy(self.x_edges)
         dx_edges_last = deepcopy(self.dx_edges)
 
+        # print("x_edges", self.x_edges)
+        # print("dx_edges", self.dx_edges)
+        # print("counts", self.counts)
+        # print("weights", self.weights)
         for i in range(self.dim):  # Update per dim
             new_i = 1
             old_i = 0
@@ -253,5 +305,8 @@ class VEGASMap:
             self.dx_edges[i][self.N_intervals - 1] = (
                 self.x_edges[i][self.N_edges - 1] - self.x_edges[i][self.N_edges - 2]
             )
+
+        # print("x_edges", self.x_edges)
+        # print("dx_edges", self.dx_edges)
 
         self._reset_weight()

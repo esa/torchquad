@@ -31,6 +31,17 @@ class VEGASStratification:
         self.dh = torch.ones(self.N_cubes) * 1.0 / self.N_cubes  # dampened counts
         self.strat_counts = torch.zeros(self.N_cubes)  # current index counts
 
+    def accumulate_weight_vec(self, idx, weight):
+        """Accumulate weights for this index + weight.
+
+        Args:
+            idx (int): Current index.
+            weight (float): Function value.
+        """
+        self.JF2[idx] += pow(weight, 2).sum()
+        self.JF[idx] += weight.sum()
+        self.strat_counts[idx] += len(weight)
+
     def accumulate_weight(self, idx, weight):
         """Accumulate weights for this index + weight.
 
@@ -46,13 +57,14 @@ class VEGASStratification:
         """Update the dampened sample counts."""
         d_sum = 0
         d_tmp = 0
-        for i in range(self.N_cubes):
 
+        for i in range(self.N_cubes):
             # EQ 42
             d_tmp = (
                 self.V_cubes * self.V_cubes / self.strat_counts[i] * self.JF2[i]
                 - (self.V_cubes / self.strat_counts[i] * self.JF[i]) ** 2
             )
+
             self.dh[i] = d_tmp ** self.beta  # dampening (EQ 43)
 
             # for very small d_tmp d_tmp ** self.beta becomes NaN
@@ -61,7 +73,9 @@ class VEGASStratification:
 
         # Normalize dampening
         d_sum = sum(self.dh)
-        self.dh = self.dh / d_sum
+
+        if d_sum != 0:
+            self.dh = self.dh / d_sum
 
     def get_NH(self, idx, nevals_exp):
         """Recalculate sample points per hypercube, EQ 44.
@@ -95,6 +109,22 @@ class VEGASStratification:
             r = tmp - q * self.N_strat
             res[i] = r
             tmp = q
+        return res
+
+    def get_Y_vec(self, idx, N):
+        """Compute randomly sampled points in specified interval.
+
+        Args:
+            idx (int): Interval index.
+
+        Returns:
+            torch.tensor: Sampled point.
+        """
+        dy = 1.0 / self.N_strat
+        res = torch.zeros([N, self.dim])
+        ID = self._get_indices(idx)
+        random_uni = torch.rand(size=[N, self.dim])
+        res = random_uni * dy + ID * dy
         return res
 
     def get_Y(self, idx):
