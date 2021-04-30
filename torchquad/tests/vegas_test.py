@@ -42,7 +42,7 @@ def test_integrate():
 
 # used to run this test individually
 start = timeit.default_timer()
-test_integrate()
+# test_integrate()
 cProfile.run("test_integrate()")
 stop = timeit.default_timer()
 print("Test ran for ", stop - start, " seconds.")

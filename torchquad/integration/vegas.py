@@ -19,7 +19,7 @@ class VEGAS(BaseIntegrator):
 
     def __init__(self):
         super().__init__()
-        logger.setLevel(logging.INFO)
+        # logger.setLevel(logging.INFO)
 
     def integrate(
         self,
@@ -252,9 +252,6 @@ class VEGAS(BaseIntegrator):
             self.map.update_map()
         self.strat.update_DH()  # update stratification
         acc = torch.sqrt(self.sigma2[-1] / (self.results[-1]))  # estimate accuracy
-
-        # if self.it > 1:
-        #     exit()
 
         return acc
 
