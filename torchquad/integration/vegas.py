@@ -117,7 +117,7 @@ class VEGAS(BaseIntegrator):
             if self._nr_of_fevals > self.N:
                 break
 
-            # Adidtional abort conditions depending on achieved errors
+            # Additional abort conditions depending on achieved errors
             if it % 5 == 0:
                 res = self._get_result()
                 err = self._get_error()
