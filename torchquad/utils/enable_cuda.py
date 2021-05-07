@@ -18,6 +18,7 @@ def enable_cuda(device=0):
         logger.info("__CUDNN VERSION:" + str(torch.backends.cudnn.version()))
         logger.info("__Number of CUDA Devices:" + str(torch.cuda.device_count()))
         logger.info("Active CUDA Device: GPU" + str(torch.cuda.current_device()))
+        # Is setting the default tensor type to cuda.Float32 here a good redundancy? I think so
         print("Setting default tensor type to cuda.Float32")
         torch.set_default_tensor_type(torch.cuda.FloatTensor)
     else:
