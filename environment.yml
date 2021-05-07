@@ -1,14 +1,14 @@
-name: torchquad
+name: torchquad_test
 channels:
 - conda-forge
 - pytorch
 dependencies:
-- cudatoolkit
-- matplotlib
-- pytest
-- python=3.8
-- pytorch=1.7
-- scipy
-- sphinx
-- sphinx_rtd_theme
-- tqdm
+- cudatoolkit>=11.0.221
+- matplotlib>=3.3.3
+- pytest>=6.2.1
+- python>=3.8
+- pytorch>=1.7
+- scipy>=1.6.0
+- sphinx>=3.4.3
+- sphinx_rtd_theme>=0.5.1
+- tqdm>=4.56.0
