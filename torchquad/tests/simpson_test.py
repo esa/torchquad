@@ -6,12 +6,18 @@ import torch
 import warnings
 
 from integration.simpson import Simpson
-from tests.integration_test_utils import compute_test_errors
+from utils.enable_cuda import enable_cuda
+from utils.set_precision import set_precision
 
 
 def test_integrate():
     """Tests the integrate function in integration.Simpson"""
-    torch.set_default_tensor_type(torch.DoubleTensor)
+    enable_cuda()
+    set_precision("double")
+
+    # Needs to happen after precision / device settings to avoid having some tensors intialized on cpu and some on GPU
+    from tests.integration_test_utils import compute_test_errors
+
     simp = Simpson()
     N = 100001
 
@@ -40,5 +46,6 @@ def test_integrate():
         assert error < 5e-6
 
 
-# used to run this test individually
-test_integrate()
+if __name__ == "__main__":
+    # used to run this test individually
+    test_integrate()

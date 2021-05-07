@@ -47,7 +47,7 @@ class VEGASMap:
         self.std_weight = torch.zeros(self.dim)  # EQ 13
         self.avg_weight = torch.zeros(self.dim)  # EQ 14
         # numbers of random samples in specific interval
-        self.counts = torch.zeros((self.dim, self.N_intervals))
+        self.counts = torch.zeros((self.dim, self.N_intervals)).long()
 
     def get_X(self, y):
         """Get mapped sampling points, EQ 9.
@@ -59,10 +59,10 @@ class VEGASMap:
             torch.tensor: Mapped points.
         """
         ID, offset = self._get_interval_ID(y), self._get_interval_offset(y)
-        res = torch.zeros([1, self.dim])
+        res = torch.zeros_like(y)
         for i in range(self.dim):
-            ID_i = int(ID[i])
-            res[0][i] = self.x_edges[i][ID_i] + self.dx_edges[i][ID_i] * offset[i]
+            ID_i = torch.floor(ID[:, i]).long()
+            res[:, i] = self.x_edges[i, ID_i] + self.dx_edges[i, ID_i] * offset[:, i]
         return res
 
     def get_Jac(self, y):
@@ -75,9 +75,9 @@ class VEGASMap:
             torch.tensor: Jacobian
         """
         ID = self._get_interval_ID(y)
-        jac = 1
+        jac = torch.ones(y.shape[0])
         for i in range(self.dim):
-            ID_i = int(ID[i])
+            ID_i = torch.floor(ID[:, i]).long()
             jac *= self.N_intervals * self.dx_edges[i][ID_i]
         return jac
 
@@ -103,56 +103,66 @@ class VEGASMap:
         """
         return (y * self.N_intervals) - self._get_interval_ID(y)
 
-    def accumulate_weight(self, y, f):
+    def accumulate_weight(self, y, jf_vec2):
         """Accumulate weights and counts of the map.
 
         Args:
             y (float): Sampled point.
-            f (float): Function evaluation.
+            jf_vec2 (float): Square of the product of function value and jacobian
         """
         ID = self._get_interval_ID(y)
         for i in range(self.dim):
-            ID_i = int(ID[i])
-            self.weights[i][ID_i] += (f * self.get_Jac(y)) ** 2
-            self.counts[i][ID_i] += 1
+            ID_i = torch.floor(ID[:, i]).long()
+            unique_vals, unique_counts = torch.unique(ID_i, return_counts=True)
+            weights_vals = jf_vec2
+            for val, count in zip(unique_vals, unique_counts):
+                self.weights[i][val] += weights_vals[ID_i == val].sum()
+            self.counts[i, unique_vals.long()] += unique_counts
 
-    def _smooth_map(
-        self,
-    ):
+    def _smooth_map(self):
         """Smooth the weights in the map, EQ 18 - 22."""
         # EQ 18
-        for i in range(self.dim):
-            for i_interval in range(len(self.weights[i])):
-                if self.counts[i][i_interval] != 0:
-                    self.weights[i][i_interval] = (
-                        self.weights[i][i_interval] / self.counts[i][i_interval]
-                    )
+        for dim in range(self.dim):
+            nnz_idx = self.counts[dim] != 0  # non zero count indices
+            self.weights[dim][nnz_idx] = (
+                self.weights[dim][nnz_idx] / self.counts[dim][nnz_idx]
+            )
 
         # EQ 18, 19
         for dim in range(self.dim):
             d_sum = sum(self.weights[dim])
             self.summed_weights[dim] = 0
-            for i in range(self.N_intervals):
-                if i == 0:
-                    d_tmp = (7.0 * self.weights[dim][0] + self.weights[dim][1]) / (
-                        8.0 * d_sum
-                    )
-                elif i == self.N_intervals - 1:
-                    d_tmp = (
-                        self.weights[dim][self.N_intervals - 2]
-                        + 7.0 * self.weights[dim][self.N_intervals - 1]
-                    ) / (8.0 * d_sum)
-                else:
-                    d_tmp = (
-                        self.weights[dim][i - 1]
-                        + 6.0 * self.weights[dim][i]
-                        + self.weights[dim][i + 1]
-                    ) / (8.0 * d_sum)
-                if d_tmp != 0:
-                    d_tmp = pow((d_tmp - 1.0) / torch.log(d_tmp), self.alpha)
 
-                self.smoothed_weights[dim][i] = d_tmp
-                self.summed_weights[dim] += d_tmp
+            # i == 0
+            d_tmp = (7.0 * self.weights[dim][0] + self.weights[dim][1]) / (8.0 * d_sum)
+            d_tmp = (
+                pow((d_tmp - 1.0) / torch.log(d_tmp), self.alpha) if d_tmp != 0 else 0
+            )
+            self.smoothed_weights[dim][0] = d_tmp
+
+            # i == last
+            d_tmp = (
+                self.weights[dim][self.N_intervals - 2]
+                + 7.0 * self.weights[dim][self.N_intervals - 1]
+            ) / (8.0 * d_sum)
+            d_tmp = (
+                pow((d_tmp - 1.0) / torch.log(d_tmp), self.alpha) if d_tmp != 0 else 0
+            )
+            self.smoothed_weights[dim][-1] = d_tmp
+
+            # rest
+            d_tmp = (
+                self.weights[dim][:-2]
+                + 6.0 * self.weights[dim][1:-1]
+                + self.weights[dim][2:]
+            ) / (8.0 * d_sum)
+            d_tmp[d_tmp != 0] = pow(
+                (d_tmp[d_tmp != 0] - 1.0) / torch.log(d_tmp[d_tmp != 0]), self.alpha
+            )
+            self.smoothed_weights[dim][1:-1] = d_tmp
+
+            # sum all weights
+            self.summed_weights[dim] = self.smoothed_weights[dim].sum()
 
             # EQ 20
             self.delta_weights[dim] = self.summed_weights[dim] / self.N_intervals
@@ -162,7 +172,7 @@ class VEGASMap:
     ):
         """Resets weights."""
         self.weights = torch.zeros((self.dim, self.N_intervals))
-        self.counts = torch.zeros((self.dim, self.N_intervals))
+        self.counts = torch.zeros((self.dim, self.N_intervals)).long()
 
     def update_map(
         self,
