@@ -11,9 +11,6 @@ def set_precision(data_type="float"):
     Args:
         data_type (string, optional): Data type to use, either "float" or "double". Defaults to "float".
 
-    Raises:
-        ValueError: If illegal data type.
-
     """
 
     if torch.cuda.is_initialized():
@@ -29,7 +26,8 @@ def set_precision(data_type="float"):
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
         else:
             logging.error(
-                "Illegal data type. Setting default tensor type to cuda.Float32 (CUDA is initialized)."
+                f"{data_type} is not a valid data type. Only float or double are supported.
+                Setting default tensor type to cuda.Float32 (CUDA is initialized)."
             )
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
     else:
@@ -44,5 +42,8 @@ def set_precision(data_type="float"):
             )
             torch.set_default_tensor_type(torch.FloatTensor)
         else:
-            logging.error("Illegal data type. Setting default tensor type to Float32.")
+            logging.error(
+                f"{data_type} is not a valid data type. Only float or double are supported. 
+            Setting default tensor type to Float32."
+            )
             torch.set_default_tensor_type(torch.FloatTensor)
