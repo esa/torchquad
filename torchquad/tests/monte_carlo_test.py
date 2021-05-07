@@ -39,7 +39,7 @@ def test_integrate():
     errors = compute_test_errors(mc.integrate, {"N": N, "dim": 3}, dim=3)
     print("N =", N, "\n", errors)
     for error in errors:
-        assert error < 8e-2
+        assert error < 1e-1
 
 
 if __name__ == "__main__":
