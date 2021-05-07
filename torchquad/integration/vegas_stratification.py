@@ -104,6 +104,7 @@ class VEGASStratification:
 
         Args:
             idx (int): Interval index.
+            N (int): Number of samples to draw.
 
         Returns:
             torch.tensor: Sampled point.
