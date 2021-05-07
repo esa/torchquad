@@ -39,9 +39,11 @@ First we must make sure we have `torchquad <https://github.com/esa/torchquad>`_ 
 
 Alternatively you can use
 
-.. code-block:: bash
+   .. code-block:: bash
 
       pip install torchquad
+
+NB Note that `pip` will not set up PyTorch with CUDA and GPU support. Therefore, we recommend to use `conda`.
 
 Usage
 -----
