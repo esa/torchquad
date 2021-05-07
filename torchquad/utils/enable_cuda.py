@@ -2,7 +2,7 @@ import torch
 import os
 
 import logging
-from utils.set_precision import set_precision
+from .set_precision import set_precision
 
 logger = logging.getLogger(__name__)
 
