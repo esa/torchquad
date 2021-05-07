@@ -3,7 +3,7 @@
 Getting started
 ===============
 
-This is a brief example of setting up *torchquad*.
+This is a brief introduction on how to set up *torchquad*.
 
 Prerequisites 
 --------------
@@ -15,14 +15,14 @@ Prerequisites
 
 We recommend using `conda <https://docs.conda.io/en/latest/>`_, especially if you want to utilize the GPU. 
 It will automatically set up CUDA and the cudatoolkit for you in that case.
-Note that torchquad also works on the CPU. However, it is optimized for GPU usage.
+Note that *torchquad* also works on the CPU. However, it is optimized for GPU usage.
 
 - `conda <https://docs.conda.io/en/latest/>`_, which will take care of all requirements for you. For a detailed list of required packages, please refer to the `conda environment file <https://github.com/esa/torchquad/blob/main/environment.yml>`_.
 
 Installation
 -------------
 
-First we must make sure we have `torchquad <https://github.com/esa/torchquad>`_ installed:
+First, we must make sure we have *`torchquad <https://github.com/esa/torchquad>`_* installed:
 
 1. Get `miniconda <https://docs.conda.io/en/latest/miniconda.html>`_ or similar
 2. Clone the repo
@@ -46,5 +46,6 @@ Alternatively you can use
 Usage
 -----
 
-A brief example of how *torchquad* can be used to compute a simple integral can be found on our `GitHub <https://github.com/esa/torchquad>`_. 
-For a more thorough introduction please refer to the `example notebook <https://github.com/esa/torchquad/blob/main/notebooks/Example_notebook.ipynb>`_.
+Now you are ready to use *torchquad*. 
+A brief example of how *torchquad* can be used to compute a simple integral can be found on our `GitHub <https://github.com/esa/torchquad#usage>`_. 
+For a more thorough introduction, please refer to the tutorial on the next page.
