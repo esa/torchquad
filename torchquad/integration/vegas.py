@@ -119,7 +119,7 @@ class VEGAS(BaseIntegrator):
             if self._nr_of_fevals > self.N - self._starting_N:
                 break
 
-            # Adidtional abort conditions depending on achieved errors
+            # Additional abort conditions depending on achieved errors
             if self.it % 5 == 0:
                 res = self._get_result()
                 err = self._get_error()
@@ -276,12 +276,9 @@ class VEGAS(BaseIntegrator):
     def _get_error(self):
         """Estimates error from variance , EQ 31.
 
-                Returns:
-        <<<<<<< HEAD
-                    float: Estimated error.
-        =======
-                    float: estimated error
-        >>>>>>> 82b0ca8565b3a9aacdbbf67d11581c27d0db911c
+        Returns:
+            float: Estimated error.
+
         """
         res = 0
         for sig in self.sigma2:

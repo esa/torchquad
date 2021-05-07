@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 
 def set_log_level(level=logging.WARN):
-    """Allow setting global log level for the application
+    """Allows setting global log level for the application.
 
     Args:
         level (logging.level, optional): Level to set, available are (logging.DEBUG,logging.INFO,logging.WARN,logging.ERROR). Defaults to logging.WARN.
