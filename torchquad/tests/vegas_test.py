@@ -13,24 +13,25 @@ def test_integrate():
     torch.set_default_tensor_type(torch.DoubleTensor)
     vegas = VEGAS()
 
-    N = 100000
-
-    # TODO needs to be adjusted for vegas
     # 1D Tests
-    # errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 1, "seed": 0})
-    # print("N =", N, "\n", errors)
-    # for error in errors:
-    #     assert error < 1e-5
+    N = 10000
+    errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 1, "seed": 0})
+    print("N =", N, "\n", errors)
+    for error in errors[:3]:
+        assert error < 1e-2
 
-    # TODO needs to be adjusted for vegas
+    for error in errors[3:6]:
+        assert error < 9.0
+
+    for error in errors[6:]:
+        assert error < 1e-2
+
     # 3D Tests
-    # N = 1000000
-    # errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 3, "seed": 0}, dim=3)
-    # print("N =", N, "\n", errors)
-    # for error in errors[:2]:
-    #     assert error < 1e-12
-    # for error in errors:
-    #     assert error < 6e-3
+    N = 10000
+    errors = compute_test_errors(vegas.integrate, {"N": N, "dim": 3, "seed": 0}, dim=3)
+    print("N =", N, "\n", errors)
+    for error in errors:
+        assert error < 1.1
 
 
 # used to run this test individually
