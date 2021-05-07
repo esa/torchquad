@@ -82,8 +82,9 @@ class VEGAS(BaseIntegrator):
         # Initialize the adaptive VEGAS map,
         # Note that a larger number of intervals may lead to problems if only few evals are allowed
         # Paper section II B
+        N_intervals = max(2, self._N_increment // 10)  # for small N intervals set 2
         self.map = VEGASMap(
-            self._dim, self._integration_domain, N_intervals=self._N_increment // 10
+            self._dim, self._integration_domain, N_intervals=N_intervals
         )
 
         # Initialize VEGAS' stratification
