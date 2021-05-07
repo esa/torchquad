@@ -1,4 +1,4 @@
-name: torchquad_test
+name: torchquad
 channels:
 - conda-forge
 - pytorch
