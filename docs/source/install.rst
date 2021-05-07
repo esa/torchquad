@@ -43,7 +43,7 @@ Alternatively you can use
 
       pip install torchquad
 
-Note though that `pip` will not set up PyTorch with CUDA and GPU support. Therefore we recommend to use `conda`.
+N.B. Note that `pip` will not set up PyTorch with CUDA and GPU support. Therefore, we recommend to use `conda`.
 
 Usage
 -----
