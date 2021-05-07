@@ -40,9 +40,10 @@ def test_integrate():
         assert error < 0.61
 
 
-# used to run this test individually
-start = timeit.default_timer()
-# test_integrate()
-cProfile.run("test_integrate()")
-stop = timeit.default_timer()
-print("Test ran for ", stop - start, " seconds.")
+if __name__ == "__main__":
+    # used to run this test individually
+    start = timeit.default_timer()
+    # test_integrate()
+    cProfile.run("test_integrate()")
+    stop = timeit.default_timer()
+    print("Test ran for ", stop - start, " seconds.")

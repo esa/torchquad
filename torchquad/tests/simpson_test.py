@@ -40,5 +40,6 @@ def test_integrate():
         assert error < 5e-6
 
 
-# used to run this test individually
-test_integrate()
+if __name__ == "__main__":
+    # used to run this test individually
+    test_integrate()
