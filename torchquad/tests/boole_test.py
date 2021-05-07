@@ -31,6 +31,7 @@ def test_integrate():
     for error in errors:
         assert error < 5e-6
 
+
 if __name__ == "__main__":
     # used to run this test individually
     test_integrate()
