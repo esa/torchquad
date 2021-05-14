@@ -22,6 +22,7 @@ You can see the latest code at https://github.com/esa/torchquad.
    :caption: Overview:
 
    install
+   tutorial
    integration_methods
    autodoc
 
