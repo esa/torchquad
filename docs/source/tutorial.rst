@@ -7,39 +7,44 @@ Tutorial
 This tutorial gives a more detailed look at its functionality and explores some performance considerations.
 
 The main problem with higher-dimensional numerical integration is that
-the computation simply becomes too costly if *n* is large, as the number
+the computation simply becomes too costly if the dimensionality, *n*, is large, as the number
 of evaluation points increases exponentially - this problem is known as
 the *curse of dimensionality*. This especially affects grid-based
 methods, but is, to some degree, also present for Monte Carlo methods,
 which also require larger numbers of points for convergence in higher
 dimensions.
 
-At this time, *torchquad* offers the following integration methods for
+At the time, *torchquad* offers the following integration methods for
 abritrary dimensionality.
 
 +--------------+-------------------------------------------------+------------+
 | Name         | How it works                                    | Spacing    |
 |              |                                                 |            |
 +==============+=================================================+============+
-| Trapezoid    | Creates a linear interpolant between two        | Equal      |
+| Trapezoid    | Creates a linear interpolant between two |br|   | Equal      |
 | rule         | neighbouring points                             |            |
 +--------------+-------------------------------------------------+------------+
-| Simpson’s    | Creates a quadratic interpolant between three   | Equal      |
-| rule         | neighbouring points                             |            |
+| Simpson’s    | Creates a quadratic interpolant between |br|    | Equal      |
+| rule         | three neighbouring point                        |            |
 +--------------+-------------------------------------------------+------------+
-| Boole's      | Creates a more complex interpolant between      | Equal      |
+| Boole’s      | Creates a more complex interpolant between |br| | Equal      |
 | rule         | five neighbouring points                        |            |
 +--------------+-------------------------------------------------+------------+
-| Monte Carlo  | Randomly chooses points at which the integrand  | Random     |
-|              | is evaluated                                    |            |
+| Monte Carlo  | Randomly chooses points at which the |br|       | Random     |
+|              | integrand is evaluated                          |            |
 +--------------+-------------------------------------------------+------------+
-| VEGAS        | Adaptive multidimensional Monte Carlo           | Stratified |
-| Enhanced     | integration (VEGAS with adaptive stratified     | sampling   |
-|              | sampling)                                       |            |
+| VEGAS        | Adaptive multidimensional Monte Carlo |br|      | Stratified |
+| Enhanced     | integration (VEGAS with adaptive stratified     | |br|       |
+| |br| (VEGAS+)| |br| sampling)                                  | sampling   |
 +--------------+-------------------------------------------------+------------+
 
+.. |br| raw:: html
+
+     <br>
+
+
 Outline
-~~~~~~~
+-------
 
 This notebook is a guide for new users to *torchquad* and is structured in
 the following way:
@@ -84,15 +89,17 @@ Now let’s get started! First, the general imports:
 
 .. parsed-literal::
 
-    Output: Setting default tensor type to cuda.Float32 (CUDA is initialized).
-    
+    **Output:** Setting default tensor type to cuda.Float32 (CUDA is initialized).
+
+
+
 
 One-dimensional integration
----------------------------
+----------------------------
 
 To make it easier to understand the methods used in this notebook, we will start with an
 example in one dimension. If you are new to these methods or simply want a clearer picture, 
-feel free to check out Patrick Walls' 
+feel free to check out Patrick Walls’ 
 `nice Python introduction <https://github.com/patrickwalls/mathematical-python/>`__ 
 to the `Trapezoid rule <https://www.math.ubc.ca/~pwalls/math-python/integration/trapezoid-rule/>`__
 and `Simpson’s rule <https://www.math.ubc.ca/~pwalls/math-python/integration/simpsons-rule/>`__
@@ -132,14 +139,6 @@ Let’s plot the function briefly.
 
 
 
-
-.. parsed-literal::
-
-    Output: [<matplotlib.lines.Line2D at 0x1620009cd90>]
-
-
-
-
 .. image:: torchquad_tutorial_figure.png
 
 
@@ -150,8 +149,7 @@ Let’s define the integration domain now and initialize the integrator.
     integration_domain = [[0, 2]] # Integration domain is always a list of lists to allow arbitrary dimensionality.
     tp = Trapezoid()  # Initialize a trapezoid solver
 
-Now we are all set to compute the integral. Let’s try it with just 101
-sample points for now.
+Now we are all set to compute the integral. Let’s try it with just 101 sample points for now.
 
 .. code:: ipython3
 
@@ -161,7 +159,7 @@ sample points for now.
 
 .. parsed-literal::
 
-    Output: Results: 12.780082702636719
+    **Output**: Results: 12.780082702636719
             Abs. Error: 1.97029114e-03
             Rel. Error: 1.54192661e-04
     
@@ -178,9 +176,9 @@ Let’s see what type of value we get for different integrators.
 
 .. parsed-literal::
 
-    Results: 12.778112411499023
-    Abs. Error: 0.00000000e+00
-    Rel. Error: 0.00000000e+00
+    **Output:** Results: 12.778112411499023
+            Abs. Error: 0.00000000e+00
+            Rel. Error: 0.00000000e+00
     
 
 .. code:: ipython3
@@ -192,9 +190,9 @@ Let’s see what type of value we get for different integrators.
 
 .. parsed-literal::
 
-    Results: 13.32831859588623
-    Abs. Error: 5.50206184e-01
-    Rel. Error: 4.30584885e-02
+    **Output:** Results: 13.32831859588623
+            Abs. Error: 5.50206184e-01
+            Rel. Error: 4.30584885e-02
     
 
 .. code:: ipython3
@@ -206,9 +204,9 @@ Let’s see what type of value we get for different integrators.
 
 .. parsed-literal::
 
-    Results: 21.83991813659668
-    Abs. Error: 9.06180573e+00
-    Rel. Error: 7.09166229e-01
+    **Output:** Results: 21.83991813659668
+            Abs. Error: 9.06180573e+00
+            Rel. Error: 7.09166229e-01
     
 
 Notably, Simpson’s method is already sufficient for a perfect solutiuon
@@ -226,12 +224,10 @@ High-dimensional integration
 
 Now, we will investigate the following 10-dimensional problem:
 
-Let ``f_2`` be the function $ f_2(x) = :raw-latex:`\sum`\_{i=1}^{10}
-:raw-latex:`\sin`(x_i) $
+Let ``f_2`` be the function :math:`f_{2}(x) = \sum_{i=1}^{10} \sin(x_{i})`.
 
 Over the domain :math:`[0,1]^{10}`, the integral of ``f_2`` is
-$:raw-latex:`\int`\_{0}\ :sup:`{1}…:raw-latex:`\int`\ {0}^{1} :raw-latex:`\sum`\ {i=1}`\ {10} :raw-latex:`\sin`(x_i) =
-20:raw-latex:`\sin`^2(1/2) = 4.59697694131860282599063392557… $.
+:math:`\int_{0}^{1} \dotsc \int_{0}^{1} \sum_{i=1}^{10} \sin(x_{i}) = 20 \sin^{2}(1/2) = 4.59697694131860282599063392557 \dotsc`
 
 Plotting this is tricky, so let’s directly move to the integrals.
 
@@ -242,7 +238,7 @@ Plotting this is tricky, so let’s directly move to the integrals.
     
     solution = 20*(torch.sin(torch.tensor([0.5]))*torch.sin(torch.tensor([0.5])))
 
-Let’s start with just 3 points per dimension, i.e. :math:`3^{10}=59,049` sample points. 
+Let’s start with just 3 points per dimension, i.e., :math:`3^{10}=59,049` sample points. 
 
 **Note**: *torchquad* currently only supports equal numbers of points per dimension. 
 We are working on giving the user more flexibility on this point.
@@ -261,9 +257,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    Results: 4.500804901123047
-    Abs. Error: 9.61723328e-02
-    Rel. Error: 2.09207758e-02
+    **Output:** Results: 4.500804901123047
+            Abs. Error: 9.61723328e-02
+            Rel. Error: 2.09207758e-02
     
 
 .. code:: ipython3
@@ -275,9 +271,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    Results: 4.598623752593994
-    Abs. Error: 1.64651871e-03
-    Rel. Error: 3.58174206e-04
+    **Output:** Results: 4.598623752593994
+            Abs. Error: 1.64651871e-03
+            Rel. Error: 3.58174206e-04
     
 
 .. code:: ipython3
@@ -289,9 +285,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    Results: 4.598303318023682
-    Abs. Error: 1.32608414e-03
-    Rel. Error: 2.88468727e-04
+    **Output:** Results: 4.598303318023682
+            Abs. Error: 1.32608414e-03
+            Rel. Error: 2.88468727e-04
     
 
 .. code:: ipython3
@@ -303,9 +299,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    Results: 4.598696708679199
-    Abs. Error: 1.71947479e-03
-    Rel. Error: 3.74044670e-04
+    **Output:** Results: 4.598696708679199
+            Abs. Error: 1.71947479e-03
+            Rel. Error: 3.74044670e-04
     
 
 Note that the Monte Carlo methods are much more competitive for
@@ -356,10 +352,10 @@ Now let’s evaluate the integral using the scipy function ``nquad``.
 
 .. parsed-literal::
 
-    Results: 2.2984884706593016
-    Abs. Error: 0.0
-    {'neval': 4084101}
-    Took 33067.629 ms
+    **Output:** Results: 2.2984884706593016
+            Abs. Error: 0.0
+            {'neval': 4084101}
+            Took 33067.629 ms
     
 
 Using scipy, we get the result in about 33 seconds on the authors’
@@ -382,7 +378,7 @@ by utilizing the GPU.
     print(f"Took {(end-start)* 1000.0:.3f} ms")
 
 
-If you tried this yourself and ran out of CUDA memory, simply decrease $ N $ 
+If you tried this yourself and ran out of CUDA memory, simply decrease :math:`N` 
 (this will, however, lead to a loss of accuracy). 
 
 Note that we use more evaluation points (:math:`37^{5}=69,343,957` for *torchquad* vs. :math:`4,084,101` 
@@ -391,15 +387,15 @@ Anyway, the decisive factor for this specific problem is runtime. A comparison w
 function evaluations is difficult, as ``nquad`` provides no support for a
 fixed number of evaluations. This may follow in the future.
 
-The results from using Simpson's rule in *torchquad* is: 
+The results from using Simpson’s rule in *torchquad* is: 
 
 .. parsed-literal::
 
-    Results: 2.2984883785247803
-    Abs. Error: 0.00000000e+00
-    Rel. Error: 0.00000000e+00
-    neval= 69343957
-    Took 162.147 ms
+    **Output:** Results: 2.2984883785247803
+            Abs. Error: 0.00000000e+00
+            Rel. Error: 0.00000000e+00
+            neval= 69343957
+            Took 162.147 ms
     
 
 In our case, torchquad was more than 300 times faster than
