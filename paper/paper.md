@@ -26,8 +26,6 @@ bibliography: paper.bib
 
 ---
 
-
-
 # Summary
 
 \texttt{torchquad} is a Python module for $n$-dimensional numerical integration optimized for graphics processing units (GPUs).
