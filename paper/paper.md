@@ -1,5 +1,5 @@
 ---
-title: 'torchquad - High-performance numerical Integration on GPUs with PyTorch'
+title: 'Torchquad - n-dimensional numerical integration on GPUs with PyTorch'
 tags:
   - Python
   - multidimensional
@@ -21,10 +21,12 @@ authors:
 affiliations:
  - name: Advanced Concepts Team, European Space Agency, Noordwijk, The Netherlands
    index: 1
-date: 28 May 2021
+date: 21 May 2021
 bibliography: paper.bib
 
 ---
+
+
 
 # Summary
 
@@ -43,7 +45,7 @@ Previous work has demonstrated that this problem can be mitigated by leveraging 
 
 Although GPU-based implementations for multidimensional numerical integration in Python exist, many of these packages do not allow fully automatic differentiation [@borowka2019gpu], which is crucial for many machine learning applications [@Baydin2018autodiffinML]. Recently, to fill this gap, the packages \texttt{VegasFlow} [@VegasFlow-Paper; @VegasFlow-Package] and \texttt{ZMCintegral} [@ZMCintegral; @ZMCintegral-code] were developed. Both of these implementations are, however, based on the TensorFlow library [@Tensorflow], and there are currently no packages available that enable more than one-dimensional integration in PyTorch.
 Additionally, the available GPU-based Python packages that allow fully automatic differentiation rely solely on Monte Carlo [@ZMCintegral] or VEGAS [@VegasFlow-Paper] methods. 
-Even though such methods offer good speed\textendash accuracy trade-offs for problems having more than four dimensions, $n_{\mathrm{d}}$, the efficiency of deterministic methods, such as the Newton\textendash Cotes formulas, is often superior for lower dimensionality [@Vegas-paper].
+Even though such methods offer good speed\textendash accuracy trade-offs for problems of higher dimensionality, $n_{\mathrm{d}}$, the efficiency of deterministic methods, such as the Newton\textendash Cotes formulas, is often superior for lower dimensionality [@Vegas-paper].
 
 Thus, to the authors' knowledge, \texttt{torchquad} is the first PyTorch-based module for $n$-dimensional numerical integration. 
 Furthermore, it incorporates several deterministic and stochastic methods, including Newton\textendash Cotes formulas and VEGAS Enhanced, which allow obtaining high-accuracy estimates for varying dimensionality at configurable computational cost as controlled by the maximum number of function evaluations $N$. It is, to the authors' knowledge, also the first GPU-capable implementation of VEGAS Enhanced [@VegasEnhanced-paper], which improves on its predecessor VEGAS by introducing an adaptive stratified sampling strategy, called \textit{importance sampling}.
@@ -70,7 +72,7 @@ Both single and double precision are supported to allow different trade-offs bet
 
 # Installation \& Contribution
 
-The \texttt{torchquad} package is implemented in Python 3.8 and is openly available under a GPL-3 license. Installation with either pip (PyPi) or conda is available for all releases. Direct access to the main development branch is provided through the GitHub repository. Users wishing to contribute to \texttt{torchquad} can submit issues or pull requests to our GitHub repository following the contribution guidelines outlined there.
+The \texttt{torchquad} package is implemented in Python 3.8 and is openly available under a GPL-3 license. Installation with either pip (PyPi) or conda is available for all releases. Our public GitHub repository provides users with direct access to the main development branch. Users wishing to contribute to \texttt{torchquad} can submit issues or pull requests to our GitHub repository following the contribution guidelines outlined there.
 
 # Tutorials 
 
