@@ -1,6 +1,30 @@
-%Add the part from ```info.md``` %here when ready for submission %(won't compile in Overleaf %otherwise)
+---
+title: 'torchquad - High-performance numerical Integration on GPUs with PyTorch'
+tags:
+  - Python
+  - multidimensional
+  - numerical integration
+  - GPU
+  - automatic differentiation
+  - PyTorch
+  - high-performance computing
+authors:
+    - name: Pablo Gómez
+    orcid: 0000-0002-5631-8240
+    affiliation: 1
+  - name: Håvard Hem Toftevaag
+    orcid: 0000-0003-4692-5722
+    affiliation: 1
+  - name: Gabriele Meoni
+    orcid: 0000-0001-9311-6392
+    affiliation: 1
+affiliations:
+ - name: Advanced Concepts Team, European Space Agency, Noordwijk, The Netherlands
+   index: 1
+date: 28 May 2021
+bibliography: paper.bib
 
-%Read more about how to cite papers [here](https://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html#Citations). I think we should not use backslash-cite but rather some markdown command.
+---
 
 # Summary
 
