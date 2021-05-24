@@ -142,7 +142,7 @@ Let’s plot the function briefly.
 .. image:: torchquad_tutorial_figure.png
 
 
-Let’s define the integration domain now and initialize the integrator.
+Let’s define the integration domain now and initialize the integrator - let’s start with the trapezoid rule.
 
 .. code:: ipython3
 
@@ -164,7 +164,7 @@ Now we are all set to compute the integral. Let’s try it with just 101 sample 
             Rel. Error: 1.54192661e-04
     
 
-Alright, quite close already as 1-D integrals are comparatively easy.
+This is quite close already, as 1-D integrals are comparatively easy.
 Let’s see what type of value we get for different integrators.
 
 .. code:: ipython3
@@ -209,15 +209,12 @@ Let’s see what type of value we get for different integrators.
             Rel. Error: 7.09166229e-01
     
 
-Notably, Simpson’s method is already sufficient for a perfect solutiuon
-here with 101 points. Monte Carlo methods do not perform so well; they are more
-suited to higher-dimensional integrals as we will see.
+Notably, Simpson’s method is already sufficient for a perfect solution here with 101 points. 
+Monte Carlo methods do not perform so well; they are more suited to higher-dimensional integrals. 
+VEGAS currently requires a larger number of samples to function correctly (as it performs several
+iterations). 
 
-Note that we picked 101 points as the implemented Simpson’s method
-currently only supports odd numbers of points. VEGAS currently requires
-a larger number of samples to function correctly (as it performs several
-iterations). Let’s step things up now and move to a 10-dimensional
-problem.
+Let’s step things up now and move to a 10-dimensional problem.
 
 High-dimensional integration
 ----------------------------
@@ -319,7 +316,7 @@ Comparison with scipy
 
 Let’s explore how *torchquad*’s performance compares to scipy, the go-to
 tool for numerical integration. A more detailed exploration of this
-topic can be found in the *Benchmark_notebook.ipynb*. For simplicity,
+topic might be done as a side project at a later time. For simplicity,
 we will stick to a 5-D version of the :math:`\sin(x)` of the previous
 section. Let’s declare it with numpy and torch. Numpy arrays will
 remain on the CPU and torch tensor on the GPU.

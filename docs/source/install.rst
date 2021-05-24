@@ -48,4 +48,4 @@ Usage
 
 Now you are ready to use *torchquad*. 
 A brief example of how *torchquad* can be used to compute a simple integral can be found on our `GitHub <https://github.com/esa/torchquad#usage>`_. 
-For a more thorough introduction, please refer to the tutorial on the next page.
+For a more thorough introduction, please refer to the `tutorial <https://torchquad.readthedocs.io/en/latest/tutorial.html>`_.
