@@ -44,6 +44,13 @@ def test_integrate():
     for error in errors:
         assert error < 6e-3
 
+    # 10D Test
+    N = 10000
+    errors = compute_test_errors(tp.integrate, {"N": N, "dim": 10}, dim=10)
+    print("N =", N, "\n", errors)
+    for error in errors:
+        assert error < 7000
+
 
 if __name__ == "__main__":
     # used to run this test individually

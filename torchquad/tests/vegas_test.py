@@ -42,11 +42,20 @@ def test_integrate():
     for error in errors:
         assert error < 0.61
 
+    # 10D Test
+    N = 10000
+    errors = compute_test_errors(
+        vegas.integrate, {"N": N, "dim": 10, "seed": 0}, dim=10
+    )
+    print("N =", N, "\n", errors)
+    for error in errors:
+        assert error < 2.5
+
 
 if __name__ == "__main__":
     # used to run this test individually
     start = timeit.default_timer()
-    # test_integrate()
-    cProfile.run("test_integrate()")
+    test_integrate()
+    # cProfile.run("test_integrate()")
     stop = timeit.default_timer()
     print("Test ran for ", stop - start, " seconds.")

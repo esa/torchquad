@@ -41,6 +41,13 @@ def test_integrate():
     for error in errors:
         assert error < 1e-1
 
+    # 10D Test
+    N = 10000
+    errors = compute_test_errors(mc.integrate, {"N": N, "dim": 10, "seed": 0}, dim=10)
+    print("N =", N, "\n", errors)
+    for error in errors:
+        assert error < 13
+
 
 if __name__ == "__main__":
     # used to run this test individually

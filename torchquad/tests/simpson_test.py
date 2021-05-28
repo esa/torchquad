@@ -45,6 +45,13 @@ def test_integrate():
     for error in errors:
         assert error < 5e-6
 
+    # 10D Test
+    N = 3 ** 10
+    errors = compute_test_errors(simp.integrate, {"N": N, "dim": 10}, dim=10)
+    print("N =", N, "\n", errors)
+    for error in errors:
+        assert error < 5e-9
+
 
 if __name__ == "__main__":
     # used to run this test individually
