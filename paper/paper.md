@@ -57,13 +57,13 @@ Finally, being PyTorch-based, \texttt{torchquad} is fully differentiable, extend
 In particular, the following deterministic integration methods are available in \texttt{torchquad} (version 0.2):  
 
 * Trapezoid Rule [@sag1964numerical] 
-* Simpson's Rule [@sag1964numerical]  
-* Boole's Rule [@ubale2012numerical]  
+* Simpson's Rule [@sag1964numerical] 
+* Boole's Rule [@ubale2012numerical] 
 
 The stochastic integration methods implemented in \texttt{torchquad} so far are: 
 
-* Classic Monte Carlo Integrator [@caflisch1998monte]  
-* VEGAS Enhanced (\mbox{\texttt{VEGAS+}}) integration method [@VegasEnhanced-paper]  
+* Classic Monte Carlo Integrator [@caflisch1998monte] 
+* VEGAS Enhanced (\mbox{\texttt{VEGAS+}}) integration method [@VegasEnhanced-paper] 
 
 The functionality and the convergence of all the methods are ensured through automatic unit testing, which relies on an extensible set of different test functions.
 Both single and double precision are supported to allow different trade-offs between accuracy and memory utilization. Even though it is optimized for GPUs, \texttt{torchquad} can also be employed without a GPU without any functional limitations.
