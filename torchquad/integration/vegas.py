@@ -215,42 +215,36 @@ class VEGAS(BaseIntegrator):
         Returns:
             float: Estimated accuracy.
         """
-
         y = torch.zeros(self._dim)  # stratified sampling points
         x = torch.zeros(self._dim)  # transformed sample points
 
-        for i_cube in range(self.strat.N_cubes):  # iterate over stratification cubes
-            jf = 0  # jacobian times feval
-            jf2 = 0
-            neval = self.strat.get_NH(i_cube, self._starting_N)
-            self.starting_N = neval  # update real neval
-            self._nr_of_fevals += neval
+        neval = self.strat.get_NH(self._starting_N)  # Evals per strat cube
+        self.starting_N = torch.sum(neval) / self.strat.N_cubes  # update real neval
+        self._nr_of_fevals += neval.sum()  # Locally track function evals
 
-            y = self.strat.get_Y(i_cube, neval)  # get points (stratified)
-            x = self.map.get_X(y)  # transform, EQ 8+9
-            f_eval = self._eval(x)  # eval integrand
-            jac = self.map.get_Jac(y)  # compute jacobian
-            jf_vec = f_eval * jac  # precompute product once
-            jf_vec2 = jf_vec ** 2
-            if self.use_grid_improve:  # if adaptive map is used, acc weight
-                self.map.accumulate_weight(y, jf_vec2)  # EQ 25
-            self.strat.accumulate_weight(i_cube, jf_vec)  # update strat
-            jf = jf_vec.sum()
-            jf2 = jf_vec2.sum()
+        y = self.strat.get_Y(neval)
+        x = self.map.get_X(y)  # transform, EQ 8+9
+        f_eval = self._eval(x)  # eval integrand
 
-            ih = jf / neval * self.strat.V_cubes  # compute integral
+        jac = self.map.get_Jac(y)  # compute jacobian
+        jf_vec = f_eval * jac  # precompute product once
+        jf_vec2 = jf_vec ** 2
 
-            # estimated variance
-            sig2 = jf2 / neval * self.strat.V_cubes * self.strat.V_cubes - pow(
-                jf / neval * self.strat.V_cubes, 2
-            )
+        if self.use_grid_improve:  # if adaptive map is used, acc weight
+            self.map.accumulate_weight(y, jf_vec2)  # EQ 25
+        jf, jf2 = self.strat.accumulate_weight(neval, jf_vec)  # update strat
 
-            self.results[-1] += ih  # store results
-            self.sigma2[-1] += sig2 / neval
+        ih = torch.divide(jf, neval) * self.strat.V_cubes  # Compute integral per cube
+
+        # Collect results
+        sig2 = torch.divide(jf2, neval) * (self.strat.V_cubes ** 2) - pow(ih, 2)
+        self.results[-1] = ih.sum()  # store results
+        self.sigma2[-1] = torch.divide(sig2, neval).sum()
 
         if self.use_grid_improve:  # if on, update adaptive map
             logger.debug("Running grid improvement")
             self.map.update_map()
+
         self.strat.update_DH()  # update stratification
         acc = torch.sqrt(self.sigma2[-1] / (self.results[-1]))  # estimate accuracy
 

@@ -30,6 +30,10 @@ TEST_FUNCTIONS_3D = [
     ),  # e^x+e^y+e^z
 ]
 
+TEST_FUNCTIONS_10D = [
+    Polynomial(3413.33333333, coeffs=[0, 0, 1], dim=10),  # x_1^2+x_2^2+...
+]
+
 
 def compute_test_errors(integrator, integrator_args, dim=1):
     """Computes errors on all test functions for given dimension and integrator
@@ -49,6 +53,8 @@ def compute_test_errors(integrator, integrator_args, dim=1):
         test_functions = TEST_FUNCTIONS_1D
     elif dim == 3:
         test_functions = TEST_FUNCTIONS_3D
+    elif dim == 10:
+        test_functions = TEST_FUNCTIONS_10D
     else:
         raise ValueError("Not testing functions implemented for dim " + str(dim))
 

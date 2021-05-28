@@ -31,16 +31,26 @@ class VEGASStratification:
         self.dh = torch.ones(self.N_cubes) * 1.0 / self.N_cubes  # dampened counts
         self.strat_counts = torch.zeros(self.N_cubes)  # current index counts
 
-    def accumulate_weight(self, idx, weight):
-        """Accumulate weights for this index + weight.
+    def accumulate_weight(self, nevals, weight_all_cubes):
+        """Accumulate weights for the cubes.
 
         Args:
-            idx (int): Current index.
-            weight (float): Function value.
+            nevals (torch.tensor): Number of evals belonging to each cube (sorted).
+            weight_all_cubes (torch.tensor): Function values.
+
+        Returns:
+            torch.tensor,torch.tensor: Computed JF and JF2
         """
-        self.JF2[idx] += pow(weight, 2).sum()
-        self.JF[idx] += weight.sum()
-        self.strat_counts[idx] += len(weight)
+        current_idx = 0
+        for idx, neval in enumerate(nevals):
+            # Get the values for the idx-th cube
+            weight = weight_all_cubes[current_idx : current_idx + neval]
+            current_idx += neval
+            self.JF2[idx] = pow(weight, 2).sum()
+            self.JF[idx] = weight.sum()
+            self.strat_counts[idx] += len(weight)
+
+        return self.JF, self.JF2
 
     def update_DH(self):
         """Update the dampened sample counts."""
@@ -65,21 +75,19 @@ class VEGASStratification:
         if d_sum != 0:
             self.dh = self.dh / d_sum
 
-    def get_NH(self, idx, nevals_exp):
+    def get_NH(self, nevals_exp):
         """Recalculate sample points per hypercube, EQ 44.
 
         Args:
-            idx (int): Current index.
             nevals_exp (int): Expected number of evaluations.
 
         Returns:
-            int: Stratified sample counts.
+            torch.tensor: Stratified sample counts per cube.
         """
-        nh = self.dh[idx] * nevals_exp
-        if nh < 2:
-            return 2
-        else:
-            return int(nh)
+        nh = torch.multiply(self.dh, nevals_exp)
+        nh = torch.floor(nh)
+        nh = torch.clip(nh, 2, None).int()
+        return nh
 
     def _get_indices(self, idx):
         """Maps point to stratified point.
@@ -99,19 +107,23 @@ class VEGASStratification:
             tmp = q
         return res
 
-    def get_Y(self, idx, N):
-        """Compute randomly sampled points in specified interval.
+    def get_Y(self, nevals):
+        """Compute randomly sampled points.
 
         Args:
-            idx (int): Interval index.
-            N (int): Number of samples to draw.
+            nevals (torch.tensor): Number of samples to draw per stratification cube.
 
         Returns:
-            torch.tensor: Sampled point.
+            torch.tensor: Sampled points.
         """
         dy = 1.0 / self.N_strat
-        res = torch.zeros([N, self.dim])
-        ID = self._get_indices(idx)
-        random_uni = torch.rand(size=[N, self.dim])
-        res = random_uni * dy + ID * dy
-        return res
+        res_in_all_cubes = []
+        # Note this loop is tricky to vectorize as cubes have different N
+        for idx, N in enumerate(nevals):
+            N = N.item()  # can't use float tensor as size
+            res = torch.zeros([N, self.dim])
+            ID = self._get_indices(idx)
+            random_uni = torch.rand(size=[N, self.dim])
+            res = random_uni * dy + ID * dy
+            res_in_all_cubes.append(res)
+        return torch.cat(res_in_all_cubes, dim=0)
