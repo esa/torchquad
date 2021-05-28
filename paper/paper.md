@@ -1,3 +1,4 @@
+<!---
 ---
 title: 'torchquad: High-performance numerical Integration on GPUs with PyTorch'
 tags:
@@ -77,3 +78,5 @@ The \texttt{torchquad} package is implemented in Python 3.8 and is openly availa
 The \texttt{torchquad} documentation, hosted on Read the Docs, provides some examples of the use of \texttt{torchquad} for one-dimensional and multidimensional integration utilizing a variety of the implemented methods.
 
 # References
+-->
+test
