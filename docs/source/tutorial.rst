@@ -136,6 +136,8 @@ Let’s plot the function briefly.
 
     points = torch.linspace(0,2,100)
     plt.plot(points.cpu(),f(points).cpu()) # Note that for plotting we have to move the values to the CPU first
+    plt.xlabel("$x$",fontsize=14)
+    plt.ylabel("f($x$)",fontsize=14)
 
 
 
