@@ -22,14 +22,14 @@ affiliations:
  - name: Advanced Concepts Team, European Space Agency, Noordwijk, The Netherlands
    index: 1
 date: 28 May 2021
-bibliography: paper.bib
+bibliography: paper/paper.bib
 
 ---
 
 # Summary
 
 \texttt{torchquad} is a Python module for $n$-dimensional numerical integration optimized for graphics processing units (GPUs).
-Various deterministic and stochastic integration methods, such as Newton\textendash Cotes formulas and Monte Carlo integration methods like VEGAS [@VegasEnhanced-paper], are available for computationally efficient integration for any dimensionality $n_{\mathrm{d}}$.
+Various deterministic and stochastic integration methods, such as Newton-Cotes formulas and Monte Carlo integration methods like VEGAS [@VegasEnhanced-paper], are available for computationally efficient integration for any dimensionality $n_{\mathrm{d}}$.
 As it is implemented using PyTorch [@PyTorch2019], one of the most popular machine learning frameworks, \texttt{torchquad} provides fully automatic differentiation throughout the integration, which is essential for many machine learning applications.
 
 # Statement of Need
@@ -43,10 +43,10 @@ Previous work has demonstrated that this problem can be mitigated by leveraging 
 
 Although GPU-based implementations for multidimensional numerical integration in Python exist, some of these packages do not allow fully automatic differentiation [@borowka2019gpu], which is crucial for many machine learning applications [@Baydin2018autodiffinML]. Recently, to fill this gap, the packages \texttt{VegasFlow} [@VegasFlow-Paper; @VegasFlow-Package] and \texttt{ZMCintegral} [@ZMCintegral; @ZMCintegral-code] were developed. Both of these implementations are, however, based on the TensorFlow library [@Tensorflow], and there are currently no packages available that enable more than one-dimensional integration in PyTorch.
 Additionally, the available GPU-based Python packages that allow fully automatic differentiation rely solely on Monte Carlo [@ZMCintegral] or VEGAS [@VegasFlow-Paper] methods. 
-Even though such methods offer good speed\textendash accuracy trade-offs for problems of higher dimensionality, $n_{\mathrm{d}}$, the efficiency of deterministic methods, such as the Newton\textendash Cotes formulas, is often superior for lower dimensionality [@Vegas-paper].
+Even though such methods offer good speed-accuracy trade-offs for problems of higher dimensionality, $n_{\mathrm{d}}$, the efficiency of deterministic methods, such as the Newton-Cotes formulas, is often superior for lower dimensionality [@Vegas-paper].
 
 Thus, to the authors' knowledge, \texttt{torchquad} is the first PyTorch-based module for $n$-dimensional numerical integration. 
-Furthermore, it incorporates several deterministic and stochastic methods, including Newton\textendash Cotes formulas and VEGAS Enhanced, which allow obtaining high-accuracy estimates for varying dimensionality at configurable computational cost as controlled by the maximum number of function evaluations $N$. It is, to the authors' knowledge, also the first GPU-capable implementation of VEGAS Enhanced [@VegasEnhanced-paper], which improves on its predecessor VEGAS by introducing an adaptive stratified sampling strategy, called \textit{importance sampling}.
+Furthermore, it incorporates several deterministic and stochastic methods, including Newton-Cotes formulas and VEGAS Enhanced, which allow obtaining high-accuracy estimates for varying dimensionality at configurable computational cost as controlled by the maximum number of function evaluations $N$. It is, to the authors' knowledge, also the first GPU-capable implementation of VEGAS Enhanced [@VegasEnhanced-paper], which improves on its predecessor VEGAS by introducing an adaptive stratified sampling strategy, called \textit{importance sampling}.
 
 Finally, being PyTorch-based, \texttt{torchquad} is fully differentiable, extending its usability to applications such as those based on machine learning. In these applications, it is typically necessary to compute the gradient of some parameters with regard to input variables to perform updates of the trainable parameters in the machine learning model. With \texttt{torchquad}, e.g., the utilized loss function can contain integrals without breaking the automatic differentiation required for training.
 
