@@ -22,7 +22,7 @@ affiliations:
  - name: Advanced Concepts Team, European Space Agency, Noordwijk, The Netherlands
    index: 1
 date: 28 May 2021
-bibliography: paper/paper.bib
+bibliography: paper.bib
 
 ---
 
