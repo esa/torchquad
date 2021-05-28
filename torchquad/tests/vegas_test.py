@@ -49,7 +49,7 @@ def test_integrate():
     )
     print("N =", N, "\n", errors)
     for error in errors:
-        assert error < 2.5
+        assert error < 12.5
 
 
 if __name__ == "__main__":
