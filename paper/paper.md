@@ -1,5 +1,5 @@
 ---
-title: 'torchquad - High-performance numerical Integration on GPUs with PyTorch'
+title: 'torchquad: High-performance numerical Integration on GPUs with PyTorch'
 tags:
   - Python
   - multidimensional
