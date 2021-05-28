@@ -111,6 +111,12 @@ Alternatively you can use
 
 NB Note that `pip` will not set up PyTorch with CUDA and GPU support. Therefore, we recommend to use `conda`.
 
+**GPU Utilization**
+
+With `conda` you can install the GPU version of PyTorch with `conda install pytorch cudatoolkit -c pytorch`. 
+For alternative installation procedures please refer to the [PyTorch Documentation](https://pytorch.org/get-started/locally/).
+
+
 <!-- USAGE EXAMPLES -->
 ## Usage
 
