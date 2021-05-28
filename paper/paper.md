@@ -29,8 +29,8 @@ bibliography: paper.bib
 # Summary
 
 \texttt{torchquad} is a Python module for $n$-dimensional numerical integration optimized for graphics processing units (GPUs).
-Various deterministic and stochastic integration methods, such as Newton-Cotes formulas and Monte Carlo integration methods like VEGAS [@VegasEnhanced-paper], are available for computationally efficient integration for any dimensionality $n_{\mathrm{d}}$.
-As it is implemented using PyTorch [@PyTorch2019], one of the most popular machine learning frameworks, \texttt{torchquad} provides fully automatic differentiation throughout the integration, which is essential for many machine learning applications.
+Various deterministic and stochastic integration methods, such as Newton-Cotes formulas and Monte Carlo integration methods like VEGAS, are available for computationally efficient integration for any dimensionality $n_{\mathrm{d}}$.
+As it is implemented using PyTorch, one of the most popular machine learning frameworks, \texttt{torchquad} provides fully automatic differentiation throughout the integration, which is essential for many machine learning applications.
 
 <!---
 
