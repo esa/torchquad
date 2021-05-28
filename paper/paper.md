@@ -1,4 +1,3 @@
-<!---
 ---
 title: 'torchquad: High-performance numerical Integration on GPUs with PyTorch'
 tags:
@@ -26,6 +25,8 @@ date: 28 May 2021
 bibliography: paper.bib
 
 ---
+
+<!---
 
 # Summary
 
