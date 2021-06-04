@@ -185,7 +185,7 @@ class VEGAS(BaseIntegrator):
 
             yrnd = torch.rand(size=[N_samples, self._dim])
             x = self.map.get_X(yrnd)
-            f_eval = self._eval(x)
+            f_eval = self._eval(x).squeeze()
             jac = self.map.get_Jac(yrnd)
             jf_vec = f_eval * jac
             jf_vec2 = jf_vec ** 2
@@ -224,7 +224,7 @@ class VEGAS(BaseIntegrator):
 
         y = self.strat.get_Y(neval)
         x = self.map.get_X(y)  # transform, EQ 8+9
-        f_eval = self._eval(x)  # eval integrand
+        f_eval = self._eval(x).squeeze()  # eval integrand
 
         jac = self.map.get_Jac(y)  # compute jacobian
         jf_vec = f_eval * jac  # precompute product once
