@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="torchquad",
-    version="0.1.1",
+    version="0.2.1",
     description="Package providing torch-based numerical integration methods.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -19,7 +19,7 @@ setup(
     install_requires=[
         "matplotlib>=3.3.3",
         "scipy>=1.6.0",
-        "tqdm>=4.55.1",
+        "tqdm>=4.56.1",
         "torch>=1.7.1",
     ],
     classifiers=[

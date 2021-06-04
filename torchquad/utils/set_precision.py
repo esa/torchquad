@@ -15,12 +15,12 @@ def set_precision(data_type="float"):
 
     if torch.cuda.is_initialized():
         if data_type.lower() == "double":
-            logger.warn(
+            logging.info(
                 "Setting default tensor type to cuda.Float64 (CUDA is initialized)."
             )
             torch.set_default_tensor_type(torch.cuda.DoubleTensor)
         elif data_type.lower() == "float":
-            logger.warn(
+            logging.info(
                 "Setting default tensor type to cuda.Float32 (CUDA is initialized)."
             )
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
@@ -34,12 +34,12 @@ def set_precision(data_type="float"):
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
     else:
         if data_type.lower() == "double":
-            logger.warn(
+            logging.info(
                 "Setting default tensor type to Float64 (CUDA not initialized)."
             )
             torch.set_default_tensor_type(torch.DoubleTensor)
         elif data_type.lower() == "float":
-            logger.warn(
+            logging.info(
                 "Setting default tensor type to Float32 (CUDA not initialized)."
             )
             torch.set_default_tensor_type(torch.FloatTensor)
