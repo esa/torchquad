@@ -69,7 +69,7 @@ Both single and double precision are supported to allow different trade-offs bet
 
 # Installation \& Contribution
 
-The \texttt{torchquad} package is implemented in Python 3.8 and is openly available under a GPL-3 license. Installation with either pip (PyPi) or conda is available for all releases. Our public GitHub repository [@torchquadGithub] provides users with direct access to the main development branch. Users wishing to contribute to \texttt{torchquad} can submit issues or pull requests to our GitHub repository following the contribution guidelines outlined there.
+The \texttt{torchquad} package is implemented in Python 3.8 and is openly available under a GPL-3 license. Installation with either [pip (PyPi)] PyPi torchquad package,\footnote{https://pypi.org/project/torchquad/} or [conda](https://anaconda.org/torchquad/torchquad) is available for all releases. Our public GitHub repository\footnote{\texttt{torchquad} GitHub repository, \url{https://github.com/esa/torchquad}} provides users with direct access to the main development branch. Users wishing to contribute to \texttt{torchquad} can submit issues or pull requests to our GitHub repository following the contribution guidelines outlined there.
 
 # Tutorials 
 
