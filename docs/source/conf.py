@@ -21,7 +21,7 @@ copyright = "2021, Gabriele Meoni, Håvard Hem Toftevaag, Pablo Gómez  ."
 author = "ESA Advanced Concepts Team"
 
 # The full version, including alpha/beta/rc tags
-release = "0.2.0"
+release = "0.2.1"
 
 
 # -- General configuration ---------------------------------------------------
