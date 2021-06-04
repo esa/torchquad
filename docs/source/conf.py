@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath("../../"))
 # -- Project information -----------------------------------------------------
 
 project = "torchquad"
-copyright = "2021, Gabriele Meoni, Håvard Hem Toftevaag, Pablo Gómez"
+copyright = "2021, Gabriele Meoni, Håvard Hem Toftevaag, Pablo Gómez  ."
 author = "ESA Advanced Concepts Team"
 
 # The full version, including alpha/beta/rc tags
