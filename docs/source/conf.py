@@ -12,16 +12,16 @@
 #
 import sys, os
 
-sys.path.insert(0, os.path.abspath("../"))
+sys.path.insert(0, os.path.abspath("../../"))
 
 # -- Project information -----------------------------------------------------
 
 project = "torchquad"
-copyright = "2020, Gabriele Meoni, Håvard Hem Toftevaag, Pablo Gómez"
+copyright = "2021, Gabriele Meoni, Håvard Hem Toftevaag, Pablo Gómez."
 author = "ESA Advanced Concepts Team"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.0"
+release = "0.1.1"
 
 
 # -- General configuration ---------------------------------------------------
@@ -33,6 +33,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
+    "sphinx.ext.imgmath",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -50,6 +51,15 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
+
+html_logo = "Torchquad_logo_white_background.png"
+
+html_theme_options = {
+    "logo_only": True,
+    "display_version": True,
+    "prev_next_buttons_location": "bottom",
+    "style_nav_header_background": "white",
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

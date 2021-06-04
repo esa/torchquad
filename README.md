@@ -39,6 +39,7 @@
         <li><a href="#built-with">Built With</a></li>
       </ul>
     </li>
+    <li><a href="#goals">Goals</a></li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
@@ -50,6 +51,7 @@
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
+    <li><a href="#FAQ">FAQ</a></li>
     <li><a href="#contact">Contact</a></li>
   </ol>
 </details>
@@ -59,18 +61,29 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-This project allows utilizing GPUs for efficient numerical integration with [PyTorch](https://pytorch.org/). 
+The torchquad module allows utilizing GPUs for efficient numerical integration with [PyTorch](https://pytorch.org/). 
+The software is free to use and is designed for the machine learning community and research groups focusing on topics requiring high-dimensional integration.
 
 ### Built With
+
+This project is built with the following packages:
 
 * [PyTorch](https://pytorch.org/)
 * [conda](https://docs.conda.io/en/latest/)
 
 
+<!-- GOALS -->
+## Goals
+
+* **Progressing science**:  Multidimensional integration is needed in many fields of physics (from particle physics to astrophysics), in applied finance, in medical statistics, and so on. With torchquad, we wish to reach research groups in such fields, as well as the general machine learning community.
+* **Withstanding the curse of dimensionality**: The [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality) makes deterministic methods in particular, but also stochastic ones, extremely slow when the dimensionality increases. This gives the researcher a choice between computationally heavy and time-consuming simulations on the one hand and inaccurate evaluations on the other. Luckily, many integration methods are [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel), which means they can strongly benefit from GPU parallelization. The curse of dimensionality still applies, but GPUs can handle the problem much better than CPUs can.
+* **Delivering a convenient and functional tool**: torchquad is built with [PyTorch](https://pytorch.org/), which means it is [fully differentiable](https://en.wikipedia.org/wiki/Differentiable_programming). Furthermore, the library of available and upcoming methods in torchquad offers high-effeciency integration for any need. 
+
+
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is a brief example of setting up torchquad.
+This is a brief guide for how to set up torchquad.
 
 ### Prerequisites
 
@@ -96,12 +109,20 @@ Alternatively you can use
    pip install torchquad
    ```
 
+NB Note that `pip` will not set up PyTorch with CUDA and GPU support. Therefore, we recommend to use `conda`.
+
+**GPU Utilization**
+
+With `conda` you can install the GPU version of PyTorch with `conda install pytorch cudatoolkit -c pytorch`. 
+For alternative installation procedures please refer to the [PyTorch Documentation](https://pytorch.org/get-started/locally/).
+
+
 <!-- USAGE EXAMPLES -->
 ## Usage
 
 This is a brief example how torchquad can be used to compute a simple integral. For a more thorough introduction please refer to the [example notebook](https://github.com/esa/torchquad/blob/main/notebooks/Example_notebook.ipynb).
 
-The full documentation  can be found on  [readthedocs](https://torchquad.readthedocs.io/en/latest/).
+The full documentation can be found on [readthedocs](https://torchquad.readthedocs.io/en/latest/).
 
 ```python
 # To avoid copying things to GPU memory, 
@@ -121,7 +142,7 @@ mc = MonteCarlo()
 integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
 ```
 
-You can find all available integrators [here](https://torchquad.readthedocs.io/en/latest/):
+You can find all available integrators [here](https://torchquad.readthedocs.io/en/latest/integration_methods.html).
 
 <!-- ROADMAP -->
 ## Roadmap
@@ -146,6 +167,13 @@ The project is open to community contributions. Feel free to open an [issue](htt
 ## License
 
 Distributed under the GPL-3.0 License. See [LICENSE](https://github.com/esa/torchquad/blob/main/LICENSE) for more information.
+
+
+<!-- FAQ -->
+## FAQ 
+
+  1. Q: `Error enabling CUDA. cuda.is_available() returned False. CPU will be used.`  <br/>A: This error indicates that no CUDA-compatible GPU could be found. Either you have no compatible GPU or the necessary CUDA requirements are missing. Using `conda`, you can install them with `conda install cudatoolkit`. For more detailed installation instructions, please refer to the [PyTorch documentation](https://pytorch.org/get-started/locally/).
+
 
 
 

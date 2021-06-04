@@ -1,17 +1,18 @@
 import torch
 import logging
+from time import perf_counter
 
 logger = logging.getLogger(__name__)
 
 
 class IntegrationGrid:
-    """This class is used to store the integration grid for methods like Trapezoid or Simpsons, which require a grid.
-    """
+    """This class is used to store the integration grid for methods like Trapezoid or Simpsons, which require a grid."""
 
     points = None  # integration points
     h = None  # mesh width
     _N = None  # number of mesh points
     _dim = None  # dimensionality of the grid
+    _runtime = None  # runtime for the creation of the integration grid
 
     def __init__(self, N, integration_domain):
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
@@ -20,12 +21,13 @@ class IntegrationGrid:
             N (int): Total desired number of points in the grid (will take next lower root depending on dim)
             integration_domain (list): Domain to choose points in, e.g. [[-1,1],[0,1]].
         """
+        start = perf_counter()
         self._check_inputs(N, integration_domain)
         self._dim = len(integration_domain)
 
         # TODO Add that N can be different for each dimension
-        # A rounding error occurs for certain numbers with certain powers, 
-        # e.g. (4**3)**(1/3) = 3.99999... Because int() floors the number, 
+        # A rounding error occurs for certain numbers with certain powers,
+        # e.g. (4**3)**(1/3) = 3.99999... Because int() floors the number,
         # i.e. int(3.99999...) -> 3, a little error term is useful
         self._N = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
 
@@ -60,6 +62,8 @@ class IntegrationGrid:
         self.points = torch.stack((tuple(points))).transpose(0, 1)
 
         logger.info("Integration grid created.")
+
+        self._runtime = perf_counter() - start
 
     def _check_inputs(self, N, integration_domain):
         """Used to check input validity"""

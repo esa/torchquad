@@ -10,8 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class Trapezoid(BaseIntegrator):
-    """Trapezoidal rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas . 
-    """
+    """Trapezoidal rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
 
     def __init__(self):
         super().__init__()
@@ -26,7 +25,7 @@ class Trapezoid(BaseIntegrator):
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
 
         Returns:
-            float: Integral value.
+            float: integral value
         """
         self._integration_domain = setup_integration_domain(dim, integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
