@@ -19,6 +19,7 @@ from .plots.plot_runtime import plot_runtime
 
 from .utils.enable_cuda import enable_cuda
 from .utils.set_precision import set_precision
+from .utils.deployment_test import _deployment_test
 
 __all__ = [
     "IntegrationGrid",
@@ -32,6 +33,7 @@ __all__ = [
     "enable_cuda",
     "set_precision",
     "set_log_level",
+    "_deployment_test",
 ]
 
 # Initialize logger
