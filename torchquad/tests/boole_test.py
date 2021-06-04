@@ -11,7 +11,8 @@ from utils.set_precision import set_precision
 
 
 def test_integrate():
-    """Tests the integrate function in integration.Boole"""
+    """Tests the integrate function in integration.Boole.
+    Note: For now the 10-D test is diabled due to lack of GPU memory on some computers."""
     enable_cuda()
     set_precision("double")
 
@@ -38,11 +39,12 @@ def test_integrate():
         assert error < 5e-6
 
     # 10D Test
-    N = 5 ** 10
-    errors = compute_test_errors(bl.integrate, {"N": N, "dim": 10}, dim=10)
-    print("N =", N, "\n", errors)
-    for error in errors:
-        assert error < 5e-9
+    # Have been disabled for now because it is too GPU-heavy
+    # N = 5 ** 10
+    # errors = compute_test_errors(bl.integrate, {"N": N, "dim": 10}, dim=10)
+    # print("N =", N, "\n", errors)
+    # for error in errors:
+    # assert error < 5e-9
 
 
 if __name__ == "__main__":
