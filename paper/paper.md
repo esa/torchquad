@@ -1,8 +1,8 @@
 ---
-title: 'torchquad - *n*-Dimensional Numerical Integration on GPUs with PyTorch'
+title: 'torchquad -- *n*-Dimensional Numerical Integration on GPUs with PyTorch'
 tags:
   - Python
-  - multidimensional
+  - n-dimensional
   - numerical integration
   - GPU
   - automatic differentiation
@@ -21,11 +21,10 @@ authors:
 affiliations:
  - name: Advanced Concepts Team, European Space Agency, Noordwijk, The Netherlands
    index: 1
-date: 28 May 2021
+date: 4 June 2021
 bibliography: paper.bib
 
 ---
-
 # Summary
 
 \texttt{torchquad} is a Python module for $n$-dimensional numerical integration optimized for graphics processing units (GPUs).
@@ -70,7 +69,7 @@ Both single and double precision are supported to allow different trade-offs bet
 
 # Installation \& Contribution
 
-The \texttt{torchquad} package is implemented in Python 3.8 and is openly available under a GPL-3 license. Installation with either pip (PyPi) or conda is available for all releases. Our public GitHub repository provides users with direct access to the main development branch. Users wishing to contribute to \texttt{torchquad} can submit issues or pull requests to our GitHub repository following the contribution guidelines outlined there.
+The \texttt{torchquad} package is implemented in Python 3.8 and is openly available under a GPL-3 license. Installation with either pip (PyPi) or conda is available for all releases. Our public GitHub repository [@torchquadGithub] provides users with direct access to the main development branch. Users wishing to contribute to \texttt{torchquad} can submit issues or pull requests to our GitHub repository following the contribution guidelines outlined there.
 
 # Tutorials 
 
