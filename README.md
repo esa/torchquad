@@ -68,8 +68,8 @@ The software is free to use and is designed for the machine learning community a
 
 This project is built with the following packages:
 
-* [PyTorch](https://pytorch.org/)
-* [conda](https://docs.conda.io/en/latest/)
+* [PyTorch](https://pytorch.org/), which means it is fully differentiable and can be used for machine learning, and
+* [conda](https://docs.conda.io/en/latest/), which will take care of all requirements for you.
 
 
 <!-- GOALS -->
@@ -87,33 +87,31 @@ This is a brief guide for how to set up torchquad.
 
 ### Prerequisites
 
-We recommend using [conda](https://docs.conda.io/en/latest/), especially if you want to utilize the GPU. It will automatically set up CUDA and the cudatoolkit for you in that case.
-Note that torchquad also works on the CPU. However, it is optimized for GPU usage.
+We recommend using [conda](https://anaconda.org/conda-forge/torchquad), especially if you want to utilize the GPU. It will automatically set up CUDA and the cudatoolkit for you in that case.
+Note that torchquad also works on the CPU; however, it is optimized for GPU usage.
 
-* [conda](https://docs.conda.io/en/latest/), which will take care of all requirements for you. For a detailed list of required packages, please refer to the [conda environment file](https://github.com/esa/torchquad/blob/main/environment.yml).
+For a detailed list of required packages, please refer to the [conda environment file](https://github.com/esa/torchquad/blob/main/environment.yml).
 
 ### Installation
 
-1. Get [miniconda](https://docs.conda.io/en/latest/miniconda.html) or similar
-2. Clone the repo
+The easiest way to install torchquad is simply to 
+
    ```sh
-   git clone https://github.com/esa/torchquad.git
-   ```
-3. Setup the environment. This will create a conda environment called `torchquad`
-   ```sh
-   conda env create -f environment.yml
+   conda install torchquad -c conda-forge -c pytorch
    ```
 
-Alternatively you can use
+Note that since PyTorch is not yet on *conda-forge* for Windows, we have explicitly included it here using `-c pytorch`.  
+
+Alternatively, it is also possible to use
    ```sh
    pip install torchquad
    ```
 
-NB Note that `pip` will not set up PyTorch with CUDA and GPU support. Therefore, we recommend to use `conda`.
+NB Note that *pip* will **not** set up PyTorch with CUDA and GPU support. Therefore, we recommend to use *conda*. 
 
 **GPU Utilization**
 
-With `conda` you can install the GPU version of PyTorch with `conda install pytorch cudatoolkit -c pytorch`. 
+With *conda* you can install the GPU version of PyTorch with `conda install pytorch cudatoolkit -c pytorch`. 
 For alternative installation procedures please refer to the [PyTorch Documentation](https://pytorch.org/get-started/locally/).
 
 
@@ -155,13 +153,29 @@ See the [open issues](https://github.com/esa/torchquad/issues) for a list of pro
 
 The project is open to community contributions. Feel free to open an [issue](https://github.com/esa/torchquad/issues) or write us an email if you would like to discuss a problem or idea first.
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+If you want to contribute, please 
 
+1. Fork the project on [GitHub](https://github.com/esa/torchquad). 
+2. Get the most up-to-date code by following this quick guide for installing torchquad from source:
+     1. Get [miniconda](https://docs.conda.io/en/latest/miniconda.html) or similar
+     2. Clone the repo
+      ```sh
+      git clone https://github.com/esa/torchquad.git
+      ```
+     3. Setup the environment. This will create a conda environment called `torchquad`
+      ```sh
+      conda env create -f environment.yml
+      conda activate torchquad
+      ```
 
+Once the installation is done, then
+
+3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+5. Push to the Branch (`git push origin feature/AmazingFeature`)
+6. Open a Pull Request
+
+and we will have a look at your contribution as soon as we can. 
 
 <!-- LICENSE -->
 ## License
