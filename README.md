@@ -156,7 +156,7 @@ The project is open to community contributions. Feel free to open an [issue](htt
 If you want to contribute, please 
 
 1. Fork the project on [GitHub](https://github.com/esa/torchquad). 
-2. Get the most up-to-date code by following this quick guide for installing *torchquad* from source:
+2. Get the most up-to-date code by following this quick guide for installing torchquad from source:
      1. Get [miniconda](https://docs.conda.io/en/latest/miniconda.html) or similar
      2. Clone the repo
       ```sh
