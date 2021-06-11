@@ -1,5 +1,5 @@
 ---
-title: 'torchquad: Numerical Integration in Arbitary Dimensions with PyTorch'
+title: 'torchquad: Numerical Integration in Arbitrary Dimensions with PyTorch'
 tags:
   - Python
   - n-dimensional
@@ -22,7 +22,7 @@ authors:
 affiliations:
  - name: Advanced Concepts Team, European Space Agency, Noordwijk, The Netherlands
    index: 1
-date: 11 June 2021
+date: 16 June 2021
 bibliography: paper.bib
 
 ---
@@ -41,7 +41,7 @@ Furthermore, numerical integration methods typically suffer from the so-called \
 This phenomenon refers to the fact that the computational complexity of the integration grows exponentially with the number of dimensions [@CurseOfDim-Book]. Reducing the error of the integration value requires increasing the number of function evaluation points $N$ exponentially, which significantly increases the runtime of the computation, especially for higher dimensions.
 Previous work has demonstrated that this problem can be mitigated by leveraging the \textit{single instruction, multiple data} parallelization of GPUs [@ZMCintegral].
 
-Although GPU-based implementations for multidimensional numerical integration in Python exist, some of these packages do not allow fully automatic differentiation [@borowka2019gpu], which is crucial for many machine learning applications [@Baydin2018autodiffinML]. Recently, to fill this gap, the packages \texttt{VegasFlow} [@VegasFlow-Paper; @VegasFlow-Package] and \texttt{ZMCintegral} [@ZMCintegral; @ZMCintegral-code] were developed. Both of these implementations are, however, based on the TensorFlow library [@Tensorflow], and there are currently no packages available that enable more than one-dimensional integration in PyTorch.
+Although GPU-based implementations for multidimensional numerical integration in Python exist, some of these packages do not allow fully automatic differentiation [@borowka2019gpu], which is crucial for many machine learning applications [@Baydin2018autodiffinML]. Recently, to fill this gap, the packages \texttt{VegasFlow} [@VegasFlow-Paper] and \texttt{ZMCintegral} [@ZMCintegral] were developed. Both of these implementations are, however, based on TensorFlow [@Tensorflow], and there are currently no packages available that enable more than one-dimensional integration in PyTorch.
 Additionally, the available GPU-based Python packages that allow fully automatic differentiation rely solely on Monte Carlo [@ZMCintegral] or VEGAS [@VegasFlow-Paper] methods. 
 Even though such methods offer good speed\textendash accuracy trade-offs for problems of high dimensionality $n_{\mathrm{d}}$, the efficiency of deterministic methods, such as the Newton\textendash Cotes formulas, is often superior for lower dimensionality [@Vegas-paper].
 
