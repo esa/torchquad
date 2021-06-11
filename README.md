@@ -125,7 +125,7 @@ After cloning the repository, developers can check the functionality of `torchqu
 
 ```sh
 pytest
-   ```
+```
 
 **GPU Utilization**
 
