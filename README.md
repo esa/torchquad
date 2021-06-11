@@ -113,7 +113,15 @@ Alternatively you can use
 NB Note that `pip` will not set up PyTorch with CUDA and GPU support. Therefore, we recommend to use `conda`.
 
 ### Test 
-Correct installation of `torchquad` can be tested with:
+After cloning the [current](https://github.com/esa/torchquad.git) repository, developers can test the correct installation of `torchquad` by running 
+
+```sh
+   pytest
+   ```
+
+from the `torchquad/tests` directory.
+
+After installing `torchquad` through `conda` or `pip`, users can thest its correct installation with:
 
 ``` py
 import torchquad
