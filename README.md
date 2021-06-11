@@ -159,9 +159,9 @@ If you want to contribute, please
 2. Get the most up-to-date code by following this quick guide for installing *torchquad* from source:
      1. Get [miniconda](https://docs.conda.io/en/latest/miniconda.html) or similar
      2. Clone the repo
-       ```sh
-       git clone https://github.com/esa/torchquad.git
-       ```
+      ```sh
+      git clone https://github.com/esa/torchquad.git
+      ```
      3. Setup the environment. This will create a conda environment called `torchquad`
       ```sh
       conda env create -f environment.yml
