@@ -10,10 +10,10 @@ tags:
   - high-performance computing
   - machine learning
 authors:
-  - name: Pablo Gómez
+  - name: Pablo GÃ³mez
     orcid: 0000-0002-5631-8240
     affiliation: 1
-  - name: Håvard Hem Toftevaag
+  - name: HÃ¥vard Hem Toftevaag
     orcid: 0000-0003-4692-5722
     affiliation: 1
   - name: Gabriele Meoni
@@ -26,7 +26,6 @@ date: 11 June 2021
 bibliography: paper.bib
 
 ---
-
 # Summary
 
 \texttt{torchquad} is a Python module for $n$-dimensional numerical integration optimized for graphics processing units (GPUs).
