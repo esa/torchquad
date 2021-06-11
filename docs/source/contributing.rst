@@ -23,6 +23,7 @@ c. Setup the environment. This will create a conda environment called ``torchqua
    .. code-block:: bash
 
       conda env create -f environment.yml
+      conda activate torchquad
 
 Once the installation is done, then
 
