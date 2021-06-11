@@ -6,6 +6,31 @@ Tutorial
 *torchquad* is a dedicated module for numerical integration in arbitrary dimensions.
 This tutorial gives a more detailed look at its functionality and explores some performance considerations.
 
+
+Minimal working example
+-----------------------
+
+.. code:: ipython3
+
+    # To avoid copying things to GPU memory, 
+    # ideally allocate everything in torch on the GPU
+    # and avoid non-torch function calls
+    import torch 
+    from torchquad import MonteCarlo
+
+    # The function we want to integrate, in this example f(x,y) = sin(x) + e^y
+    def some_function(x):
+        return torch.sin(x[0]) + torch.exp(x[1])
+
+    # Declare an integrator, here we use the simple, stochastic Monte Carlo integration method
+    mc = MonteCarlo()
+
+    # Compute the function integral by sampling 10000 points over domain 
+    integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
+
+Detailed Introduction
+---------------------
+
 The main problem with higher-dimensional numerical integration is that
 the computation simply becomes too costly if the dimensionality, *n*, is large, as the number
 of evaluation points increases exponentially - this problem is known as
