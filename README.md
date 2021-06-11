@@ -45,6 +45,7 @@
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+        <li><a href="#test">Test</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
@@ -110,6 +111,14 @@ Alternatively you can use
    ```
 
 NB Note that `pip` will not set up PyTorch with CUDA and GPU support. Therefore, we recommend to use `conda`.
+
+### Test 
+Correct installation of `torchquad` can be tested with:
+
+``` py
+import torchquad
+torchquad._deployment_test() 
+```
 
 **GPU Utilization**
 
