@@ -10,7 +10,7 @@ tags:
   - high-performance computing
   - machine learning
 authors:
-  - name: Pablo Gómez
+  - name: Pablo Gómez^[corresponding author]
     orcid: 0000-0002-5631-8240
     affiliation: 1
   - name: Håvard Hem Toftevaag
@@ -75,6 +75,6 @@ The \texttt{torchquad} package is implemented in Python 3.8 and is openly availa
 
 # Tutorials 
 
-The \texttt{torchquad} documentation, hosted on Read the Docs,\footnote{\texttt{torchquad} documentation on Read the Docs, \url{https://torchquad.readthedocs.io/en/release/}} provides some examples of the use of \texttt{torchquad} for one-dimensional and multidimensional integration utilizing a variety of the implemented methods.
+The \texttt{torchquad} documentation, hosted on Read the Docs,\footnote{\texttt{torchquad} documentation on Read the Docs, \url{https://torchquad.readthedocs.io/}} provides some examples of the use of \texttt{torchquad} for one-dimensional and multidimensional integration utilizing a variety of the implemented methods.
 
 # References
