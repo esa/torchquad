@@ -22,10 +22,11 @@ authors:
 affiliations:
  - name: Advanced Concepts Team, European Space Agency, Noordwijk, The Netherlands
    index: 1
-date: 16 June 2021
+date: 15 June 2021
 bibliography: paper.bib
 
 ---
+
 # Summary
 
 \texttt{torchquad} is a Python module for $n$-dimensional numerical integration optimized for graphics processing units (GPUs).
@@ -34,15 +35,15 @@ As it is implemented using PyTorch [@PyTorch2019], one of the most popular machi
 
 # Statement of Need
 
-Multidimensional integration is needed in many fields, such as physics (ranging from particle physics [@ParticlePhysics-Paper] to astrophysics [@Astrophysics-Paper]), applied finance [@AppliedFinance-Paper], medical statistics [@MedicalStatistics-Paper], and machine learning [@VEGASinMachineLearning-Paper]. 
-Most of the conventional Python packages for multidimensional integration, such as \texttt{quadpy} [@quadpy], and \texttt{nquad} [@scipy], only target and are optimized for central processing units (CPUs). 
-However, as many numerical integration methods are embarrassingly parallel, GPUs can offer superior computational performance in computing them. 
+Multidimensional integration is needed in many fields, such as physics (ranging from particle physics [@ParticlePhysics-Paper] to astrophysics [@izzo2021geodesy]), applied finance [@AppliedFinance-Paper], medical statistics [@MedicalStatistics-Paper], and machine learning [@VEGASinMachineLearning-Paper]. 
+Most of the conventional Python packages for multidimensional integration, such as \texttt{quadpy} [@quadpy] and \texttt{nquad} [@scipy], only target and are optimized for central processing units (CPUs). 
+However, as many numerical integration methods are embarrassingly parallel, GPUs can offer superior computational performance in their computation. 
 Furthermore, numerical integration methods typically suffer from the so-called \textit{curse of dimensionality} [@ZMCintegral]. 
 This phenomenon refers to the fact that the computational complexity of the integration grows exponentially with the number of dimensions [@CurseOfDim-Book]. Reducing the error of the integration value requires increasing the number of function evaluation points $N$ exponentially, which significantly increases the runtime of the computation, especially for higher dimensions.
 Previous work has demonstrated that this problem can be mitigated by leveraging the \textit{single instruction, multiple data} parallelization of GPUs [@ZMCintegral].
 
 Although GPU-based implementations for multidimensional numerical integration in Python exist, some of these packages do not allow fully automatic differentiation [@borowka2019gpu], which is crucial for many machine learning applications [@Baydin2018autodiffinML]. Recently, to fill this gap, the packages \texttt{VegasFlow} [@VegasFlow-Paper] and \texttt{ZMCintegral} [@ZMCintegral] were developed. Both of these implementations are, however, based on TensorFlow [@Tensorflow], and there are currently no packages available that enable more than one-dimensional integration in PyTorch.
-Additionally, the available GPU-based Python packages that allow fully automatic differentiation rely solely on Monte Carlo methods [@ZMCintegral, @VegasFlow-Paper] methods. 
+Additionally, the available GPU-based Python packages that allow fully automatic differentiation rely solely on Monte Carlo methods [@ZMCintegral; @VegasFlow-Paper]. 
 Even though such methods offer good speed\textendash accuracy trade-offs for problems of high dimensionality $n_{\mathrm{d}}$, the efficiency of deterministic methods, such as the Newton\textendash Cotes formulas, is often superior for lower dimensionality [@Vegas-paper].
 
 In summary, to the authors' knowledge, \texttt{torchquad} is the first PyTorch-based module for $n$-dimensional numerical integration. 
