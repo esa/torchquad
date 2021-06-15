@@ -1,9 +1,109 @@
+@article{VegasFlow-Paper,
+    author = "Carrazza, Stefano and Cruz-Martinez, Juan M.",
+    title = "{{VegasFlow: accelerating Monte Carlo simulation across multiple hardware platforms}}",
+    eprint = "2002.12921",
+    archivePrefix = "arXiv",
+    primaryClass = "physics.comp-ph",
+    reportNumber = "TIF-UNIMI-2020-8",
+    doi = "10.1016/j.cpc.2020.107376",
+    journal = "Computer Physics Communications",
+    volume = "254",
+    pages = "107376",
+    year = "2020"
+}
 
-@incollection{NEURIPS2019,
-title = {PyTorch: An Imperative Style, High-Performance Deep Learning Library},
+@misc{izzo2021geodesy,
+      title={Geodesy of irregular small bodies via neural density fields: geodesyNets}, 
+      author={Dario Izzo and Pablo Gómez},
+      year={2021},
+      eprint={2105.13031},
+      archivePrefix={arXiv},
+      primaryClass={astro-ph.EP}
+}
+
+@article{caflisch1998monte,
+  title={{Monte Carlo and quasi-Monte Carlo methods}},
+  author={Russel E. Caflisch},
+  journal={Acta Numerica},
+  volume={7},
+  pages={1--49},
+  year={1998},
+  month=jan,
+  publisher={Cambridge University Press},
+  doi={10.1017/S0962492900002804}
+}
+
+@article{ubale2012numerical,
+  title={{Numerical Solution of Boole’s rule in Numerical Integration By Using General Quadrature Formula}},
+  author={Ubale, P.~V.},
+  journal={Bulletin of Society for Mathematical Services and Standards},
+  volume={2},
+  number={1},
+  pages={1--5},
+  year={2012},
+  month=jun,
+  doi={10.18052/www.scipress.com/BSMaSS.2.1}
+}
+
+@article{sag1964numerical,
+  title={{Numerical Evaluation of High-Dimensional Integrals}},
+  author={Sag, Tom W. and Szekeres, George},
+  journal={Mathematics of Computation},
+  volume={18},
+  number={86},
+  pages={245--253},
+  year={1964},
+  doi={10.2307/2003298}
+}
+
+@article{borowka2019gpu,
+  title={{A GPU compatible quasi-Monte Carlo integrator interfaced to pySecDec}},
+  author={Borowka, Sophia and Heinrich, Gudrun and Jahn, S. and Jones, S.~P. and Kerner, M. and Schlenk, J.},
+  journal={Computer Physics Communications},
+  volume={240},
+  pages={120--137},
+  year={2019},
+  publisher={Elsevier}
+}
+
+@article{Baydin2018autodiffinML,
+  author  = {Atilim Gunes Baydin and Barak A. Pearlmutter and Alexey Andreyevich Radul and Jeffrey Mark Siskind},
+  title   = {{Automatic Differentiation in Machine Learning: a Survey}},
+  journal = {Journal of Machine Learning Research},
+  year    = {2018},
+  volume  = {18},
+  number  = {153},
+  pages   = {1--43},
+  url     = {http://jmlr.org/papers/v18/17-468.html}
+}
+
+@article{Vegas-paper,
+title = {A new algorithm for adaptive multidimensional integration},
+journal = {Journal of Computational Physics},
+volume = {27},
+number = {2},
+pages = {192--203},
+year = {1978},
+issn = {0021-9991},
+doi = {10.1016/0021-9991(78)90004-9},
+url = {https://www.sciencedirect.com/science/article/pii/0021999178900049},
+author = {G.~Peter Lepage}
+}
+
+@misc{VegasEnhanced-paper,
+    title={{Adaptive Multidimensional Integration: VEGAS Enhanced}},
+    author={G.~Peter Lepage},
+    year={2020},
+    eprint={2009.05112},
+    archivePrefix={arXiv},
+    primaryClass={physics.comp-ph}
+}
+
+@incollection{PyTorch2019,
+title = {{PyTorch: An Imperative Style, High-Performance Deep Learning Library}},
 author = {Paszke, Adam and Gross, Sam and Massa, Francisco and Lerer, Adam and Bradbury, James and Chanan, Gregory and Killeen, Trevor and Lin, Zeming and Gimelshein, Natalia and Antiga, Luca and Desmaison, Alban and Kopf, Andreas and Yang, Edward and DeVito, Zachary and Raison, Martin and Tejani, Alykhan and Chilamkurthy, Sasank and Steiner, Benoit and Fang, Lu and Bai, Junjie and Chintala, Soumith},
 booktitle = {Advances in Neural Information Processing Systems 32},
-editor = {Wallach, H. and Larochelle, H. and Beygelzimer, A. and d\textquotesingle Alch\'{e}-Buc, F. and Fox, E. and Garnett, R.},
+editor = {Wallach, H. and Larochelle, H. and Beygelzimer, A. and d'Alch\'{e}-Buc, F. and Fox, E. and Garnett, R.},
 pages = {8024--8035},
 year = {2019},
 publisher = {Curran Associates, Inc.},
@@ -22,83 +122,18 @@ url = {http://papers.neurips.cc/paper/9015-pytorch-an-imperative-style-high-perf
 }
 
 @article{scipy,
-  author  = {Virtanen, Pauli and Gommers, Ralf and Oliphant, Travis E. and Haberland, Matt and Reddy, Tyler and Cournapeau, David and Burovski, Evgeni and Peterson, Pearu and Weckesser, Warren and Bright, Jonathan and {van der Walt}, St{\'e}fan J. and Brett, Matthew and Wilson, Joshua and Millman, K. Jarrod and Mayorov, Nikolay and Nelson, Andrew R. J. and Jones, Eric and Kern, Robert and Larson, Eric and Carey, C J and Polat, {\.I}lhan and Feng, Yu and Moore, Eric W. and {VanderPlas}, Jake and Laxalde, Denis and Perktold, Josef and Cimrman, Robert and Henriksen, Ian and Quintero, E. A. and Harris, Charles R. and Archibald, Anne M. and Ribeiro, Ant{\^o}nio H. and Pedregosa, Fabian and {van Mulbregt}, Paul and {SciPy 1.0 Contributors}},
-  title   = {{{SciPy} 1.0: Fundamental Algorithms for Scientific Computing in Python}},
+  author  = {Virtanen, Pauli and Gommers, Ralf and Oliphant, Travis E. and Haberland, Matt and Reddy, Tyler and Cournapeau, David and Burovski, Evgeni and Peterson, Pearu and Weckesser, Warren and Bright, Jonathan and {van der Walt}, St{\'e}fan J. and Brett, Matthew and Wilson, Joshua and Millman, K. Jarrod and Mayorov, Nikolay and Nelson, Andrew R.~J. and Jones, Eric and Kern, Robert and Larson, Eric and Carey, C J and Polat, {\.I}lhan and Feng, Yu and Moore, Eric W. and {VanderPlas}, Jake and Laxalde, Denis and Perktold, Josef and Cimrman, Robert and Henriksen, Ian and Quintero, E.~A. and Harris, Charles R. and Archibald, Anne M. and Ribeiro, Ant{\^o}nio H. and Pedregosa, Fabian and {van Mulbregt}, Paul and {SciPy 1.0 Contributors}},
+  title   = {{SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python}},
   journal = {Nature Methods},
   year    = {2020},
   volume  = {17},
   pages   = {261--272},
   adsurl  = {https://rdcu.be/b08Wh},
-  doi     = {10.1038/s41592-019-0686-2},
+  doi     = {10.1038/s41592-019-0686-2}
 }
-
-
-@article{Carrazza2020rdn,
-    author = "Carrazza, Stefano and Cruz-Martinez, Juan M.",
-    title = "{VegasFlow: accelerating Monte Carlo simulation across multiple hardware platforms}",
-    eprint = "2002.12921",
-    archivePrefix = "arXiv",
-    primaryClass = "physics.comp-ph",
-    reportNumber = "TIF-UNIMI-2020-8",
-    doi = "10.1016/j.cpc.2020.107376",
-    journal = "Comput. Phys. Commun.",
-    volume = "254",
-    pages = "107376",
-    year = "2020"
-}
-
-@software{vegasflow-package,
-    author       = {Cruz-Martinez, Juan and Carrazza, Stefano},
-    title        = {N3PDF/vegasflow: vegasflow v1.0},
-    month        = feb,
-    year         = 2020,
-    publisher    = {Zenodo},
-    version      = {v1.0},
-    doi          = {10.5281/zenodo.3691926},
-    url          = {https://doi.org/10.5281/zenodo.3691926}
-}
-
-@article{caflisch1998monte,
-  title={Monte carlo and quasi-monte carlo methods},
-  author={Caflisch, Russel E. and others},
-  journal={Acta numerica},
-  volume={1998},
-  pages={1--49},
-  year={1998},
-  publisher={Cambridge University Press}
-}
-
-@article{ubale2012numerical,
-  title={{Numerical Solution of Boole’s rule in Numerical Integration By Using General Quadrature Formula}},
-  author={Ubale, P. V.},
-  journal={Bulletin of Society for mathematical services \& standards (B SO MA SS)},
-  volume={1},
-  number={2},
-  pages={1--5},
-  year={2012}
-}
-
-@article{sag1964numerical,
-  title={Numerical evaluation of high-dimensional integrals},
-  author={Sag, Tom W. and Szekeres, George},
-  journal={Mathematics of Computation},
-  volume={18},
-  number={86},
-  pages={245--253},
-  year={1964}
-}
-
-@article{lepage2020adaptive,
-  title={Adaptive Multidimensional Integration: VEGAS Enhanced},
-  author={Lepage, G. Peter},
-  journal={arXiv preprint arXiv:2009.05112},
-  year={2020}
-}
-
-
 
 @article{ZMCintegral,
-title = {ZMCintegral: A package for multi-dimensional Monte Carlo integration on multi-GPUs},
+title = {{ZMCintegral: A package for multi-dimensional Monte Carlo integration on multi-GPUs}},
 journal = {Computer Physics Communications},
 volume = {248},
 pages = {106962},
@@ -106,25 +141,100 @@ year = {2020},
 issn = {0010-4655},
 doi = {10.1016/j.cpc.2019.106962},
 url = {https://www.sciencedirect.com/science/article/pii/S0010465519303121},
-author = {Hong-Zhong Wu and Jun-Jie Zhang and Long-Gang Pang and Qun Wang},
+author = {Hong-Zhong Wu and Jun-Jie Zhang and Long-Gang Pang and Qun Wang}
 }
 
-@software{ZMCintegral-code,
-  author  = {Wu, Hong-Zhong and Zhang, Junjie and Pang, Long-Gang and Wang, Qun},
-  title   = {{{ZMCintegral}: A package for multi-dimensional Monte Carlo integration on multi-GPUs}},
-  publisher = {Mendeley Data},
-  year    = {2019},
-  month = oct,
-  version  = {v1},
-  url  = {https://data.mendeley.com/datasets/p7wc7k6mpp/1},
-  doi     = {10.17632/p7wc7k6mpp.1},
+@inproceedings{Tensorflow,
+    title={{TensorFlow: A System for Large-Scale Machine Learning}}, 
+    author={Martín Abadi and Paul Barham and Jianmin Chen and Zhifeng Chen and Andy Davis and Jeffrey Dean and Matthieu Devin and Sanjay Ghemawat and Geoffrey Irving and Michael Isard and Manjunath Kudlur and Josh Levenberg and Rajat Monga and Sherry Moore and Derek G. Murray and Benoit Steiner and Paul Tucker and Vijay Vasudevan and Pete Warden and Martin Wicke and Yuan Yu and Xiaoqiang Zheng},
+    date = {2016},
+    publisher = {USENIX Association},
+    address = {Savannah, GA, USA},
+    booktitle = {Proceedings of the 12th USENIX Conference on Operating Systems Design and Implementation},
+    pages = {265--283},
+    isbn = {9781931971331},
+    series = {OSDI16}
 }
 
-@misc{Tensorflow,
-      title={TensorFlow: A system for large-scale machine learning}, 
-      author={Martín Abadi and Paul Barham and Jianmin Chen and Zhifeng Chen and Andy Davis and Jeffrey Dean and Matthieu Devin and Sanjay Ghemawat and Geoffrey Irving and Michael Isard and Manjunath Kudlur and Josh Levenberg and Rajat Monga and Sherry Moore and Derek G. Murray and Benoit Steiner and Paul Tucker and Vijay Vasudevan and Pete Warden and Martin Wicke and Yuan Yu and Xiaoqiang Zheng},
-      year={2016},
-      eprint={1605.08695},
-      archivePrefix={arXiv},
-      primaryClass={cs.DC}
+@article{ParticlePhysics-Paper,
+title = {{The Monte Carlo event generator AcerMC versions 2.0 to 3.8 with interfaces to PYTHIA 6.4, HERWIG 6.5 and ARIADNE 4.1}},
+journal = {Computer Physics Communications},
+volume = {184},
+number = {3},
+pages = {919--985},
+year = {2013},
+issn = {0010-4655},
+doi = {10.1016/j.cpc.2012.10.032},
+url = {https://www.sciencedirect.com/science/article/pii/S001046551200375X},
+author = {Borut Paul Kersevan and Elzbieta Richter-Was}
+}
+
+@article{Astrophysics-Paper,
+    author = {Serra, Paolo and Heavens, Alan and Melchiorri, Alessandro},
+    title = "{Bayesian Evidence for a cosmological constant using new high-redshift supernova data}",
+    journal = {Monthly Notices of the Royal Astronomical Society},
+    volume = {379},
+    number = {1},
+    pages = {169--175},
+    year = {2007},
+    month = jun,
+    issn = {0035-8711},
+    doi = {10.1111/j.1365-2966.2007.11924.x},
+    url = {https://doi.org/10.1111/j.1365-2966.2007.11924.x},
+    eprint = {https://academic.oup.com/mnras/article-pdf/379/1/169/3925836/mnras0379-0169.pdf}
+}
+
+@article{AppliedFinance-Paper,
+  doi = {10.1142/s0219024907004081},
+  url = {https://doi.org/10.1142/s0219024907004081},
+  year = {2007},
+  month = feb,
+  publisher = {World Scientific Publishing Co Pte Ltd},
+  volume = {10},
+  number = {01},
+  pages = {51--88},
+  author = {Giuseppe Campolieti and Roman Makarov},
+  title = {Pricing path-dependent options on state dependent volatility models with a {Bessel} bridge},
+  journal = {International Journal of Theoretical and Applied Finance}
+}
+
+@article{MedicalStatistics-Paper,
+author = {Ray, J. and Marzouk, Y.~M. and Najm, H.~N.},
+title = {{A Bayesian approach for estimating bioterror attacks from patient data}},
+journal = {Statistics in Medicine},
+volume = {30},
+number = {2},
+pages = {101-126},
+keywords = {Bayesian inference, anthrax, Sverdlovsk outbreak, bioterrorism},
+doi = {10.1002/sim.4090},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/sim.4090},
+eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/sim.4090},
+year = {2011}
+}
+
+@article{VEGASinMachineLearning-Paper,
+  doi = {10.1137/050629367},
+  url = {https://doi.org/10.1137/050629367},
+  year = {2006},
+  month = jan,
+  publisher = {Society for Industrial {\&} Applied Mathematics ({SIAM})},
+  volume = {5},
+  number = {4},
+  pages = {670--698},
+  author = {Fatihcan M. Atay and Axel Hutt},
+  title = {{Neural Fields with Distributed Transmission Speeds and Long-Range Feedback Delays}},
+  journal = {{SIAM} Journal on Applied Dynamical Systems}
+}
+
+@book{CurseOfDim-Book,
+ Author = {Richard Ernest Bellman},
+ title = {{Dynamic Programming (Dover Books on Computer Science)}},
+ description = {Dynamic Programming (Dover Books on Computer Science) (Book, 2003)},
+ publisher = {Dover Publications},
+ interhash = {ffaf97c7ad74814196cce38e0c50e6cf},
+ intrahash = {9974530bc63e1991c4378da0ab874c7a},
+ year = {2003},
+ month = mar,
+ isbn = {0486428095},
+ url = {https://www.xarg.org/ref/a/0486428095/}
 }
