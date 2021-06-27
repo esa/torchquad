@@ -51,9 +51,10 @@ class BaseIntegrator:
 
         return result
 
-    def _check_inputs(self, dim=None, N=None, integration_domain=None):
-        """Used to check input validity
-
+     @staticmethod
+     def _check_inputs(dim=None, N=None, integration_domain=None):
+         """Used to check input validity
+       
         Args:
             dim (int, optional): Dimensionality of function to integrate. Defaults to None.
             N (int, optional): Total number of integration points. Defaults to None.
