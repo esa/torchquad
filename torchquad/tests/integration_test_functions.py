@@ -96,7 +96,8 @@ class Exponential(IntegrationTestFunction):
         super().__init__(expected_result, dim, domain)
         self.f = self._exp
 
-    def _exp(self, x):
+        @staticmethod
+        def _exp(x):
         # compute e^x
         return torch.sum(torch.exp(x), dim=1)
 
@@ -113,5 +114,6 @@ class Sinusoid(IntegrationTestFunction):
         super().__init__(expected_result, dim, domain)
         self.f = self._sinusoid
 
-    def _sinusoid(self, x):
-        return torch.sum(torch.sin(x), dim=1)
+        @staticmethod
+        def _sinusoid(x):
+            return torch.sum(torch.sin(x), dim=1)
