@@ -81,9 +81,9 @@ class Boole(BaseIntegrator):
 
         return cur_dim_areas
 
-    def _adjust_N(self, dim, N):
-        """Adjusts the total number of points to a valid number, i.e. N satisfies N^(1/dim) - 1 % 4 == 0.
-
+        @staticmethod
+        def _adjust_N(dim, N):
+        
         Args:
             dim (int): Dimensionality of the integration domain.
             N (int): Total number of sample points to use for the integration.
