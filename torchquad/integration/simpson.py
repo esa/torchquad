@@ -79,7 +79,8 @@ class Simpson(BaseIntegrator):
 
         return cur_dim_areas
 
-    def _adjust_N(self, dim, N):
+        @staticmethod
+        def _adjust_N(dim, N):
         """Adjusts the current N to an odd integer >=3, if N is not that already.
 
         Args:
