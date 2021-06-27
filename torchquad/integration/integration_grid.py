@@ -65,9 +65,10 @@ class IntegrationGrid:
 
         self._runtime = perf_counter() - start
 
-    def _check_inputs(self, N, integration_domain):
+        @staticmethod
+        def _check_inputs(N, integration_domain):
         """Used to check input validity"""
-
+       
         logger.debug("Checking inputs to IntegrationGrid.")
         dim = len(integration_domain)
 
