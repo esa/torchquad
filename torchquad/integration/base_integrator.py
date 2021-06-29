@@ -1,5 +1,6 @@
 import logging
 import warnings
+
 import torch
 
 logger = logging.getLogger(__name__)
@@ -51,17 +52,18 @@ class BaseIntegrator:
 
         return result
 
-    def _check_inputs(self, dim=None, N=None, integration_domain=None):
+    @staticmethod
+    def _check_inputs(dim=None, N=None, integration_domain=None):
         """Used to check input validity
 
-        Args:
-            dim (int, optional): Dimensionality of function to integrate. Defaults to None.
-            N (int, optional): Total number of integration points. Defaults to None.
-            integration_domain (list, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
+   Args:
+       dim (int, optional): Dimensionality of function to integrate. Defaults to None.
+       N (int, optional): Total number of integration points. Defaults to None.
+       integration_domain (list, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
 
-        Raises:
-            ValueError: if inputs are not compatible with each other.
-        """
+   Raises:
+       ValueError: if inputs are not compatible with each other.
+   """
         logger.debug("Checking inputs to Integrator.")
         if dim is not None:
             if dim < 1:

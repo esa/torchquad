@@ -34,21 +34,12 @@ class IntegrationGrid:
         self.h = torch.zeros([self._dim])
 
         logger.debug(
-            "Creating "
-            + str(self._dim)
-            + "-dimensional integration grid with "
-            + str(N)
-            + " points over"
-            + str(integration_domain),
-        )
+            "Creating " + str(self._dim) + "-dimensional integration grid with " + str(N) + " points over" + str(
+                integration_domain), )
         grid_1d = []
         # Determine for each dimension grid points and mesh width
         for dim in range(self._dim):
-            grid_1d.append(
-                torch.linspace(
-                    integration_domain[dim][0], integration_domain[dim][1], self._N
-                )
-            )
+            grid_1d.append(torch.linspace(integration_domain[dim][0], integration_domain[dim][1], self._N))
             self.h[dim] = grid_1d[dim][1] - grid_1d[dim][0]
 
         logger.debug("Grid mesh width is " + str(self.h))
@@ -65,8 +56,9 @@ class IntegrationGrid:
 
         self._runtime = perf_counter() - start
 
-    def _check_inputs(self, N, integration_domain):
-        """Used to check input validity"""
+        @staticmethod
+        def _check_inputs(N, integration_domain):
+            """Used to check input validity"""
 
         logger.debug("Checking inputs to IntegrationGrid.")
         dim = len(integration_domain)
@@ -78,26 +70,11 @@ class IntegrationGrid:
             raise ValueError("N has to be > 1.")
 
         if N ** (1.0 / dim) < 2:
-            raise ValueError(
-                "Cannot create a ",
-                dim,
-                "-dimensional grid with ",
-                N,
-                " points. Too few points per dimension.",
-            )
+            raise ValueError("Cannot create a ", dim, "-dimensional grid with ", N,
+                " points. Too few points per dimension.", )
 
         for bounds in integration_domain:
             if len(bounds) != 2:
-                raise ValueError(
-                    bounds,
-                    " in ",
-                    integration_domain,
-                    " does not specify a valid integration bound.",
-                )
+                raise ValueError(bounds, " in ", integration_domain, " does not specify a valid integration bound.", )
             if bounds[0] > bounds[1]:
-                raise ValueError(
-                    bounds,
-                    " in ",
-                    integration_domain,
-                    " does not specify a valid integration bound.",
-                )
+                raise ValueError(bounds, " in ", integration_domain, " does not specify a valid integration bound.", )
