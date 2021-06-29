@@ -15,7 +15,7 @@ class IntegrationTestFunction:
     order = None
     f = None  # Function to evaluate
 
-    def __init__(self, expected_result, dim=1, domain=None):
+    def __init__(self, expected_result, dim = 1, domain = None):
         """Initializes domain and stores vars
 
         Args:
@@ -32,13 +32,7 @@ class IntegrationTestFunction:
             self.domain = domain
         logging.debug("Initialized Test function with ")
         logging.debug(
-            "dim="
-            + str(self.dim)
-            + "| domain="
-            + str(self.domain)
-            + "| expected_result="
-            + str(expected_result)
-        )
+            "dim=" + str(self.dim) + "| domain=" + str(self.domain) + "| expected_result=" + str(expected_result))
 
     def evaluate(self, integrator, integration_args):
         """Evaluates the passed integration functions with args
@@ -50,11 +44,11 @@ class IntegrationTestFunction:
         Returns:
             float: Integration result
         """
-        return integrator(fn=self.f, integration_domain=self.domain, **integration_args)
+        return integrator(fn = self.f, integration_domain = self.domain, **integration_args)
 
 
 class Polynomial(IntegrationTestFunction):
-    def __init__(self, expected_result=None, coeffs=[2], dim=1, domain=None):
+    def __init__(self, expected_result = None, coeffs = [2], dim = 1, domain = None):
         """N-dimensional , degree K poylnomial test functions
 
         Args:
@@ -78,14 +72,14 @@ class Polynomial(IntegrationTestFunction):
         exponentials = torch.multiply(exponentials, self.coeffs)
 
         # Collapse dimensions
-        exponentials = torch.sum(exponentials, dim=2)
+        exponentials = torch.sum(exponentials, dim = 2)
 
         # sum all values for each dim
-        return torch.sum(exponentials, dim=1)
+        return torch.sum(exponentials, dim = 1)
 
 
 class Exponential(IntegrationTestFunction):
-    def __init__(self, expected_result=None, dim=1, domain=None):
+    def __init__(self, expected_result = None, dim = 1, domain = None):
         """Creates an n-dimensional exponential test function
 
         Args:
@@ -98,12 +92,13 @@ class Exponential(IntegrationTestFunction):
 
         @staticmethod
         def _exp(x):
+
         # compute e^x
-        return torch.sum(torch.exp(x), dim=1)
+        return torch.sum(torch.exp(x), dim = 1)
 
 
 class Sinusoid(IntegrationTestFunction):
-    def __init__(self, expected_result=None, dim=1, domain=None):
+    def __init__(self, expected_result = None, dim = 1, domain = None):
         """Creates an n-dimensional exponential test function
 
         Args:
@@ -116,4 +111,4 @@ class Sinusoid(IntegrationTestFunction):
 
         @staticmethod
         def _sinusoid(x):
-            return torch.sum(torch.sin(x), dim=1)
+            return torch.sum(torch.sin(x), dim = 1)
