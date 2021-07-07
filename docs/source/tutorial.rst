@@ -16,11 +16,16 @@ Minimal working example
     # ideally allocate everything in torch on the GPU
     # and avoid non-torch function calls
     import torch 
-    from torchquad import MonteCarlo
+    from torchquad import MonteCarlo, enable_cuda
 
-    # The function we want to integrate, in this example f(x,y) = sin(x) + e^y
+    # Enable GPU support if available
+    enable_cuda() 
+
+    # The function we want to integrate, in this example f(x0,x1) = sin(x0) + e^x1 for x0=[0,1] and x1=[-1,1]
+    # Note that the function needs to support multiple evaluations at once (first dimension of x here)
+    # Expected result here is ~3.2698
     def some_function(x):
-        return torch.sin(x[0]) + torch.exp(x[1])
+        return torch.sin(x[:,0]) + torch.exp(x[:,1]) 
 
     # Declare an integrator, here we use the simple, stochastic Monte Carlo integration method
     mc = MonteCarlo()
