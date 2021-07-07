@@ -4,7 +4,7 @@ Contributing
 ================
 
 The project is open to community contributions. Feel free to open an `issue <https://github.com/esa/torchquad/issues>`_ 
-or write us an `email <https://torchquad.readthedocs.io/en/latest/contact.html#feedback>`_ if you would like to discuss a problem or idea first.
+or write us an `email <https://torchquad.readthedocs.io/en/main/contact.html#feedback>`_ if you would like to discuss a problem or idea first.
 
 If you want to contribute, please 
 

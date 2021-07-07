@@ -15,7 +15,8 @@ Prerequisites
 
 We recommend using `conda <https://docs.conda.io/en/latest/>`_, especially if you want to utilize the GPU. 
 It will automatically set up CUDA and the cudatoolkit for you in that case.
-Note that *torchquad* also works on the CPU; however, it is optimized for GPU usage.
+Note that *torchquad* also works on the CPU; however, it is optimized for GPU usage. 
+Currently torchquad only supports NVIDIA cards with CUDA. We are investigating future support for AMD cards through [ROCm](https://pytorch.org/blog/pytorch-for-amd-rocm-platform-now-available-as-python-package/).
 
 For a detailed list of required packages, please refer to the `conda environment file <https://github.com/esa/torchquad/blob/main/environment.yml>`_.
 
@@ -49,4 +50,4 @@ Usage
 
 Now you are ready to use *torchquad*. 
 A brief example of how *torchquad* can be used to compute a simple integral can be found on our `GitHub <https://github.com/esa/torchquad#usage>`_. 
-For a more thorough introduction, please refer to the `tutorial <https://torchquad.readthedocs.io/en/latest/tutorial.html>`_.
+For a more thorough introduction, please refer to the `tutorial <https://torchquad.readthedocs.io/en/main/tutorial.html>`_.

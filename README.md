@@ -3,7 +3,7 @@
 *** Based on https://github.com/othneildrew/Best-README-Template
 -->
 
-[![Documentation Status](https://readthedocs.org/projects/torchquad/badge/?version=latest)](https://torchquad.readthedocs.io/en/latest/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/torchquad/badge/?version=main)](https://torchquad.readthedocs.io/en/main/?badge=main)
 
 
 
@@ -89,7 +89,7 @@ This is a brief guide for how to set up torchquad.
 ### Prerequisites
 
 We recommend using [conda](https://anaconda.org/conda-forge/torchquad), especially if you want to utilize the GPU. It will automatically set up CUDA and the cudatoolkit for you in that case.
-Note that torchquad also works on the CPU; however, it is optimized for GPU usage.
+Note that torchquad also works on the CPU; however, it is optimized for GPU usage. Currently torchquad only supports NVIDIA cards with CUDA. We are investigating future support for AMD cards through [ROCm](https://pytorch.org/blog/pytorch-for-amd-rocm-platform-now-available-as-python-package/).
 
 For a detailed list of required packages, please refer to the [conda environment file](https://github.com/esa/torchquad/blob/main/environment.yml).
 
@@ -134,20 +134,25 @@ For alternative installation procedures please refer to the [PyTorch Documentati
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-This is a brief example how torchquad can be used to compute a simple integral. For a more thorough introduction please refer to the [example notebook](https://github.com/esa/torchquad/blob/main/notebooks/Example_notebook.ipynb).
+This is a brief example how torchquad can be used to compute a simple integral. For a more thorough introduction please refer to the [tutorial](https://torchquad.readthedocs.io/en/main/tutorial.html) section in the documentation.
 
-The full documentation can be found on [readthedocs](https://torchquad.readthedocs.io/en/latest/).
+The full documentation can be found on [readthedocs](https://torchquad.readthedocs.io/en/main/).
 
 ```python
 # To avoid copying things to GPU memory, 
 # ideally allocate everything in torch on the GPU
 # and avoid non-torch function calls
 import torch 
-from torchquad import MonteCarlo
+from torchquad import MonteCarlo, enable_cuda
 
-# The function we want to integrate, in this example f(x,y) = sin(x) + e^y
+# Enable GPU support if available
+enable_cuda() 
+
+# The function we want to integrate, in this example f(x0,x1) = sin(x0) + e^x1 for x0=[0,1] and x1=[-1,1]
+# Note that the function needs to support multiple evaluations at once (first dimension of x here)
+# Expected result here is ~3.2698
 def some_function(x):
-    return torch.sin(x[0]) + torch.exp(x[1])
+    return torch.sin(x[:,0]) + torch.exp(x[:,1]) 
 
 # Declare an integrator, here we use the simple, stochastic Monte Carlo integration method
 mc = MonteCarlo()
@@ -156,7 +161,7 @@ mc = MonteCarlo()
 integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
 ```
 
-You can find all available integrators [here](https://torchquad.readthedocs.io/en/latest/integration_methods.html).
+You can find all available integrators [here](https://torchquad.readthedocs.io/en/main/integration_methods.html).
 
 <!-- ROADMAP -->
 ## Roadmap
