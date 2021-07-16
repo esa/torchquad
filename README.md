@@ -199,7 +199,6 @@ Please note that PRs should be created from and into the `develop` branch. For e
 
 and we will have a look at your contribution as soon as we can. 
 
-For torchquad, we autoformat every PR with Black. This means that if you are not using Black, you will have to pull the autoformatted code after pushing, otherwise conflicts might arise.
 
 Furthermore, we ask you to create PRs on the `develop` branch, *not* `main` branch, and to make sure that your PR has passed all tests.
 Only PRs created on the `develop` branch with all tests passed will be considered.
