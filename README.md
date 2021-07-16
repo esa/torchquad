@@ -189,14 +189,20 @@ If you want to contribute, please
       conda activate torchquad
       ```
 
-Once the installation is done, then
+Once the installation is done, then you are ready to contribute. 
+Please note that PRs should be created on the `develop` branch.
 
 3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 5. Push to the Branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request
+6. Open a Pull Request on the `develop` branch (*not* `main`)
 
 and we will have a look at your contribution as soon as we can. 
+
+For torchquad, we autoformat every PR with Black. This means that if you are not using Black, you will have to pull the autoformatted code after pushing, otherwise conflicts might arise.
+
+Furthermore, we ask you to create PRs on the `develop` branch, *not* `main` branch, and to make sure that your PR has passed all tests.
+Only PRs created on the `develop` branch with all tests passed will be considered.
 
 <!-- LICENSE -->
 ## License
