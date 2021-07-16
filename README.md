@@ -3,8 +3,9 @@
 *** Based on https://github.com/othneildrew/Best-README-Template
 -->
 
-[![Documentation Status](https://readthedocs.org/projects/torchquad/badge/?version=latest)](https://torchquad.readthedocs.io/en/latest/?badge=latest) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/develop) ![Conda](https://img.shields.io/conda/dn/conda-forge/torchquad) ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchquad)
+[![Documentation Status](https://readthedocs.org/projects/torchquad/badge/?version=latest)](https://torchquad.readthedocs.io/en/latest/?badge=latest) &emsp; ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/develop) ![Conda](https://img.shields.io/conda/dn/conda-forge/torchquad) ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchquad)
 ![GitHub issues](https://img.shields.io/github/issues/esa/torchquad) ![GitHub pull requests](https://img.shields.io/github/issues-pr/esa/torchquad) 
+
 ![GitHub](https://img.shields.io/github/license/esa/torchquad) ![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/torchquad) ![PyPI](https://img.shields.io/pypi/v/torchquad) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/torchquad)
 ![GitHub last commit](https://img.shields.io/github/last-commit/esa/torchquad) ![GitHub contributors](https://img.shields.io/github/contributors/esa/torchquad)
 
