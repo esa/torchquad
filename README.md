@@ -195,7 +195,7 @@ Please note that PRs should be created from and into the `develop` branch. For e
 3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 5. Push to the Branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request on the `develop` branch (*not* `main`)
+6. Open a Pull Request on the `develop` branch, *not* `main` (NB: For torchquad, we autoformat every PR with black. Our GitHub actions may create additional commits on your PR for that reason.)
 
 and we will have a look at your contribution as soon as we can. 
 
