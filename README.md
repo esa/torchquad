@@ -169,6 +169,17 @@ You can find all available integrators [here](https://torchquad.readthedocs.io/e
 See the [open issues](https://github.com/esa/torchquad/issues) for a list of proposed features (and known issues).
 
 
+<!-- PERFORMANCE -->
+## Performance
+
+Using GPUs torchquad scales particularly well with integration methods that offer easy parallelization. For example, below you see error and runtime results for integrating the function `f(x,y,z) = sin(x * (y+1)²) * (z+1)` on a consumer-grade desktop PC.
+
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime.png?raw=true)
+*Runtime results of the integration. Note the far superior scaling on the GPU (solid line) in comparison to the CPU (dashed and dotted) for both methods.*
+
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence.png?raw=true)
+*Convergence results of the integration. Note that Simpson quickly reaches floating point precision. Monte Carlo is not competitive here given the low dimensionality of the problem.*
+
 <!-- CONTRIBUTING -->
 ## Contributing
 
