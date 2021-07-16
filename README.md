@@ -3,8 +3,7 @@
 *** Based on https://github.com/othneildrew/Best-README-Template
 -->
 
-[![Documentation Status](https://readthedocs.org/projects/torchquad/badge/?version=latest)](https://torchquad.readthedocs.io/en/latest/?badge=latest)
-
+[![Documentation Status](https://readthedocs.org/projects/torchquad/badge/?version=latest)](https://torchquad.readthedocs.io/en/latest/?badge=latest) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/main?style=flat-square)
 
 
 <!-- PROJECT LOGO -->
