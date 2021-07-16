@@ -9,6 +9,13 @@
     :height: 227px
     :alt: torchquad_logo
 
+
+.. image:: https://img.shields.io/conda/dn/conda-forge/torchquad?style=for-the-badge   :alt: Conda
+
+.. image:: https://readthedocs.org/projects/torchquad/badge/?version=release?style=for-the-badge
+   :target: https://torchquad.readthedocs.io/en/main/?badge=release?style=for-the-badge
+   :alt: Documentation Status
+
 Welcome to torchquad's documentation!
 =====================================================
 
