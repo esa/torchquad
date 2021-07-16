@@ -200,8 +200,8 @@ Please note that PRs should be created from and into the `develop` branch. For e
 and we will have a look at your contribution as soon as we can. 
 
 
-Furthermore, we ask you to create PRs on the `develop` branch, *not* `main` branch, and to make sure that your PR has passed all tests.
-Only PRs created on the `develop` branch with all tests passed will be considered.
+Furthermore, please make sure that your PR passes all automated tests. Review will only happen after that.
+Only PRs created on the `develop` branch with all tests passed will be considered. The only exception to this rule is if you want to update the documentation in relation to the current release on conda / pip. In that case you may ask to merge directly into `main`.
 
 <!-- LICENSE -->
 ## License
