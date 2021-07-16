@@ -190,7 +190,7 @@ If you want to contribute, please
       ```
 
 Once the installation is done, then you are ready to contribute. 
-Please note that PRs should be created on the `develop` branch.
+Please note that PRs should be created from and into the `develop` branch. For each release the develop branch is moved into main.
 
 3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
