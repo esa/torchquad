@@ -9,6 +9,56 @@
     :height: 227px
     :alt: torchquad_logo
 
+
+.. image:: https://readthedocs.org/projects/torchquad/badge/?version=main
+   :target: https://torchquad.readthedocs.io/en/main/?badge=main
+   :alt: Documentation Status
+
+.. image:: https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/develop   
+   :target: https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/develop   
+   :alt: GitHub Workflow Status (branch)
+
+.. image:: https://img.shields.io/github/last-commit/esa/torchquad   
+   :target: https://img.shields.io/github/last-commit/esa/torchquad   
+   :alt: GitHub last commit
+
+.. image:: https://img.shields.io/github/license/esa/torchquad   
+   :target: https://img.shields.io/github/license/esa/torchquad   
+   :alt: GitHub license
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/torchquad   
+   :target: https://img.shields.io/conda/vn/conda-forge/torchquad   
+   :alt: Conda (channel only)
+
+.. image:: https://img.shields.io/pypi/v/torchquad   
+   :target: https://img.shields.io/pypi/v/torchquad   
+   :alt: PyPI Version
+
+.. image:: https://img.shields.io/pypi/pyversions/torchquad   
+   :target: https://img.shields.io/pypi/pyversions/torchquad   
+   :alt: PyPI - Python Version
+
+.. image:: https://img.shields.io/github/contributors/esa/torchquad   
+   :target: https://img.shields.io/github/contributors/esa/torchquad  
+   :alt: GitHub contributors
+
+.. image:: https://img.shields.io/github/issues/esa/torchquad   
+   :target: https://img.shields.io/github/issues/esa/torchquad    
+   :alt: GitHub issues 
+
+.. image:: https://img.shields.io/github/issues-pr/esa/torchquad   
+   :target: https://img.shields.io/github/issues-pr/esa/torchquad
+   :alt: GitHub pull requests
+
+.. image:: https://img.shields.io/conda/dn/conda-forge/torchquad   
+   :target: https://img.shields.io/conda/dn/conda-forge/torchquad
+   :alt: Conda
+
+.. image:: https://img.shields.io/pypi/dm/torchquad   
+   :target: https://img.shields.io/pypi/dm/torchquad
+   :alt: PyPI - Downloads
+
+
 Welcome to torchquad's documentation!
 =====================================================
 

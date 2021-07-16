@@ -70,7 +70,7 @@ class BaseIntegrator:
             if integration_domain is not None:
                 if dim != len(integration_domain):
                     raise ValueError(
-                        "Dimension of integration_domain needs to be match passed dim."
+                        "Dimension of integration_domain needs to match the passed function dimensionality dim."
                     )
 
         if N is not None:
