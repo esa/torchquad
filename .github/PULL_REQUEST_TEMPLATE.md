@@ -4,6 +4,7 @@ Summary of changes
 
 * ... 
 * ...
+
 ## Resolved Issues
 
 - [ ] fixes #Issue
