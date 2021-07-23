@@ -4,6 +4,8 @@ from time import perf_counter
 
 logger = logging.getLogger(__name__)
 
+from .utils import _linspace_with_grads
+
 
 class IntegrationGrid:
     """This class is used to store the integration grid for methods like Trapezoid or Simpsons, which require a grid."""
@@ -41,12 +43,22 @@ class IntegrationGrid:
             + " points over"
             + str(integration_domain),
         )
+
+        # Check if domain requires gradient
+        if hasattr(integration_domain, "requires_grad"):
+            requires_grad = integration_domain.requires_grad
+        else:
+            requires_grad = False
+
         grid_1d = []
         # Determine for each dimension grid points and mesh width
         for dim in range(self._dim):
             grid_1d.append(
-                torch.linspace(
-                    integration_domain[dim][0], integration_domain[dim][1], self._N
+                _linspace_with_grads(
+                    integration_domain[dim][0],
+                    integration_domain[dim][1],
+                    self._N,
+                    requires_grad=requires_grad,
                 )
             )
             self.h[dim] = grid_1d[dim][1] - grid_1d[dim][0]
