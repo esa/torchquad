@@ -16,10 +16,10 @@ class IntegrationTestFunction:
     f = None  # Function to evaluate
 
     def __init__(self, expected_result, dim=1, domain=None):
-        """Initializes domain and stores vars
+        """Initializes domain and stores vars.
 
         Args:
-            expected_result (float): Expected integration result
+            expected_result (float): Expected integration result.
             dim (int, optional): Dimensionality of investigated function. Defaults to 1.
             domain (list, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
         """
@@ -41,11 +41,11 @@ class IntegrationTestFunction:
         )
 
     def evaluate(self, integrator, integration_args):
-        """Evaluates the passed integration functions with args
+        """Evaluates the passed integration functions with args.
 
         Args:
-            integrator (func): Integration function to call
-            integration_args (list): Arguments to pass to integrator
+            integrator (func): Integration function to call.
+            integration_args (list): Arguments to pass to integrator.
 
         Returns:
             float: Integration result
@@ -55,10 +55,10 @@ class IntegrationTestFunction:
 
 class Polynomial(IntegrationTestFunction):
     def __init__(self, expected_result=None, coeffs=[2], dim=1, domain=None):
-        """N-dimensional , degree K poylnomial test functions
+        """N-dimensional, degree K poylnomial test functions.
 
         Args:
-            expected_result (torch.tensor): Expected results per dimension. Required to compute errors.
+            expected_result (torch.tensor): Expected result. Required to compute errors.
             coeffs (list, optional): Polynomial coefficients. Are the same for each dim. Defaults to [2].
             dim (int, optional): Polynomial dimensionality. Defaults to 1.
             domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^dim.
@@ -86,10 +86,10 @@ class Polynomial(IntegrationTestFunction):
 
 class Exponential(IntegrationTestFunction):
     def __init__(self, expected_result=None, dim=1, domain=None):
-        """Creates an n-dimensional exponential test function
+        """Creates an n-dimensional exponential test function.
 
         Args:
-            expected_result (torch.tensor): Expected results per dimension. Required to compute errors.
+            expected_result (torch.tensor): Expected result. Required to compute errors.
             dim (int, optional): Input dimension. Defaults to 1.
             domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^dim.
         """
@@ -103,10 +103,10 @@ class Exponential(IntegrationTestFunction):
 
 class Sinusoid(IntegrationTestFunction):
     def __init__(self, expected_result=None, dim=1, domain=None):
-        """Creates an n-dimensional exponential test function
+        """Creates an n-dimensional sinusoidal test function.
 
         Args:
-            expected_result (torch.tensor): Expected results per dimension. Required to compute errors.
+            expected_result (torch.tensor): Expected result. Required to compute errors.
             dim (int, optional): Input dimension. Defaults to 1.
             domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^dim.
         """

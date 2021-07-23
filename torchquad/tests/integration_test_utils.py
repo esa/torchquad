@@ -36,7 +36,7 @@ TEST_FUNCTIONS_10D = [
 
 
 def compute_test_errors(integrator, integrator_args, dim=1):
-    """Computes errors on all test functions for given dimension and integrator
+    """Computes errors on all test functions for given dimension and integrator.
 
     Args:
         integrator (torchquad.base_integrator): Integrator to use
@@ -55,6 +55,53 @@ def compute_test_errors(integrator, integrator_args, dim=1):
         test_functions = TEST_FUNCTIONS_3D
     elif dim == 10:
         test_functions = TEST_FUNCTIONS_10D
+    else:
+        raise ValueError("Not testing functions implemented for dim " + str(dim))
+
+    # compute integration errors on all of them
+    for test_function in test_functions:
+        errors.append(
+            np.abs(
+                test_function.evaluate(integrator, integrator_args).cpu().numpy()
+                - test_function.expected_result
+            )
+        )
+
+    return errors
+
+
+TEST_FUNCTIONS_COMPLEX_1D = [
+    Polynomial(4.0j, [2.0j]),  # y = 2j
+    Polynomial(0, [0, 1j]),  # y = xj
+    # y=7x^4-3jx^3+2x^2-jx+3
+    Polynomial(44648.0 / 15.0 + 0.0j, [3, -1j, 2, -3j, 7], domain=[[-4, 4]]),
+]
+
+TEST_FUNCTIONS_COMPLEX_3D = [
+    Polynomial(48.0j, [2.0j], dim=3),  # 2
+    Polynomial(0, [0, 1], dim=3),  # y = x
+    Polynomial(8.0j, coeffs=[0, 0, 1j], dim=3),  # x^2+y^2+z^2
+]
+
+
+def compute_complex_test_errors(integrator, integrator_args, dim=1):
+    """Computes errors on all test functions for given dimension and integrator.
+
+    Args:
+        integrator (torchquad.base_integrator): Integrator to use
+        integrator_args (dict): Arguments for the integrator
+        dim (int, optional): Dimensionality of test functions to use. Defaults to 1.
+
+    Returns:
+        list: Absolute errors on all test functions
+    """
+    errors = []
+
+    # get the test functions
+    if dim == 1:
+        test_functions = TEST_FUNCTIONS_COMPLEX_1D
+    elif dim == 3:
+        test_functions = TEST_FUNCTIONS_COMPLEX_3D
     else:
         raise ValueError("Not testing functions implemented for dim " + str(dim))
 
