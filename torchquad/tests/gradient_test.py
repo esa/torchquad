@@ -30,7 +30,7 @@ def test_gradients():
 
     N = 99997
     result_tolerence = 1e-2
-    gradient_tolerance = 1e-2
+    gradient_tolerance = 3e-2
     torch.manual_seed(0)  # we have to seed torch to get reproducible results
 
     # Define integrators
