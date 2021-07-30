@@ -181,14 +181,15 @@ class VEGASMap:
         self._smooth_map()
 
         # Initialize new locations
-        x_edges_last = deepcopy(self.x_edges)
-        dx_edges_last = deepcopy(self.dx_edges)
+        x_edges_last = self.x_edges.clone().detach().requires_grad_(True)
+        dx_edges_last = self.dx_edges.clone().detach().requires_grad_(True)
+
+        # Cumulative sum of smoothed weights
 
         for i in range(self.dim):  # Update per dim
-            new_i = 1
             old_i = 0
             d_accu = 0
-            while True:
+            for new_i in range(1, self.N_intervals):
                 d_accu += self.delta_weights[i]
 
                 while d_accu > self.smoothed_weights[i][old_i]:
@@ -196,18 +197,15 @@ class VEGASMap:
                     old_i = old_i + 1
 
                 # EQ 22
-                self.x_edges[i][new_i] = (
-                    x_edges_last[i][old_i]
-                    + d_accu / self.smoothed_weights[i][old_i] * dx_edges_last[i][old_i]
-                )
+                offset = (
+                    d_accu / self.smoothed_weights[i][old_i] * dx_edges_last[i][old_i]
+                ).detach()
+
+                self.x_edges[i][new_i] = x_edges_last[i][old_i] + offset
 
                 self.dx_edges[i][new_i - 1] = (
                     self.x_edges[i][new_i] - self.x_edges[i][new_i - 1]
                 )
-
-                new_i = new_i + 1
-                if new_i >= self.N_intervals:
-                    break
 
             self.dx_edges[i][self.N_intervals - 1] = (
                 self.x_edges[i][self.N_edges - 1] - self.x_edges[i][self.N_edges - 2]

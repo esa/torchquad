@@ -2,7 +2,6 @@ import sys
 
 sys.path.append("../")
 
-import torch
 import timeit
 
 import cProfile

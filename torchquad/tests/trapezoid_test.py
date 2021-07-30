@@ -2,8 +2,6 @@ import sys
 
 sys.path.append("../")
 
-import torch
-
 
 from integration.trapezoid import Trapezoid
 from utils.enable_cuda import enable_cuda
