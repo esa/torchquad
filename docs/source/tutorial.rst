@@ -409,7 +409,7 @@ Computing gradients with respect to the integration domain
 ----------------------------------------------------------
 
 *torchquad* allows fully automatic differentiation. In this tutorial, we will show how to extract the gradients with respect to the integration domain.
-We selected Trapezoid and MonteCarlo methods to showcase that getting the gradients it is possible for both deterministic and stochastic methods.
+We selected the Trapezoid rule and the Monte Carlo method to showcase that getting gradients is possible for both deterministic and stochastic methods.
 
 
 .. code:: ipython3
