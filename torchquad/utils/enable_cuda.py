@@ -13,7 +13,7 @@ def enable_cuda(device=0, data_type="float"):
 
     Args:
         device (int, optional): CUDA device to use. Defaults to 0.
-        data_type (string, optional): Data type to use, either "float" or "double". Defaults to "float".
+        data_type (string, optional): Data type to use, either "float"/"float32", "double"/"float64", "cfloat"/"complex64", or "cdouble"/"complex128". Defaults to "float".
 
     """
     if torch.cuda.is_available():
