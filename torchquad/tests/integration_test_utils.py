@@ -95,14 +95,20 @@ def compute_test_errors(
         if test_function.is_complex == False:
             errors.append(
                 np.abs(
-                    test_function.evaluate(integrator, integrator_args).cpu().numpy()
+                    test_function.evaluate(integrator, integrator_args)
+                    .cpu()
+                    .detach()
+                    .numpy()
                     - test_function.expected_result
                 )
             )
         elif test_function.is_complex and use_complex:
             errors.append(
                 np.abs(
-                    test_function.evaluate(integrator, integrator_args).cpu().numpy()
+                    test_function.evaluate(integrator, integrator_args)
+                    .cpu()
+                    .detach()
+                    .numpy()
                     - test_function.expected_result
                 )
             )
