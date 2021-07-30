@@ -397,7 +397,7 @@ The results from using Simpson’s rule in *torchquad* is:
             Took 162.147 ms
     
 
-In our case, *torchquad* was more than 300 times faster than
+In our case, *torchquad*  with Simpson’s rule was more than 300 times faster than
 ``scipy.integrate.nquad``. We will add
 more elaborate integration methods over time; however, this tutorial should
 already showcase the advantages of numerical integration on the GPU.
