@@ -14,7 +14,7 @@ from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision
 
 
-def test_function(x):
+def some_function(x):
     """V shaped test function.
     Gradient in positive x should be 2,
     Gradient in negative x should be -2
@@ -36,11 +36,13 @@ def test_gradients():
     # Define integrators
     integrators = [MonteCarlo(), Trapezoid(), Simpson(), Boole(), VEGAS()]
     for integrator in integrators:
+        print("Running integrator...", integrator)
+
         # Compute integral
         domain = torch.tensor([[-1.0, 1.0]])
         domain.requires_grad = True
         result = integrator.integrate(
-            test_function, dim=1, N=N, integration_domain=domain
+            some_function, dim=1, N=N, integration_domain=domain
         )
 
         # Check results are correct
