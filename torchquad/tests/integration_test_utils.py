@@ -102,7 +102,7 @@ def compute_test_errors(
                     - test_function.expected_result
                 )
             )
-        elif test_function.is_complex and use_complex:
+        if test_function.is_complex and use_complex:
             errors.append(
                 np.abs(
                     test_function.evaluate(integrator, integrator_args)
