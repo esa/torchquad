@@ -7,7 +7,7 @@ dependencies:
 - matplotlib>=3.3.3
 - pytest>=6.2.1
 - python>=3.8
-- pytorch>=1.7
+- pytorch>=1.9
 - scipy>=1.6.0
 - sphinx>=3.4.3
 - sphinx_rtd_theme>=0.5.1
