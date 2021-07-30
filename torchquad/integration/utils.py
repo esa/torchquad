@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 def _linspace_with_grads(start, stop, N, requires_grad):
-    """Creates a equally spaced 1D grid while keeping gradients
+    """Creates an equally spaced 1D grid while keeping gradients
     in regard to inputs
 
     Args:
