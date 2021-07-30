@@ -450,4 +450,4 @@ The output of the code is as follows:
 .. parsed-literal::
 
     **Output:** Method: <torchquad.integration.monte_carlo.MonteCarlo object at 0x7f724735b6a0> Gradients: tensor([[-1.9872,  2.0150]])
-        Method: <torchquad.integration.trapezoid.Trapezoid object at 0x7f724735b6d0> Gradients: tensor([[-2.0000,  2.0000]])
+            Method: <torchquad.integration.trapezoid.Trapezoid object at 0x7f724735b6d0> Gradients: tensor([[-2.0000,  2.0000]])
