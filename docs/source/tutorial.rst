@@ -436,7 +436,7 @@ We selected the Trapezoid rule and the Monte Carlo method to showcase that getti
         domain.requires_grad = True # It enables the creation of a computational graph for gradient calculation.
         result = integrator.integrate(
             test_function, dim=1, N=N, integration_domain=domain
-        ) # We calculate the 1 D integral by using the previously defined test-fuction
+        ) # We calculate the 1-D integral by using the previously defined test-fuction
 
         result.backward() #Gradients computation
 
