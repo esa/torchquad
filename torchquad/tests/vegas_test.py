@@ -5,7 +5,7 @@ sys.path.append("../")
 import torch
 import timeit
 
-import cProfile
+import cProfile, pstats
 
 from integration.vegas import VEGAS
 from utils.enable_cuda import enable_cuda
@@ -30,7 +30,7 @@ def test_integrate():
         assert error < 5e-3
 
     for error in errors:
-        assert error < 3.0
+        assert error < 4.0
 
     for error in errors[6:]:
         assert error < 6e-3
@@ -54,8 +54,12 @@ def test_integrate():
 
 if __name__ == "__main__":
     # used to run this test individually
+    profiler = cProfile.Profile()
+    profiler.enable()
     start = timeit.default_timer()
     test_integrate()
-    # cProfile.run("test_integrate()")
+    profiler.disable()
+    stats = pstats.Stats(profiler).sort_stats("tottime")
+    stats.print_stats()
     stop = timeit.default_timer()
     print("Test ran for ", stop - start, " seconds.")
