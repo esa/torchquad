@@ -403,7 +403,7 @@ more elaborate integration methods over time; however, this tutorial should
 already showcase the advantages of numerical integration on the GPU.
 
 Reasonably, one might prefer Monte Carlo integration methods for a 5-D
-problem. We will add this in the future.
+problem. We might add this comparison to the tutorial in the future.
 
 Computing gradients with respect to the integration domain
 --------------------------------------------------------
