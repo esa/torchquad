@@ -10,21 +10,22 @@ from utils.set_precision import set_precision
 
 
 def test_integrate():
-    """Tests the integrate function in integration.MonteCarlo"""
+    """Tests the integrate function in integration.MonteCarlo."""
     enable_cuda()
     set_precision("double")
 
     # Needs to happen after precision / device settings to avoid having some tensors intialized on cpu and some on GPU
     from tests.integration_test_utils import compute_test_errors
 
+    mc = MonteCarlo()
+
+    # 1D Tests
     N = 100000  # integration points to use
     torch.manual_seed(0)  # we have to seed torch to get reproducible results
 
-    mc = MonteCarlo()
-
     errors = compute_test_errors(mc.integrate, {"N": N, "dim": 1})
-    print(errors)
-    # if this breaks check if test functions in integration_test_utils changed.
+    print("Passed N =", N, "\n", "Errors: ", errors)
+    # If this breaks check if test functions in integration_test_utils changed.
     for error in errors[:3]:
         assert error < 7e-3
 
@@ -37,14 +38,14 @@ def test_integrate():
     # 3D Tests
     N = 1000000
     errors = compute_test_errors(mc.integrate, {"N": N, "dim": 3}, dim=3)
-    print("N =", N, "\n", errors)
+    print("Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:
         assert error < 1e-1
 
-    # 10D Test
+    # 10D Tests
     N = 10000
     errors = compute_test_errors(mc.integrate, {"N": N, "dim": 10, "seed": 0}, dim=10)
-    print("N =", N, "\n", errors)
+    print("Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:
         assert error < 13
 
