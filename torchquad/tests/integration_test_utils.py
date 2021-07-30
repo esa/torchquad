@@ -62,7 +62,10 @@ def compute_test_errors(integrator, integrator_args, dim=1):
     for test_function in test_functions:
         errors.append(
             np.abs(
-                test_function.evaluate(integrator, integrator_args).cpu().numpy()
+                test_function.evaluate(integrator, integrator_args)
+                .cpu()
+                .detach()
+                .numpy()
                 - test_function.expected_result
             )
         )
