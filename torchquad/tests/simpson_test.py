@@ -2,7 +2,6 @@ import sys
 
 sys.path.append("../")
 
-import torch
 import warnings
 
 from integration.simpson import Simpson

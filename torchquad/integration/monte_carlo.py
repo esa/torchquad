@@ -1,6 +1,6 @@
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
-from .utils import setup_integration_domain
+from .utils import _setup_integration_domain
 import torch
 
 import logging
@@ -43,7 +43,7 @@ class MonteCarlo(BaseIntegrator):
         self._dim = dim
         self._nr_of_fevals = 0
         self.fn = fn
-        self._integration_domain = setup_integration_domain(dim, integration_domain)
+        self._integration_domain = _setup_integration_domain(dim, integration_domain)
         if seed is not None:
             torch.random.manual_seed(seed)
 
