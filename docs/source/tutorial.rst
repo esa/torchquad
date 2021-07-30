@@ -442,7 +442,7 @@ We selected the Trapezoid rule and the Monte Carlo method to showcase that getti
 
         print("Method:", integrator, "Gradients:", domain.grad)
 
-The code above calculates the integral for a 1-D test_fuction `test_function()` in the [-1,1] domain and prints the gradients with respect to the integration domain.
+The code above calculates the integral for a 1-D test-function ``test_function()`` in the [-1,1] domain and prints the gradients with respect to the integration domain.
 The command `domain.requires_grad = True` enables the creation a computational graph, and it shall be called before calling the `integrate(...)` method.
 Gradients computation is, then, performed calling `result.backward()`. 
 The output of the code is as follows:
