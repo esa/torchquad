@@ -4,9 +4,7 @@ from .utils import _setup_integration_domain
 
 import torch
 
-import logging
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class Trapezoid(BaseIntegrator):

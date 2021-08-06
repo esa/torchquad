@@ -12,6 +12,7 @@ from integration.boole import Boole
 
 from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision
+from utils.set_log_level import set_log_level
 
 
 def some_function(x):
@@ -25,6 +26,7 @@ def some_function(x):
 def test_gradients():
     """Tests that the implemented integrators
     maintain torch gradients and they are consistent and correct"""
+    set_log_level("INFO")
     enable_cuda()
     set_precision("double")
 

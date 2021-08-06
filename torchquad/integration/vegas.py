@@ -6,9 +6,7 @@ from .vegas_stratification import VEGASStratification
 
 import torch
 
-import logging
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class VEGAS(BaseIntegrator):
@@ -19,7 +17,6 @@ class VEGAS(BaseIntegrator):
 
     def __init__(self):
         super().__init__()
-        # logger.setLevel(logging.INFO)
 
     def integrate(
         self,

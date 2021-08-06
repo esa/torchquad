@@ -4,10 +4,8 @@ from .utils import _setup_integration_domain
 
 import torch
 
-import logging
+from loguru import logger
 import warnings
-
-logger = logging.getLogger(__name__)
 
 
 class Simpson(BaseIntegrator):

@@ -1,9 +1,7 @@
 """This file contains various utility functions for the integrations methods."""
 
 import torch
-import logging
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 def _linspace_with_grads(start, stop, N, requires_grad):

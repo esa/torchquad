@@ -1,8 +1,7 @@
 import torch
-import logging
+from loguru import logger
 from time import perf_counter
 
-logger = logging.getLogger(__name__)
 
 from .utils import _linspace_with_grads
 
