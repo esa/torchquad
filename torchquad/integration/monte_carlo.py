@@ -1,8 +1,8 @@
+import torch
+from loguru import logger
+
 from .base_integrator import BaseIntegrator
 from .utils import _setup_integration_domain
-import torch
-
-from loguru import logger
 
 
 class MonteCarlo(BaseIntegrator):

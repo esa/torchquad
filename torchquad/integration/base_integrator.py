@@ -1,6 +1,6 @@
-from loguru import logger
 import warnings
 import torch
+from loguru import logger
 
 
 class BaseIntegrator:

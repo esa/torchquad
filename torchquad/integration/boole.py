@@ -1,11 +1,10 @@
+import torch
+import warnings
+from loguru import logger
+
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
 from .utils import _setup_integration_domain
-
-import torch
-
-from loguru import logger
-import warnings
 
 
 class Boole(BaseIntegrator):

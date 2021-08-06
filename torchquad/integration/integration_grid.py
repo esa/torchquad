@@ -1,7 +1,6 @@
 import torch
-from loguru import logger
 from time import perf_counter
-
+from loguru import logger
 
 from .utils import _linspace_with_grads
 

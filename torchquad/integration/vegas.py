@@ -1,12 +1,11 @@
+import torch
+from loguru import logger
+
+
 from .base_integrator import BaseIntegrator
 from .utils import _setup_integration_domain
-
 from .vegas_map import VEGASMap
 from .vegas_stratification import VEGASStratification
-
-import torch
-
-from loguru import logger
 
 
 class VEGAS(BaseIntegrator):
