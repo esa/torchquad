@@ -1,3 +1,5 @@
+import torch
+
 from torchquad import Boole, Trapezoid, Simpson, VEGAS, MonteCarlo
 
 # TODO test these in the future
@@ -6,8 +8,8 @@ from torchquad import Boole, Trapezoid, Simpson, VEGAS, MonteCarlo
 
 from torchquad import enable_cuda
 from torchquad import set_precision
-
-import torch
+from torchquad import set_log_level
+from loguru import logger
 
 
 def _deployment_test():
@@ -17,38 +19,44 @@ def _deployment_test():
     """
     """[summary]
     """
-    print()
-    print()
-    print()
-    print("######## TESTING DEPLOYMENT ########")
-    print()
+    set_log_level("INFO")
+    logger.info("####################################")
+    logger.info("######## TESTING DEPLOYMENT ########")
+    logger.info("####################################")
+    logger.info("")
 
-    print("Testing CUDA init... ", end="")
+    logger.info("Testing CUDA init... ")
     # Test inititialization on GPUs if available
     enable_cuda()
     set_precision("double")
-    print("Done.")
+    logger.info("Done.")
 
-    print("Initializing integrators... ", end="")
+    logger.info("")
+    logger.info("####################################")
+
+    logger.info("Initializing integrators... ")
     tp = Trapezoid()
     sp = Simpson()
     boole = Boole()
     mc = MonteCarlo()
     vegas = VEGAS()
-    print("Done.")
+    logger.info("Done.")
 
     def some_test_function(x):
         return torch.exp(x) * torch.pow(x, 2)
 
-    print("Testing integrate functions... ", end="")
+    logger.info("")
+    logger.info("####################################")
+
+    logger.info("Testing integrate functions... ")
     tp.integrate(some_test_function, dim=1, N=101)
     sp.integrate(some_test_function, dim=1, N=101)
     boole.integrate(some_test_function, dim=1, N=101)
     mc.integrate(some_test_function, dim=1, N=101)
     vegas.integrate(some_test_function, dim=1, N=101)
-    print("Done.")
+    logger.info("Done.")
+    logger.info("")
 
-    print()
-    print()
-    print()
-    print("######## ALL DONE. ########")
+    logger.info("####################################")
+    logger.info("############ ALL DONE. #############")
+    logger.info("####################################")

@@ -6,6 +6,36 @@ Tutorial
 *torchquad* is a dedicated module for numerical integration in arbitrary dimensions.
 This tutorial gives a more detailed look at its functionality and explores some performance considerations.
 
+
+Minimal working example
+-----------------------
+
+.. code:: ipython3
+
+    # To avoid copying things to GPU memory, 
+    # ideally allocate everything in torch on the GPU
+    # and avoid non-torch function calls
+    import torch 
+    from torchquad import MonteCarlo, enable_cuda
+
+    # Enable GPU support if available
+    enable_cuda() 
+
+    # The function we want to integrate, in this example f(x0,x1) = sin(x0) + e^x1 for x0=[0,1] and x1=[-1,1]
+    # Note that the function needs to support multiple evaluations at once (first dimension of x here)
+    # Expected result here is ~3.2698
+    def some_function(x):
+        return torch.sin(x[:,0]) + torch.exp(x[:,1]) 
+
+    # Declare an integrator, here we use the simple, stochastic Monte Carlo integration method
+    mc = MonteCarlo()
+
+    # Compute the function integral by sampling 10000 points over domain 
+    integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
+
+Detailed Introduction
+---------------------
+
 The main problem with higher-dimensional numerical integration is that
 the computation simply becomes too costly if the dimensionality, *n*, is large, as the number
 of evaluation points increases exponentially - this problem is known as
@@ -397,10 +427,57 @@ The results from using Simpson’s rule in *torchquad* is:
             Took 162.147 ms
     
 
-In our case, torchquad was more than 300 times faster than
-``scipy.integrate.nquad`` with a just the simple Simpson’s rule. We will add
+In our case, *torchquad*  with Simpson’s rule was more than 300 times faster than
+``scipy.integrate.nquad``. We will add
 more elaborate integration methods over time; however, this tutorial should
 already showcase the advantages of numerical integration on the GPU.
 
 Reasonably, one might prefer Monte Carlo integration methods for a 5-D
-problem. We will add this in the future.
+problem. We might add this comparison to the tutorial in the future.
+
+Computing gradients with respect to the integration domain
+----------------------------------------------------------
+
+*torchquad* allows fully automatic differentiation. In this tutorial, we will show how to extract the gradients with respect to the integration domain.
+We selected the Trapezoid rule and the Monte Carlo method to showcase that getting gradients is possible for both deterministic and stochastic methods.
+
+
+.. code:: ipython3
+
+    import torch
+    from torchquad.integration.monte_carlo import MonteCarlo
+    from torchquad.integration.trapezoid import Trapezoid
+    from torchquad.utils.enable_cuda import enable_cuda
+    from torchquad.utils.set_precision import set_precision
+
+    def test_function(x):
+        """V shaped test function."""
+        return 2 * torch.abs(x)
+
+    enable_cuda()
+    set_precision("double")
+    N = 99997 # Number of iterations
+    torch.manual_seed(0)  # We have to seed torch to get reproducible results
+    integrators = [MonteCarlo(), Trapezoid()]   # Define integrators
+
+    for integrator in integrators:
+
+        domain = torch.tensor([[-1.0, 1.0]]) #Integration domains
+        domain.requires_grad = True # It enables the creation of a computational graph for gradient calculation.
+        result = integrator.integrate(
+            test_function, dim=1, N=N, integration_domain=domain
+        ) # We calculate the 1-D integral by using the previously defined test-fuction
+
+        result.backward() #Gradients computation
+
+        print("Method:", integrator, "Gradients:", domain.grad)
+
+The code above calculates the integral for a 1-D test-function ``test_function()`` in the [-1,1] domain and prints the gradients with respect to the integration domain.
+The command ``domain.requires_grad = True`` enables the creation of a computational graph, and it shall be called before calling the ``integrate(...)`` method.
+Gradients computation is, then, performed calling ``result.backward()``. 
+The output of the code is as follows:
+
+.. parsed-literal::
+
+    **Output:** Method: <torchquad.integration.monte_carlo.MonteCarlo object at 0x7f724735b6a0> Gradients: tensor([[-1.9872,  2.0150]])
+            Method: <torchquad.integration.trapezoid.Trapezoid object at 0x7f724735b6d0> Gradients: tensor([[-2.0000,  2.0000]])

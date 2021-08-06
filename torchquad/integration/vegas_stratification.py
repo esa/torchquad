@@ -1,10 +1,6 @@
 import torch
 import math
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 
 class VEGASStratification:
     """The stratification used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112 .
@@ -23,6 +19,7 @@ class VEGASStratification:
         self.dim = dim
         # stratification steps per dim, EQ 33
         self.N_strat = math.floor((N_increment / 2.0) ** (1.0 / dim))
+        self.N_strat = 1000 if self.N_strat > 1000 else self.N_strat
         self.beta = beta  # variable controlling adaptiveness in stratification 0 to 1
         self.N_cubes = self.N_strat ** self.dim  # total number of subdomains
         self.V_cubes = (1.0 / self.N_strat) ** self.dim  # volume of hypercubes
@@ -41,14 +38,26 @@ class VEGASStratification:
         Returns:
             torch.tensor,torch.tensor: Computed JF and JF2
         """
-        current_idx = 0
-        for idx, neval in enumerate(nevals):
-            # Get the values for the idx-th cube
-            weight = weight_all_cubes[current_idx : current_idx + neval]
-            current_idx += neval
-            self.JF2[idx] = pow(weight, 2).sum()
-            self.JF[idx] = weight.sum()
-            self.strat_counts[idx] += len(weight)
+        # Build indices for weights
+        indices = torch.cumsum(nevals, dim=0)
+
+        # Compute squares of all weights ahead
+        square_weights = torch.pow(weight_all_cubes, 2.0)
+
+        # Used to store previous indexstarting point
+        prev = 0
+        for idx in range(len(nevals)):
+            # Get the values for the idx-th cubes
+            cur_weights = weight_all_cubes[prev : indices[idx]]
+            cur_square_weights = square_weights[prev : indices[idx]]
+
+            # Compute jacobians
+            self.JF2[idx] = cur_square_weights.sum()
+            self.JF[idx] = cur_weights.sum()
+
+            # Store counts
+            self.strat_counts[idx] += len(cur_weights)
+            prev = indices[idx]
 
         return self.JF, self.JF2
 
@@ -98,12 +107,12 @@ class VEGASStratification:
         Returns:
             torch.tensor: Mapped point.
         """
-        res = torch.zeros([self.dim])
+        res = torch.zeros([len(idx), self.dim])
         tmp = idx
         for i in range(self.dim):
             q = tmp // self.N_strat
             r = tmp - q * self.N_strat
-            res[i] = r
+            res[:, i] = r
             tmp = q
         return res
 
@@ -118,12 +127,24 @@ class VEGASStratification:
         """
         dy = 1.0 / self.N_strat
         res_in_all_cubes = []
+
+        # Get indices
+        indices = torch.arange(len(nevals))
+        indices = self._get_indices(indices)
+
+        # Get random numbers (we get a few more just to vectorize properly)
+        # This might increase the memorz requirements slightly but is probably
+        # worth it
+        random_uni = torch.rand(size=[len(nevals), nevals.max(), self.dim])
+
+        # Sum the random numbers onto the index locations and scale with dy
+        # Note that the resulting tensor is still slightly too large
+        # that gets remedied in the for-loop after
+        # Also, indices needs the unsqueeye to fill the missing dimension
+        res = (random_uni + indices.unsqueeze(1)) * dy
+
         # Note this loop is tricky to vectorize as cubes have different N
         for idx, N in enumerate(nevals):
-            N = N.item()  # can't use float tensor as size
-            res = torch.zeros([N, self.dim])
-            ID = self._get_indices(idx)
-            random_uni = torch.rand(size=[N, self.dim])
-            res = random_uni * dy + ID * dy
-            res_in_all_cubes.append(res)
+            res_in_all_cubes.append(res[idx, 0:N, :])
+
         return torch.cat(res_in_all_cubes, dim=0)
