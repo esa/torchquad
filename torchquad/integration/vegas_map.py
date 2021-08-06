@@ -115,7 +115,7 @@ class VEGASMap:
             ID_i = torch.floor(ID[:, i]).long()
             unique_vals, unique_counts = torch.unique(ID_i, return_counts=True)
             weights_vals = jf_vec2
-            for val, _ in zip(unique_vals, unique_counts):
+            for val in unique_vals:
                 self.weights[i][val] += weights_vals[ID_i == val].sum()
             self.counts[i, unique_vals.long()] += unique_counts
 

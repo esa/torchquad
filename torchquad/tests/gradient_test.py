@@ -28,7 +28,7 @@ def test_gradients():
     enable_cuda()
     set_precision("double")
 
-    N = 99997
+    N = 199997
     result_tolerence = 1e-2
     gradient_tolerance = 5e-2
     torch.manual_seed(0)  # we have to seed torch to get reproducible results
