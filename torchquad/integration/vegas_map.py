@@ -199,7 +199,7 @@ class VEGASMap:
             # EQ 22
             self.x_edges[i][1:-1] = (
                 self.x_edges[i][indices]
-                + d_accu_i
+                + d_accu_i.detach()
                 / self.smoothed_weights[i][indices]
                 * self.dx_edges[i][indices]
             )
