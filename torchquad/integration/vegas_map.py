@@ -1,7 +1,6 @@
 import torch
 
 
-
 class VEGASMap:
     """The map used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112 .
     Implementation is inspired by https://github.com/ycwu1030/CIGAR/ .
