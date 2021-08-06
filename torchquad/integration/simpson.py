@@ -7,8 +7,6 @@ from .integration_grid import IntegrationGrid
 from .utils import _setup_integration_domain
 
 
-
-
 class Simpson(BaseIntegrator):
 
     """Simpson's rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
