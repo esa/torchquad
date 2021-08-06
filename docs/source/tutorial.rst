@@ -49,7 +49,8 @@ Outline
 This notebook is a guide for new users to *torchquad* and is structured in
 the following way:
 
--  Example integration in one dimension (1-D)
+-  Necessary imports for this tutorial
+-  Example integration in one dimension (1-D) with complex numbers
 -  Example integration in ten dimensions (10-D)
 -  Some accuracy / runtime comparisons with scipy
 
@@ -107,6 +108,8 @@ in one dimension.
 Similarly, `Tirthajyoti Sarkar <https://github.com/tirthajyoti>`__ has made a nice visual explanation of 
 `Monte Carlo integration in Python 
 <https://towardsdatascience.com/monte-carlo-integration-in-python-a71a209d277e>`__.
+
+The *torchquad* package also works with complex numbers. To showcase this 
 
 Let ``f(x)`` be the function :math:`f(x) = e^{x} \cdot x^{2}`. Over the domain 
 :math:`[0,2]`, the integral of ``f(x)`` is :math:`\int_{0}^{2} f(x) dx = 
