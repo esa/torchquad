@@ -1,8 +1,6 @@
 import torch
 
-import logging
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 def set_precision(data_type="float"):
@@ -15,17 +13,17 @@ def set_precision(data_type="float"):
 
     if torch.cuda.is_initialized():
         if data_type.lower() == "double":
-            logging.info(
+            logger.info(
                 "Setting default tensor type to cuda.Float64 (CUDA is initialized)."
             )
             torch.set_default_tensor_type(torch.cuda.DoubleTensor)
         elif data_type.lower() == "float":
-            logging.info(
+            logger.info(
                 "Setting default tensor type to cuda.Float32 (CUDA is initialized)."
             )
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
         else:
-            logging.error(
+            logger.error(
                 data_type,
                 "Invalid data type. Only float or double are supported. "
                 "Setting default tensor type to cuda.Float32 (CUDA is initialized). "
@@ -34,17 +32,17 @@ def set_precision(data_type="float"):
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
     else:
         if data_type.lower() == "double":
-            logging.info(
+            logger.info(
                 "Setting default tensor type to Float64 (CUDA not initialized)."
             )
             torch.set_default_tensor_type(torch.DoubleTensor)
         elif data_type.lower() == "float":
-            logging.info(
+            logger.info(
                 "Setting default tensor type to Float32 (CUDA not initialized)."
             )
             torch.set_default_tensor_type(torch.FloatTensor)
         else:
-            logging.error(
+            logger.error(
                 data_type,
                 "Invalid data type. Only float or double are supported. "
                 "Setting default tensor type to Float32. "

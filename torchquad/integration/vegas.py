@@ -1,14 +1,11 @@
-from .base_integrator import BaseIntegrator
-from .utils import setup_integration_domain
+import torch
+from loguru import logger
 
+
+from .base_integrator import BaseIntegrator
+from .utils import _setup_integration_domain
 from .vegas_map import VEGASMap
 from .vegas_stratification import VEGASStratification
-
-import torch
-
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class VEGAS(BaseIntegrator):
@@ -19,7 +16,6 @@ class VEGAS(BaseIntegrator):
 
     def __init__(self):
         super().__init__()
-        # logger.setLevel(logging.INFO)
 
     def integrate(
         self,
@@ -75,7 +71,7 @@ class VEGAS(BaseIntegrator):
         self._starting_N = N // self._max_iterations
         self._N_increment = N // self._max_iterations
         self._fn = fn
-        self._integration_domain = setup_integration_domain(dim, integration_domain)
+        self._integration_domain = _setup_integration_domain(dim, integration_domain)
         if seed is not None:
             torch.random.manual_seed(seed)
 

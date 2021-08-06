@@ -1,13 +1,10 @@
-from .base_integrator import BaseIntegrator
-from .integration_grid import IntegrationGrid
-from .utils import setup_integration_domain
-
 import torch
-
-import logging
+from loguru import logger
 import warnings
 
-logger = logging.getLogger(__name__)
+from .base_integrator import BaseIntegrator
+from .integration_grid import IntegrationGrid
+from .utils import _setup_integration_domain
 
 
 class Simpson(BaseIntegrator):
@@ -34,7 +31,7 @@ class Simpson(BaseIntegrator):
         if N is None:
             N = 3 ** dim
 
-        self._integration_domain = setup_integration_domain(dim, integration_domain)
+        self._integration_domain = _setup_integration_domain(dim, integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
         N = self._adjust_N(dim=dim, N=N)
 

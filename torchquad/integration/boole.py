@@ -1,13 +1,10 @@
+import torch
+import warnings
+from loguru import logger
+
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
-from .utils import setup_integration_domain
-
-import torch
-
-import logging
-import warnings
-
-logger = logging.getLogger(__name__)
+from .utils import _setup_integration_domain
 
 
 class Boole(BaseIntegrator):
@@ -34,7 +31,7 @@ class Boole(BaseIntegrator):
         if N is None:
             N = 5 ** dim
 
-        self._integration_domain = setup_integration_domain(dim, integration_domain)
+        self._integration_domain = _setup_integration_domain(dim, integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
         N = self._adjust_N(dim=dim, N=N)
 

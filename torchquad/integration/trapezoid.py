@@ -1,12 +1,9 @@
+import torch
+from loguru import logger
+
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
-from .utils import setup_integration_domain
-
-import torch
-
-import logging
-
-logger = logging.getLogger(__name__)
+from .utils import _setup_integration_domain
 
 
 class Trapezoid(BaseIntegrator):
@@ -27,7 +24,7 @@ class Trapezoid(BaseIntegrator):
         Returns:
             float: integral value
         """
-        self._integration_domain = setup_integration_domain(dim, integration_domain)
+        self._integration_domain = _setup_integration_domain(dim, integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
 
         logger.debug(
