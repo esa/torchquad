@@ -9,10 +9,12 @@ import cProfile, pstats
 from integration.vegas import VEGAS
 from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision
+from utils.set_log_level import set_log_level
 
 
 def test_integrate():
     """Tests the integrate function in integration.VEGAS."""
+    set_log_level("INFO")
     enable_cuda()
     set_precision("double")
 

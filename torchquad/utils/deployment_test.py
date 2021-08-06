@@ -1,3 +1,5 @@
+import torch
+
 from torchquad import Boole, Trapezoid, Simpson, VEGAS, MonteCarlo
 
 # TODO test these in the future
@@ -6,8 +8,6 @@ from torchquad import Boole, Trapezoid, Simpson, VEGAS, MonteCarlo
 
 from torchquad import enable_cuda
 from torchquad import set_precision
-
-import torch
 
 
 def _deployment_test():

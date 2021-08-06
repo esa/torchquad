@@ -1,8 +1,6 @@
-import logging
 import warnings
 import torch
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class BaseIntegrator:

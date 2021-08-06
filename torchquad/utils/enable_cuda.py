@@ -1,10 +1,8 @@
 import torch
 import os
+from loguru import logger
 
-import logging
 from .set_precision import set_precision
-
-logger = logging.getLogger(__name__)
 
 
 def enable_cuda(device=0, data_type="float"):
@@ -24,6 +22,6 @@ def enable_cuda(device=0, data_type="float"):
         logger.info("Active CUDA Device: GPU" + str(torch.cuda.current_device()))
         set_precision(data_type)
     else:
-        logger.warn(
+        logger.warning(
             "Error enabling CUDA. cuda.is_available() returned False. CPU will be used."
         )

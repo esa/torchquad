@@ -1,9 +1,4 @@
 import torch
-from copy import deepcopy
-
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class VEGASMap:

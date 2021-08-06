@@ -1,8 +1,6 @@
 import torch
 
-import logging
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class IntegrationTestFunction:
@@ -33,8 +31,8 @@ class IntegrationTestFunction:
             self.domain = torch.tensor([[-1, 1]] * self.dim)
         else:
             self.domain = domain
-        logging.debug("Initialized Test function with ")
-        logging.debug(
+        logger.debug("Initialized Test function with ")
+        logger.debug(
             "dim="
             + str(self.dim)
             + "| domain="
