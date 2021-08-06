@@ -58,6 +58,10 @@
    :target: https://img.shields.io/pypi/dm/torchquad
    :alt: PyPI - Downloads
 
+.. image:: https://joss.theoj.org/papers/d6f22f83f1a889ddf83b3c2e0cd0919c/status.svg   
+   :target: https://joss.theoj.org/papers/d6f22f83f1a889ddf83b3c2e0cd0919c
+   :alt: JOSS Status
+   
 
 Welcome to torchquad's documentation!
 =====================================================
