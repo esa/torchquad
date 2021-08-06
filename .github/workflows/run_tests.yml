@@ -23,7 +23,7 @@ jobs:
         python-version: 3.8
     - name: Install dependencies
       run: |
-        $CONDA/bin/conda env update --file environment.yml --name base
+        conda env create --file environment.yml
     # - name: Lint with flake8
     #   run: |
     #     # stop the build if there are Python syntax errors or undefined names
@@ -32,6 +32,6 @@ jobs:
     #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
+        conda activate torchquad
         cd torchquad/tests
-        conda install pytest
-        $CONDA/bin/pytest
+        pytest
