@@ -1,8 +1,10 @@
 import torch
 import os
-from loguru import logger
 
 from .set_precision import set_precision
+from .get_logger import get_logger
+
+logger = get_logger()
 
 
 def enable_cuda(device=0, data_type="float"):
