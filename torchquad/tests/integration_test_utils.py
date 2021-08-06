@@ -92,7 +92,7 @@ def compute_test_errors(
 
     # Compute integration errors on all of them
     for test_function in test_functions:
-        if test_function.is_complex == False:
+        if not test_function.is_complex:
             errors.append(
                 np.abs(
                     test_function.evaluate(integrator, integrator_args)
