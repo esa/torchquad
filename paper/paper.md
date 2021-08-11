@@ -63,7 +63,7 @@ In particular, the following deterministic integration methods are available in 
 
 The stochastic integration methods implemented in \texttt{torchquad} so far are: 
 
-* \texttt{Classic~Monte~Carlo~Integrator} [@caflisch1998monte] 
+* \texttt{Classic \hspace Monte\hspace Carlo~Integrator} [@caflisch1998monte] 
 * \texttt{VEGAS~Enhanced} (\mbox{\texttt{VEGAS+}}) integration method [@VegasEnhanced-paper] 
 
 The functionality and the convergence of all the methods are ensured through automatic unit testing, which relies on an extensible set of different test functions.
