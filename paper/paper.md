@@ -57,9 +57,9 @@ Finally, being \texttt{PyTorch}-based, \texttt{torchquad} is fully differentiabl
 \texttt{torchquad} features fully vectorized implementations of various deterministic and stochastic methods to perform $n$-dimensional integration over cubical domains.
 In particular, the following deterministic integration methods are available in \texttt{torchquad} (version 0.2.1):  
 
-* \mbox{\texttt{Trapezoid Rule}} [@sag1964numerical] 
-* \mbox{\texttt{Simpson's Rule}} [@sag1964numerical] 
-* \mbox{\texttt{Boole's Rule}} [@ubale2012numerical] 
+* \mbox{\texttt{Trapezoid~~Rule}} [@sag1964numerical] 
+* \texttt{Simpson's~~Rule} [@sag1964numerical] 
+* \mbox{\texttt{Boole's~~Rule}} [@ubale2012numerical] 
 
 The stochastic integration methods implemented in \texttt{torchquad} so far are: 
 
