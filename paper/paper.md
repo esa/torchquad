@@ -10,10 +10,10 @@ tags:
   - high-performance computing
   - machine learning
 authors:
-  - name: Pablo Gómez^[corresponding author]
+  - name: Pablo GÃ³mez^[corresponding author]
     orcid: 0000-0002-5631-8240
     affiliation: 1
-  - name: Håvard Hem Toftevaag
+  - name: HÃ¥vard Hem Toftevaag
     orcid: 0000-0003-4692-5722
     affiliation: 1
   - name: Gabriele Meoni
@@ -57,14 +57,14 @@ Finally, being \texttt{PyTorch}-based, \texttt{torchquad} is fully differentiabl
 \texttt{torchquad} features fully vectorized implementations of various deterministic and stochastic methods to perform $n$-dimensional integration over cubical domains.
 In particular, the following deterministic integration methods are available in \texttt{torchquad} (version 0.2.1):  
 
-* \texttt{Trapezoid Rule} [@sag1964numerical] 
-* \texttt{Simpson's Rule} [@sag1964numerical] 
-* \texttt{Boole's Rule} [@ubale2012numerical] 
+* Trapezoid Rule [@sag1964numerical] 
+* Simpson's Rule [@sag1964numerical] 
+* Boole's Rule [@ubale2012numerical] 
 
 The stochastic integration methods implemented in \texttt{torchquad} so far are: 
 
-* \texttt{Classic Monte Carlo Integrator} [@caflisch1998monte] 
-* \texttt{VEGAS Enhanced} (\mbox{\texttt{VEGAS+}}) integration method [@VegasEnhanced-paper] 
+* Classic Monte Carlo Integrator [@caflisch1998monte] 
+* VEGAS Enhanced (\mbox{\texttt{VEGAS+}}) integration method [@VegasEnhanced-paper] 
 
 The functionality and the convergence of all the methods are ensured through automatic unit testing, which relies on an extensible set of different test functions.
 Both single and double precision are supported to allow different trade-offs between accuracy and memory utilization. Even though it is optimized for GPUs, \texttt{torchquad} can also be employed without a GPU without any functional limitations.
