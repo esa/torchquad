@@ -30,7 +30,7 @@ bibliography: paper.bib
 # Summary
 
 \texttt{torchquad} is a \texttt{Python} module for $n$-dimensional numerical integration optimized for graphics processing units (GPUs).
-Various deterministic and stochastic integration methods, such as \texttt{Newton\textendash Cotes} formulas and \texttt{Monte Carlo} integration methods like \texttt{VEGAS Enhanced} [@VegasEnhanced-paper], are available for computationally efficient integration for arbitrary dimensionality $n_{\mathrm{d}}$.
+Various deterministic and stochastic integration methods, such as \texttt{Newton\textendash Cotes} formulas and \texttt{Monte~Carlo} integration methods like \texttt{VEGAS~Enhanced} [@VegasEnhanced-paper], are available for computationally efficient integration for arbitrary dimensionality $n_{\mathrm{d}}$.
 As it is implemented using \texttt{PyTorch} [@PyTorch2019], one of the most popular machine learning frameworks, \texttt{torchquad} provides fully automatic differentiation throughout the integration, which is essential for many machine learning applications.
 
 # Statement of Need
@@ -43,11 +43,11 @@ This phenomenon refers to the fact that the computational complexity of the inte
 Previous work has demonstrated that this problem can be mitigated by leveraging the \textit{single instruction, multiple data} parallelization of GPUs [@ZMCintegral].
 
 Although GPU-based implementations for multidimensional numerical integration in \texttt{Python} exist, some of these packages do not allow fully automatic differentiation [@borowka2019gpu], which is crucial for many machine learning applications [@Baydin2018autodiffinML]. Recently, to fill this gap, the packages \texttt{VegasFlow} [@VegasFlow-Paper] and \texttt{ZMCintegral} [@ZMCintegral] were developed. Both of these implementations are, however, based on \texttt{TensorFlow} [@Tensorflow], and there are currently no packages available that enable more than one-dimensional integration in \texttt{PyTorch}.
-Additionally, the available GPU-based \texttt{Python} packages that allow fully automatic differentiation rely solely on \texttt{Monte Carlo} methods [@ZMCintegral; @VegasFlow-Paper]. 
+Additionally, the available GPU-based \texttt{Python} packages that allow fully automatic differentiation rely solely on \texttt{Monte~Carlo} methods [@ZMCintegral; @VegasFlow-Paper]. 
 Even though such methods offer good speed\textendash accuracy trade-offs for problems of high dimensionality $n_{\mathrm{d}}$, the efficiency of deterministic methods, such as the \texttt{Newton\textendash Cotes} formulas, is often superior for lower dimensionality [@Vegas-paper].
 
 In summary, to the authors' knowledge, \texttt{torchquad} is the first \texttt{PyTorch}-based module for $n$-dimensional numerical integration. 
-Furthermore, it incorporates several deterministic and stochastic methods, including \texttt{Newton\textendash Cotes} formulas and \texttt{VEGAS Enhanced}, which allow obtaining high-accuracy estimates for varying dimensionality at configurable computational cost as controlled by the maximum number of function evaluations $N$. It is, to the authors' knowledge, also the first GPU-capable implementation of \texttt{VEGAS Enhanced} [@VegasEnhanced-paper], which improves on its predecessor \texttt{VEGAS} by introducing an adaptive stratified sampling strategy.
+Furthermore, it incorporates several deterministic and stochastic methods, including \texttt{Newton\textendash Cotes} formulas and \texttt{VEGAS~Enhanced}, which allow obtaining high-accuracy estimates for varying dimensionality at configurable computational cost as controlled by the maximum number of function evaluations $N$. It is, to the authors' knowledge, also the first GPU-capable implementation of \texttt{VEGAS~Enhanced} [@VegasEnhanced-paper], which improves on its predecessor \texttt{VEGAS} by introducing an adaptive stratified sampling strategy.
 
 Finally, being \texttt{PyTorch}-based, \texttt{torchquad} is fully differentiable, extending its applicability to use cases such as those in machine learning. In these applications, it is typically necessary to compute the gradient of some parameters with regard to input variables to perform updates of the trainable parameters in the machine learning model. With \texttt{torchquad}, e.g., the employed loss function can contain integrals without breaking the automatic differentiation required for training.
 
@@ -57,24 +57,24 @@ Finally, being \texttt{PyTorch}-based, \texttt{torchquad} is fully differentiabl
 \texttt{torchquad} features fully vectorized implementations of various deterministic and stochastic methods to perform $n$-dimensional integration over cubical domains.
 In particular, the following deterministic integration methods are available in \texttt{torchquad} (version 0.2.1):  
 
-* \mbox{\texttt{Trapezoid~~Rule}} [@sag1964numerical] 
-* \texttt{Simpson's~~Rule} [@sag1964numerical] 
-* \mbox{\texttt{Boole's~~Rule}} [@ubale2012numerical] 
+* \texttt{Trapezoid~Rule} [@sag1964numerical] 
+* \texttt{Simpson's~Rule} [@sag1964numerical] 
+* \texttt{Boole's~Rule} [@ubale2012numerical] 
 
 The stochastic integration methods implemented in \texttt{torchquad} so far are: 
 
-* \mbox{\texttt{Classic Monte Carlo Integrator}} [@caflisch1998monte] 
-* \mbox{\texttt{VEGAS Enhanced}} (\mbox{\texttt{VEGAS+}}) integration method [@VegasEnhanced-paper] 
+* \texttt{Classic~Monte~Carlo~Integrator} [@caflisch1998monte] 
+* \texttt{VEGAS~Enhanced} (\mbox{\texttt{VEGAS+}}) integration method [@VegasEnhanced-paper] 
 
 The functionality and the convergence of all the methods are ensured through automatic unit testing, which relies on an extensible set of different test functions.
 Both single and double precision are supported to allow different trade-offs between accuracy and memory utilization. Even though it is optimized for GPUs, \texttt{torchquad} can also be employed without a GPU without any functional limitations.
 
 # Installation \& Contribution
 
-The \texttt{torchquad} package is implemented in \texttt{Python 3.8} and is openly available under a GPL-3 license. Installation with either \texttt{pip} (\texttt{PyPi})\footnote{\texttt{torchquad} package on \texttt{PyPi}, \url{https://pypi.org/project/torchquad/}} or \texttt{conda}\footnote{\texttt{torchquad} package on \texttt{conda}, \url{https://anaconda.org/conda-forge/torchquad}} is available. Our public \texttt{GitHub} repository\footnote{\texttt{torchquad} \texttt{GitHub} repository, \url{https://github.com/esa/torchquad}} provides users with direct access to the main development branch. Users wishing to contribute to \texttt{torchquad} can submit issues or pull requests to our \texttt{GitHub} repository following the contribution guidelines outlined there.
+The \texttt{torchquad} package is implemented in \texttt{Python~3.8} and is openly available under a GPL-3 license. Installation with either \texttt{pip} (\texttt{PyPi})\footnote{\texttt{torchquad} package on \texttt{PyPi}, \url{https://pypi.org/project/torchquad/}} or \texttt{conda}\footnote{\texttt{torchquad} package on \texttt{conda}, \url{https://anaconda.org/conda-forge/torchquad}} is available. Our public \texttt{GitHub} repository\footnote{\texttt{torchquad} \texttt{GitHub} repository, \url{https://github.com/esa/torchquad}} provides users with direct access to the main development branch. Users wishing to contribute to \texttt{torchquad} can submit issues or pull requests to our \texttt{GitHub} repository following the contribution guidelines outlined there.
 
 # Tutorials 
 
-The \texttt{torchquad} documentation, hosted on \texttt{Read the Docs},\footnote{\texttt{torchquad} documentation on \texttt{Read the Docs}, \url{https://torchquad.readthedocs.io/}} provides some examples of the use of \texttt{torchquad} for one-dimensional and multidimensional integration utilizing a variety of the implemented methods.
+The \texttt{torchquad} documentation, hosted on \texttt{Read~the~Docs},\footnote{\texttt{torchquad} documentation on \texttt{Read~the~Docs}, \url{https://torchquad.readthedocs.io/}} provides some examples of the use of \texttt{torchquad} for one-dimensional and multidimensional integration utilizing a variety of the implemented methods.
 
 # References
