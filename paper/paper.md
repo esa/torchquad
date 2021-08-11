@@ -1,3 +1,32 @@
+---
+title: 'torchquad: Numerical Integration in Arbitrary Dimensions with PyTorch'
+tags:
+  - Python
+  - n-dimensional
+  - numerical integration
+  - GPU
+  - automatic differentiation
+  - PyTorch
+  - high-performance computing
+  - machine learning
+authors:
+  - name: Pablo Gómez^[corresponding author]
+    orcid: 0000-0002-5631-8240
+    affiliation: 1
+  - name: Håvard Hem Toftevaag
+    orcid: 0000-0003-4692-5722
+    affiliation: 1
+  - name: Gabriele Meoni
+    orcid: 0000-0001-9311-6392
+    affiliation: 1
+affiliations:
+ - name: Advanced Concepts Team, European Space Agency, Noordwijk, The Netherlands
+   index: 1
+date: 15 June 2021
+bibliography: paper.bib
+
+---
+
 # Summary
 
 \texttt{torchquad} is a \texttt{Python} module for $n$-dimensional numerical integration optimized for graphics processing units (GPUs).
