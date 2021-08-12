@@ -58,7 +58,7 @@ Finally, being \texttt{PyTorch}-based, \texttt{torchquad} is fully differentiabl
 In particular, the following deterministic integration methods are available in \texttt{torchquad} (version 0.2.1):  
 
 * \texttt{Trapezoid\:Rule} [@sag1964numerical] 
-* \texttt{Simpson's\:Rule} [@sag1964numerical] 
+* \texttt{Simpson's} \texttt{Rule} [@sag1964numerical] 
 * \texttt{Boole's\:Rule} [@ubale2012numerical] 
 
 The stochastic integration methods implemented in \texttt{torchquad} so far are: 
