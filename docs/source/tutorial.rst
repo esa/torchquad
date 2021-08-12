@@ -24,10 +24,10 @@ abritrary dimensionality.
 | Trapezoid    | Creates a linear interpolant between two |br|   | Equal      |
 | rule         | neighbouring points                             |            |
 +--------------+-------------------------------------------------+------------+
-| Simpson’s    | Creates a quadratic interpolant between |br|    | Equal      |
+| Simpson's    | Creates a quadratic interpolant between |br|    | Equal      |
 | rule         | three neighbouring point                        |            |
 +--------------+-------------------------------------------------+------------+
-| Boole’s      | Creates a more complex interpolant between |br| | Equal      |
+| Boole's      | Creates a more complex interpolant between |br| | Equal      |
 | rule         | five neighbouring points                        |            |
 +--------------+-------------------------------------------------+------------+
 | Monte Carlo  | Randomly chooses points at which the |br|       | Random     |
@@ -49,10 +49,11 @@ Outline
 This notebook is a guide for new users to *torchquad* and is structured in
 the following way:
 
--  Necessary imports for this tutorial
--  Example integration in one dimension (1-D) with complex numbers
--  Example integration in ten dimensions (10-D)
--  Some accuracy / runtime comparisons with scipy
+1.  Necessary imports for this tutorial
+2.  Example integration in one dimension (1-D) with complex numbers
+3.  Example integration in ten dimensions (10-D)
+4.  Some accuracy / runtime comparisons with scipy
+5.  Example showing how gradients can be obtained w.r.t. the integration domain
 
 Feel free to test the code on your own computer as we go along.
 
@@ -95,53 +96,58 @@ Now let’s get started! First, the general imports:
 
 
 
-One-dimensional integration
-----------------------------
+One-dimensional integration with complex numbers
+------------------------------------------------
 
 To make it easier to understand the methods used in this notebook, we will start with an
 example in one dimension. If you are new to these methods or simply want a clearer picture, 
 feel free to check out Patrick Walls’ 
 `nice Python introduction <https://github.com/patrickwalls/mathematical-python/>`__ 
 to the `Trapezoid rule <https://www.math.ubc.ca/~pwalls/math-python/integration/trapezoid-rule/>`__
-and `Simpson’s rule <https://www.math.ubc.ca/~pwalls/math-python/integration/simpsons-rule/>`__
+and `Simpson's rule <https://www.math.ubc.ca/~pwalls/math-python/integration/simpsons-rule/>`__
 in one dimension.
 Similarly, `Tirthajyoti Sarkar <https://github.com/tirthajyoti>`__ has made a nice visual explanation of 
 `Monte Carlo integration in Python 
 <https://towardsdatascience.com/monte-carlo-integration-in-python-a71a209d277e>`__.
 
-The *torchquad* package also works with complex numbers. To showcase this 
-
-Let ``f(x)`` be the function :math:`f(x) = e^{x} \cdot x^{2}`. Over the domain 
+The *torchquad* package also works with complex numbers. To showcase this, in the following example we 
+will let ``f(x)`` be the complex function :math:`f(x) = e^{3ix} \cdot x^{2}`. Over the domain 
 :math:`[0,2]`, the integral of ``f(x)`` is :math:`\int_{0}^{2} f(x) dx = 
-\int_{0}^{2} e^x \cdot x^2 dx = 2(e^{2} - 1) = 12.7781121978613004544...`
+\int_{0}^{2} e^{3ix} \cdot x^{2} dx = -\frac{2}{27} i ( 1 + (17 + 6i) e^{6i} )`, or, alternatively, 
+:math:`0.0748857930... - i1.4073621035...` 
+(see `Wolfram Alpha <https://www.wolframalpha.com/input/?i=integral+of+e%5E%283ix%29+*+x%5E%282%29+from+0+to+2>`__ 
+if you don't belive us).
 
-Let’s declare the function and a simple function to print the absolute error, 
+Let’s declare the ``f(x)`` function, a simple helper function to print the absolute error, 
 as well as remember the correct result.
 
 .. code:: ipython3
 
     def f(x):
-        return torch.exp(x) * torch.pow(x,2)
+        return torch.exp(3.0j*x) * torch.pow(x,2)
     
     def print_error(result,solution):
-        print("Results:",result.item())
+        print("Results:", result.item())
         print(f"Abs. Error: {(torch.abs(result - solution).item()):.8e}")
         print(f"Rel. Error: {(torch.abs((result - solution) / solution).item()):.8e}")
     
-    solution = 2*(torch.exp(torch.tensor([2.]))-1)
+    solution = -2.0j / 27.0 * (1.0 + (17.0 + 6.0j) * torch.exp(torch.tensor([6.0j])) )
 
 **Note that we are using the torch versions to ensure that all variables
-are and stay on the GPU.**
+are and stay on the GPU.** 
+**Also, note:** the unit imaginary number :math:`i` is written as ``j`` in Python.
 
 Let’s plot the function briefly.
 
 .. code:: ipython3
 
     points = torch.linspace(0,2,100)
-    plt.plot(points.cpu(),f(points).cpu()) # Note that for plotting we have to move the values to the CPU first
-    plt.xlabel("$x$",fontsize=14)
-    plt.ylabel("f($x$)",fontsize=14)
+    real_part = f(points).real
+    imag_part = f(points).imag
 
+    plt.plot(points.cpu(),real_part.cpu()) # Note that for plotting we have to move 
+    plt.plot(points.cpu(),imag_part.cpu()) # the values to the CPU first
+    # The code for the legend and labels have been hidden here for readability
 
 
 .. image:: torchquad_tutorial_figure.png
@@ -151,7 +157,8 @@ Let’s define the integration domain now and initialize the integrator - let’
 
 .. code:: ipython3
 
-    integration_domain = [[0, 2]] # Integration domain is always a list of lists to allow arbitrary dimensionality.
+    # Integration domain is always a list of lists to allow arbitrary dimensionality.
+    integration_domain = [[0, 2]]
     tp = Trapezoid()  # Initialize a trapezoid solver
 
 Now we are all set to compute the integral. Let’s try it with just 101 sample points for now.
@@ -164,9 +171,9 @@ Now we are all set to compute the integral. Let’s try it with just 101 sample 
 
 .. parsed-literal::
 
-    **Output**: Results: 12.780082702636719
-            Abs. Error: 1.97029114e-03
-            Rel. Error: 1.54192661e-04
+    **Output**: Results: (0.07512567937374115-1.407015323638916j)
+            Abs. Error: 4.21665376e-04
+            Rel. Error: 2.99190753e-04
     
 
 This is quite close already, as 1-D integrals are comparatively easy.
@@ -181,10 +188,23 @@ Let’s see what type of value we get for different integrators.
 
 .. parsed-literal::
 
-    **Output:** Results: 12.778112411499023
-            Abs. Error: 0.00000000e+00
-            Rel. Error: 0.00000000e+00
+    **Output:** Results: (0.0748857706785202-1.4073622226715088j)
+            Abs. Error: 1.21286661e-07
+            Rel. Error: 8.60583995e-08
     
+.. code:: ipython3
+
+    boole = Boole()
+    result = boole.integrate(f, dim=1, N=101, integration_domain=integration_domain)
+    print_error(result,solution)
+
+
+.. parsed-literal::
+
+    **Output:** Results: (0.0748857855796814-1.4073619842529297j)
+            Abs. Error: 1.19441893e-07
+            Rel. Error: 8.47494519e-08
+
 
 .. code:: ipython3
 
@@ -195,9 +215,9 @@ Let’s see what type of value we get for different integrators.
 
 .. parsed-literal::
 
-    **Output:** Results: 13.32831859588623
-            Abs. Error: 5.50206184e-01
-            Rel. Error: 4.30584885e-02
+    **Output:** (0.050353918224573135-1.494397759437561j)
+            Abs. Error: 9.04268697e-02
+            Rel. Error: 6.41619712e-02
     
 
 .. code:: ipython3
@@ -209,15 +229,15 @@ Let’s see what type of value we get for different integrators.
 
 .. parsed-literal::
 
-    **Output:** Results: 21.83991813659668
-            Abs. Error: 9.06180573e+00
-            Rel. Error: 7.09166229e-01
+    **Output:** RuntimeError: result type ComplexFloat can't be cast to the desired output type Float
     
 
-Notably, Simpson’s method is already sufficient for a perfect solution here with 101 points. 
+Notably, Simpson's and Boole's methods are already really good here with only 101 points. 
+(You can try setting the function ``f(x) = torch.exp(x) * torch.pow(x,2)`` instead 
+to see Simpson's and Boole's methods find the perfect solution).
 Monte Carlo methods do not perform so well; they are more suited to higher-dimensional integrals. 
 VEGAS currently requires a larger number of samples to function correctly (as it performs several
-iterations). 
+iterations) and it doesn't currently support complex numbers. We're working hard on adding this feature.
 
 Let’s step things up now and move to a 10-dimensional problem.
 
@@ -247,7 +267,8 @@ We are working on giving the user more flexibility on this point.
 
 .. code:: ipython3
 
-    integration_domain = [[0, 1]]*10 # Integration domain always is a list of lists to allow arbitrary dimensionality
+    # Integration domain always is a list of lists to allow arbitrary dimensionality
+    integration_domain = [[0, 1]]*10 
     N = 3**10 
 
 .. code:: ipython3
@@ -280,6 +301,22 @@ We are working on giving the user more flexibility on this point.
 
 .. code:: ipython3
 
+    boole = Boole()  # Initialize Boole solver
+    result = boole.integrate(f_2, dim=10, N=N, integration_domain=integration_domain)
+    print_error(result,solution)
+
+
+.. parsed-literal::
+
+    **Output:** UserWarning: N per dimension cannot be lower than 5. N per dim will now be changed to 5.
+            Results: 4.596975326538086
+            Abs. Error: 1.90734863e-06
+            Rel. Error: 4.14913643e-07
+            
+
+
+.. code:: ipython3
+
     mc = MonteCarlo()
     result = mc.integrate(f_2, dim=10, N=N, integration_domain=integration_domain, seed=42)
     print_error(result,solution)
@@ -306,15 +343,20 @@ We are working on giving the user more flexibility on this point.
             Rel. Error: 3.74044670e-04
     
 
-Note that the Monte Carlo methods are much more competitive for
-this case. The bad convergence properties of the trapezoid method are
-visible while Simpson’s rule is still OK given the comparatively smooth
-integrand.
+Note that the Monte Carlo methods are much more competitive in this case. 
+The bad convergence properties of the trapezoid method are visible while Simpson's 
+and Boole's rule are still OK given the comparatively smooth integrand. 
+
+Note that with the choice of sample points (3 per dimension), Boole's method cannot work. 
+The number of sample points is therefore automatically increased to 5 per dimension for this method, 
+which gives Boole's method an unfair advantage here. The reason why the number of sample points 
+is set to 3 per dimension for the other methods is because then even users with a small GPU can 
+follow the example - if *N* is larger, they might get ``RuntimeError: CUDA out of memory``.
 
 If you have been repeating the examples from this tutorial on your own computer, you could also try 
-increasing N to :math:`5^{10}=9,765,625`.
-You can see the curse of dimensionality fully at play here, and 
-some users might even experience running out of memory at this point.
+increasing *N* to :math:`5^{10}=9,765,625` for all methods.
+You can see the curse of dimensionality fully at play here, and might even experience running out of memory at this point.
+
 
 Comparison with scipy
 ---------------------
@@ -389,7 +431,7 @@ Anyway, the decisive factor for this specific problem is runtime. A comparison w
 function evaluations is difficult, as ``nquad`` provides no support for a
 fixed number of evaluations. This may follow in the future.
 
-The results from using Simpson’s rule in *torchquad* is: 
+The results from using Simpson's rule in *torchquad* is: 
 
 .. parsed-literal::
 
@@ -400,7 +442,7 @@ The results from using Simpson’s rule in *torchquad* is:
             Took 162.147 ms
     
 
-In our case, *torchquad*  with Simpson’s rule was more than 300 times faster than
+In our case, *torchquad*  with Simpson's rule was more than 300 times faster than
 ``scipy.integrate.nquad``. We will add
 more elaborate integration methods over time; however, this tutorial should
 already showcase the advantages of numerical integration on the GPU.
