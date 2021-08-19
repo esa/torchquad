@@ -65,11 +65,7 @@ class IntegrationGrid:
 
         # Get grid points
         points = torch.meshgrid(*grid_1d)
-
-        # Flatten to 1D
-        points = [p.flatten() for p in points]
-
-        self.points = torch.stack((tuple(points))).transpose(0, 1)
+        self.points = torch.stack(list(map(torch.ravel, points)), dim=1)
 
         logger.info("Integration grid created.")
 
