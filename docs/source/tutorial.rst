@@ -207,7 +207,7 @@ Now we are all set to compute the integral. Let’s try it with just 101 sample 
 
 .. parsed-literal::
 
-    **Output**: Results: (0.0751256138749595-1.4070152346569569j)
+    **Output:** Results: (0.0751256138749595-1.4070152346569569j)
             Abs. Error: 4.21725301e-04
             Rel. Error: 2.99233274e-04
     
