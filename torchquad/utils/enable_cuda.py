@@ -16,9 +16,9 @@ def enable_cuda(device=0, data_type="float"):
     """
     if torch.cuda.is_available():
         os.environ["TORCH_DEVICE"] = "cuda:" + str(device)
-        logger.info("__pyTorch VERSION:" + str(torch.version))
-        logger.info("__CUDNN VERSION:" + str(torch.backends.cudnn.version()))
-        logger.info("__Number of CUDA Devices:" + str(torch.cuda.device_count()))
+        logger.info("PyTorch VERSION: " + str(torch.__version__))
+        logger.info("CUDNN VERSION: " + str(torch.backends.cudnn.version()))
+        logger.info("Number of CUDA Devices: " + str(torch.cuda.device_count()))
         logger.info("Active CUDA Device: GPU" + str(torch.cuda.current_device()))
         set_precision(data_type)
     else:

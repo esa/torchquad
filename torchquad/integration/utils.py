@@ -6,14 +6,13 @@ from loguru import logger
 
 def _linspace_with_grads(start, stop, N, requires_grad):
     """Creates an equally spaced 1D grid while keeping gradients
-    in regard to inputs
+    in regard to inputs.
 
     Args:
-        start (torch.tensor): Start point (inclusive)
-        stop (torch.tensor): End point (inclusive)
-        N (torch.tensor): Number of points
-        requires_grad (bool): Indicates if output should be
-            recorded for backpropagation
+        start (torch.tensor): Start point (inclusive).
+        stop (torch.tensor): End point (inclusive).
+        N (torch.tensor): Number of points.
+        requires_grad (bool): Indicates if output should be recorded for backpropagation.
 
     Returns:
         torch.tensor: Equally spaced 1D grid
@@ -22,7 +21,7 @@ def _linspace_with_grads(start, stop, N, requires_grad):
         # Create 0 to 1 spaced grid
         grid = torch.linspace(0, 1, N)
 
-        # Scale to desired range , thus keeping gradients
+        # Scale to desired range, thus keeping gradients
         grid *= stop - start
         grid += start
 
