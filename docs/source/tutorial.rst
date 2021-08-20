@@ -96,7 +96,7 @@ Now let’s get started! First, the general imports:
 
 
 
-One-dimensional integration with complex numbers
+One-dimensional integration
 ------------------------------------------------
 
 To make it easier to understand the methods used in this notebook, we will start with an
@@ -110,15 +110,15 @@ Similarly, `Tirthajyoti Sarkar <https://github.com/tirthajyoti>`__ has made a ni
 `Monte Carlo integration in Python 
 <https://towardsdatascience.com/monte-carlo-integration-in-python-a71a209d277e>`__.
 
-The *torchquad* package also works with complex numbers. To showcase this, in the following example we 
-will let ``f(x)`` be the complex function :math:`f(x) = e^{3ix} \cdot x^{2}`. Over the domain 
+*torchquad* is compatible with complex numbers. To showcase this, in the following example we 
+will let ``f(x)`` be the complex function :math:`f(x) = e^{3ix} \cdot x^{2}` (real integrands can be used in the exact same way). Over the domain 
 :math:`[0,2]`, the integral of ``f(x)`` is :math:`\int_{0}^{2} f(x) dx = 
 \int_{0}^{2} e^{3ix} \cdot x^{2} dx = -\frac{2}{27} i ( 1 + (17 + 6i) e^{6i} )`, or, alternatively, 
 :math:`0.0748857930... - i1.4073621035...` 
 (see `Wolfram Alpha <https://www.wolframalpha.com/input/?i=integral+of+e%5E%283ix%29+*+x%5E%282%29+from+0+to+2>`__ 
 if you don't belive us).
 
-Let’s declare the ``f(x)`` function, a simple helper function to print the absolute error, 
+Let’s declare the function ``f(x)``, a simple helper function to print the absolute error, 
 as well as remember the correct result.
 
 .. code:: ipython3
@@ -133,7 +133,7 @@ as well as remember the correct result.
     
     solution = -2.0j / 27.0 * (1.0 + (17.0 + 6.0j) * torch.exp(torch.tensor([6.0j])) )
 
-**Note that we are using the torch versions to ensure that all variables
+**Note that we are using the torch versions of functions like ``exp`` to ensure that all variables
 are and stay on the GPU.** 
 **Also, note:** the unit imaginary number :math:`i` is written as ``j`` in Python.
 
