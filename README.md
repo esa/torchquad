@@ -80,9 +80,9 @@ This project is built with the following packages:
 <!-- GOALS -->
 ## Goals
 
-* **Progressing science**:  Multidimensional integration is needed in many fields of physics (from particle physics to astrophysics), in applied finance, in medical statistics, and so on. With torchquad, we wish to reach research groups in such fields, as well as the general machine learning community.
+* **Advancing science**:  Multidimensional integration is needed in many fields of physics (from particle physics to astrophysics), in applied finance, in medical statistics, and so on. With torchquad, we wish to reach research groups in such fields, as well as the general machine learning community.
 * **Withstanding the curse of dimensionality**: The [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality) makes deterministic methods in particular, but also stochastic ones, extremely slow when the dimensionality increases. This gives the researcher a choice between computationally heavy and time-consuming simulations on the one hand and inaccurate evaluations on the other. Luckily, many integration methods are [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel), which means they can strongly benefit from GPU parallelization. The curse of dimensionality still applies, but GPUs can handle the problem much better than CPUs can.
-* **Delivering a convenient and functional tool**: torchquad is built with [PyTorch](https://pytorch.org/), which means it is [fully differentiable](https://en.wikipedia.org/wiki/Differentiable_programming). Furthermore, the library of available and upcoming methods in torchquad offers high-effeciency integration for any need. 
+* **Delivering a convenient and functional tool**: torchquad is built with [PyTorch](https://pytorch.org/), which means it is [fully differentiable](https://en.wikipedia.org/wiki/Differentiable_programming). Furthermore, the library of available and upcoming methods in torchquad offers high-efficiency integration for any need. 
 
 
 <!-- GETTING STARTED -->
