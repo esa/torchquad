@@ -82,6 +82,7 @@ Now let’s get started! First, the general imports:
     
     from torchquad import enable_cuda # Necessary to enable GPU support
     from torchquad import Trapezoid, Simpson, Boole, MonteCarlo, VEGAS # The available integrators
+    from torchquad.utils.set_precision import set_precision
     import torchquad
 
 .. code:: ipython3
@@ -153,12 +154,13 @@ Let’s plot the function briefly.
 .. image:: torchquad_tutorial_figure.png
 
 
-Let’s define the integration domain now and initialize the integrator - let’s start with the trapezoid rule.
+Let’s define the integration domain, set the precision to double, and initialize the integrator - let’s start with the trapezoid rule.
 
 .. code:: ipython3
 
     # Integration domain is always a list of lists to allow arbitrary dimensionality.
     integration_domain = [[0, 2]]
+    set_precision('double')
     tp = Trapezoid()  # Initialize a trapezoid solver
 
 Now we are all set to compute the integral. Let’s try it with just 101 sample points for now.
@@ -171,9 +173,9 @@ Now we are all set to compute the integral. Let’s try it with just 101 sample 
 
 .. parsed-literal::
 
-    **Output**: Results: (0.07512567937374115-1.407015323638916j)
-            Abs. Error: 4.21665376e-04
-            Rel. Error: 2.99190753e-04
+    **Output**: Results: (0.0751256138749595-1.4070152346569569j)
+            Abs. Error: 4.21725301e-04
+            Rel. Error: 2.99233274e-04
     
 
 This is quite close already, as 1-D integrals are comparatively easy.
@@ -188,9 +190,9 @@ Let’s see what type of value we get for different integrators.
 
 .. parsed-literal::
 
-    **Output:** Results: (0.0748857706785202-1.4073622226715088j)
-            Abs. Error: 1.21286661e-07
-            Rel. Error: 8.60583995e-08
+    **Output:** Results: (0.0748856817342774-1.407362129881349j)
+            Abs. Error: 1.11758709e-07
+            Rel. Error: 7.92978838e-08
     
 .. code:: ipython3
 
@@ -201,9 +203,9 @@ Let’s see what type of value we get for different integrators.
 
 .. parsed-literal::
 
-    **Output:** Results: (0.0748857855796814-1.4073619842529297j)
-            Abs. Error: 1.19441893e-07
-            Rel. Error: 8.47494519e-08
+    **Output:** Results: (0.07488579656243394-1.407362063802251j)
+            Abs. Error: 0.00000000e+00
+            Rel. Error: 0.00000000e+00
 
 
 .. code:: ipython3
@@ -215,36 +217,23 @@ Let’s see what type of value we get for different integrators.
 
 .. parsed-literal::
 
-    **Output:** (0.050353918224573135-1.494397759437561j)
-            Abs. Error: 9.04268697e-02
-            Rel. Error: 6.41619712e-02
+    **Output:** Results: (0.1345164951606459-1.1738163554904042j)
+            Abs. Error: 2.41038278e-01
+            Rel. Error: 1.71027616e-01
     
 
-.. code:: ipython3
-
-    vegas = VEGAS()
-    result = vegas.integrate(f,dim=1,N=101,integration_domain=integration_domain)
-    print_error(result,solution)
-
-
-.. parsed-literal::
-
-    **Output:** RuntimeError: result type ComplexFloat can't be cast to the desired output type Float
-    
 
 Notably, Simpson's and Boole's methods are already really good here with only 101 points. 
-(You can try setting the function ``f(x) = torch.exp(x) * torch.pow(x,2)`` instead 
-to see Simpson's and Boole's methods find the perfect solution).
 Monte Carlo methods do not perform so well; they are more suited to higher-dimensional integrals. 
 VEGAS currently requires a larger number of samples to function correctly (as it performs several
 iterations) and it doesn't currently support complex numbers. We're working hard on adding this feature.
 
-Let’s step things up now and move to a 10-dimensional problem.
+Let’s step things up now and move to a ten-dimensional problem.
 
 High-dimensional integration
 ----------------------------
 
-Now, we will investigate the following 10-dimensional problem:
+Now, we will investigate the following ten-dimensional problem:
 
 Let ``f_2`` be the function :math:`f_{2}(x) = \sum_{i=1}^{10} \sin(x_{i})`.
 
@@ -260,7 +249,7 @@ Plotting this is tricky, so let’s directly move to the integrals.
     
     solution = 20*(torch.sin(torch.tensor([0.5]))*torch.sin(torch.tensor([0.5])))
 
-Let’s start with just 3 points per dimension, i.e., :math:`3^{10}=59,049` sample points. 
+Let’s start with just 5 points per dimension, i.e., :math:`5^{10}=9,765,625` sample points. 
 
 **Note**: *torchquad* currently only supports equal numbers of points per dimension. 
 We are working on giving the user more flexibility on this point.
@@ -269,7 +258,8 @@ We are working on giving the user more flexibility on this point.
 
     # Integration domain always is a list of lists to allow arbitrary dimensionality
     integration_domain = [[0, 1]]*10 
-    N = 3**10 
+    set_precision('float')
+    N = 5**10 
 
 .. code:: ipython3
 
@@ -280,9 +270,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.500804901123047
-            Abs. Error: 9.61723328e-02
-            Rel. Error: 2.09207758e-02
+    **Output:** Results: 4.573010444641113
+            Abs. Error: 2.39667892e-02
+            Rel. Error: 5.21359732e-03
     
 
 .. code:: ipython3
@@ -294,9 +284,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.598623752593994
-            Abs. Error: 1.64651871e-03
-            Rel. Error: 3.58174206e-04
+    **Output:** Results: 4.597078323364258
+            Abs. Error: 1.01089478e-04
+            Rel. Error: 2.19904232e-05
     
 
 .. code:: ipython3
@@ -308,10 +298,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** UserWarning: N per dimension cannot be lower than 5. N per dim will now be changed to 5.
-            Results: 4.596975326538086
-            Abs. Error: 1.90734863e-06
-            Rel. Error: 4.14913643e-07
+    **Output:** Results: 4.596974849700928
+            Abs. Error: 2.38418579e-06
+            Rel. Error: 5.18642082e-07
             
 
 
@@ -324,38 +313,36 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.598303318023682
-            Abs. Error: 1.32608414e-03
-            Rel. Error: 2.88468727e-04
+    **Output:** Results: 4.597158908843994
+            Abs. Error: 1.81674957e-04
+            Rel. Error: 3.95205243e-05
     
 
 .. code:: ipython3
 
     vegas = VEGAS()
-    result = vegas.integrate(f_2,dim=10,N=N,integration_domain=integration_domain)
+    result = vegas.integrate(f_2,dim=10,N=N,integration_domain=integration_domain,use_warmup=False,use_grid_improve=False)    
     print_error(result,solution)
 
 
 .. parsed-literal::
 
-    **Output:** Results: 4.598696708679199
-            Abs. Error: 1.71947479e-03
-            Rel. Error: 3.74044670e-04
+    **Output:** Results: 4.596913814544678
+            Abs. Error: 6.34193420e-05
+            Rel. Error: 1.37958787e-05
     
 
 Note that the Monte Carlo methods are much more competitive in this case. 
 The bad convergence properties of the trapezoid method are visible while Simpson's 
 and Boole's rule are still OK given the comparatively smooth integrand. 
 
-Note that with the choice of sample points (3 per dimension), Boole's method cannot work. 
-The number of sample points is therefore automatically increased to 5 per dimension for this method, 
-which gives Boole's method an unfair advantage here. The reason why the number of sample points 
-is set to 3 per dimension for the other methods is because then even users with a small GPU can 
-follow the example - if *N* is larger, they might get ``RuntimeError: CUDA out of memory``.
-
-If you have been repeating the examples from this tutorial on your own computer, you could also try 
-increasing *N* to :math:`5^{10}=9,765,625` for all methods.
-You can see the curse of dimensionality fully at play here, and might even experience running out of memory at this point.
+If you have been repeating the examples from this tutorial on your own computer, you 
+might get ``RuntimeError: CUDA out of memory`` if you have a small GPU.
+In that case, you could also try to reduce the number of sample points (e.g., 3 per dimension).
+You can really see the curse of dimensionality fully at play here, since :math:`5^{10}=9,765,625`
+but :math:`3^{10}=59,049`, reducing the number of sample points by a factor of 165.
+Note, however, that Boole's method cannot work for only 3 points per dimension, so the number of sample points is therefore 
+automatically increased to 5 per dimension for this method.
 
 
 Comparison with scipy
@@ -458,12 +445,6 @@ We selected the Trapezoid rule and the Monte Carlo method to showcase that getti
 
 
 .. code:: ipython3
-
-    import torch
-    from torchquad.integration.monte_carlo import MonteCarlo
-    from torchquad.integration.trapezoid import Trapezoid
-    from torchquad.utils.enable_cuda import enable_cuda
-    from torchquad.utils.set_precision import set_precision
 
     def test_function(x):
         """V shaped test function."""
