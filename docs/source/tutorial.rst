@@ -76,7 +76,7 @@ abritrary dimensionality.
 Outline
 -------
 
-This notebook is a guide for new users to *torchquad* and is structured in
+This tutorial is a guide for new users to *torchquad* and is structured in
 the following way:
 
 -  Example integration in one dimension (1-D)
@@ -119,15 +119,19 @@ Now let’s get started! First, the general imports:
 
 .. parsed-literal::
 
-    **Output:** Setting default tensor type to cuda.Float32 (CUDA is initialized).
-
+    **Output:** Initializing torchquad.
+            PyTorch VERSION: 1.9.0
+            CUDNN VERSION: 7605
+            Number of CUDA Devices: 1
+            Active CUDA Device: GPU0
+            Setting default tensor type to cuda.Float32 (CUDA is initialized).
 
 
 
 One-dimensional integration
 ----------------------------
 
-To make it easier to understand the methods used in this notebook, we will start with an
+To make it easier to understand the methods used in this tutorial, we will start with an
 example in one dimension. If you are new to these methods or simply want a clearer picture, 
 feel free to check out Patrick Walls’ 
 `nice Python introduction <https://github.com/patrickwalls/mathematical-python/>`__ 
@@ -191,7 +195,7 @@ Now we are all set to compute the integral. Let’s try it with just 101 sample 
 
 .. parsed-literal::
 
-    **Output**: Results: 12.780082702636719
+    **Output:** Results: 12.780082702636719
             Abs. Error: 1.97029114e-03
             Rel. Error: 1.54192661e-04
     
@@ -470,14 +474,14 @@ We selected the Trapezoid rule and the Monte Carlo method to showcase that getti
 
         result.backward() #Gradients computation
 
-        print("Method:", integrator, "Gradients:", domain.grad)
+        print("Method:", integrator.__class__.__name__, " -  Gradients:", domain.grad)
 
 The code above calculates the integral for a 1-D test-function ``test_function()`` in the [-1,1] domain and prints the gradients with respect to the integration domain.
-The command ``domain.requires_grad = True`` enables the creation of a computational graph, and it shall be called before calling the ``integrate(...)`` method.
+The command ``domain.requires_grad = True`` enables the creation of a computational graph, and it should be called before calling the ``integrate(...)`` method.
 Gradients computation is, then, performed calling ``result.backward()``. 
 The output of the code is as follows:
 
 .. parsed-literal::
 
-    **Output:** Method: <torchquad.integration.monte_carlo.MonteCarlo object at 0x7f724735b6a0> Gradients: tensor([[-1.9872,  2.0150]])
-            Method: <torchquad.integration.trapezoid.Trapezoid object at 0x7f724735b6d0> Gradients: tensor([[-2.0000,  2.0000]])
+    **Output:** Method: MonteCarlo  -  Gradients: tensor([[-2.0059064163,  2.0055464055]])
+            Method: Trapezoid  -  Gradients: tensor([[-2.0000000000,  2.0000000000]])
