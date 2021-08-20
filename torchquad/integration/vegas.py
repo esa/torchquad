@@ -179,7 +179,8 @@ class VEGAS(BaseIntegrator):
             jf = 0  # jacobians * function
             jf2 = 0
 
-            yrnd = torch.rand(size=[N_samples, self._dim])
+            # Multiplying by 0.99999999 as the edge case of y=1 leads to an error
+            yrnd = torch.rand(size=[N_samples, self._dim]) * 0.999999
             x = self.map.get_X(yrnd)
             f_eval = self._eval(x).squeeze()
             jac = self.map.get_Jac(yrnd)

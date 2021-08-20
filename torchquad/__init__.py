@@ -39,4 +39,3 @@ __all__ = [
 
 set_log_level("INFO")
 logger.info("Initializing torchquad.")
-enable_cuda()

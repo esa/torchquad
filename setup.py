@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="torchquad",
-    version="0.2.1",
+    version="0.2.3",
     description="Package providing torch-based numerical integration methods.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -17,6 +17,7 @@ setup(
     author="ESA Advanced Concepts Team",
     author_email="pablo.gomez@esa.int",
     install_requires=[
+        "loguru>=0.5.3",
         "matplotlib>=3.3.3",
         "scipy>=1.6.0",
         "tqdm>=4.56.1",

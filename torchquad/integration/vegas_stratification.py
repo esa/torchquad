@@ -133,9 +133,9 @@ class VEGASStratification:
         indices = self._get_indices(indices)
 
         # Get random numbers (we get a few more just to vectorize properly)
-        # This might increase the memorz requirements slightly but is probably
-        # worth it
-        random_uni = torch.rand(size=[len(nevals), nevals.max(), self.dim])
+        # This might increase the memory requirements slightly but is probably
+        # worth it.
+        random_uni = torch.rand(size=[len(nevals), nevals.max(), self.dim]) * 0.999999
 
         # Sum the random numbers onto the index locations and scale with dy
         # Note that the resulting tensor is still slightly too large
