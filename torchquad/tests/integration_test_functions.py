@@ -1,8 +1,6 @@
 import torch
 
-import logging
-
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 class IntegrationTestFunction:
@@ -27,14 +25,15 @@ class IntegrationTestFunction:
         """
         self.dim = dim
         self.expected_result = expected_result
+
         self.is_complex = is_complex
         # Initialize domain to [-1,1]^dim if not passed
         if domain == None:
             self.domain = torch.tensor([[-1, 1]] * self.dim)
         else:
             self.domain = domain
-        logging.debug("Initialized Test function with ")
-        logging.debug(
+        logger.debug("Initialized Test function with ")
+        logger.debug(
             "dim="
             + str(self.dim)
             + "| domain="

@@ -2,15 +2,17 @@ import sys
 
 sys.path.append("../")
 
-from integration.integration_grid import IntegrationGrid
 import torch
+
+from integration.integration_grid import IntegrationGrid
+from utils.set_log_level import set_log_level
 
 torch.set_printoptions(10)
 
 
 def test_integration_grid():
     """Tests the integration grid in integration.integration_grid for illegal values."""
-
+    set_log_level("INFO")
     # Generate a grid in different dimensions with different N on different domains
     eps = 2e-8  # error bound
 
@@ -65,4 +67,5 @@ def test_integration_grid():
     # print("3-D (float) test: N =", N, ", grid_N = N^(1/3) =", grid._N, ", error:", torch.abs(grid.h[dim] - domain_width / (grid._N - 1)))
 
 
-test_integration_grid()
+if __name__ == "__main__":
+    test_integration_grid()

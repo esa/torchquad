@@ -1,9 +1,4 @@
 import torch
-from copy import deepcopy
-
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class VEGASMap:
@@ -115,7 +110,7 @@ class VEGASMap:
             ID_i = torch.floor(ID[:, i]).long()
             unique_vals, unique_counts = torch.unique(ID_i, return_counts=True)
             weights_vals = jf_vec2
-            for val, count in zip(unique_vals, unique_counts):
+            for val in unique_vals:
                 self.weights[i][val] += weights_vals[ID_i == val].sum()
             self.counts[i, unique_vals.long()] += unique_counts
 
@@ -180,35 +175,30 @@ class VEGASMap:
         """Update the adaptive map, Section II C."""
         self._smooth_map()
 
-        # Initialize new locations
-        x_edges_last = self.x_edges.clone().detach().requires_grad_(True)
-        dx_edges_last = self.dx_edges.clone().detach().requires_grad_(True)
-
-        # Cumulative sum of smoothed weights
-
         for i in range(self.dim):  # Update per dim
             old_i = 0
             d_accu = 0
+
+            indices = torch.zeros(self.N_intervals - 1).long()
+            d_accu_i = torch.zeros(self.N_intervals - 1)
+
             for new_i in range(1, self.N_intervals):
                 d_accu += self.delta_weights[i]
 
                 while d_accu > self.smoothed_weights[i][old_i]:
                     d_accu -= self.smoothed_weights[i][old_i]
                     old_i = old_i + 1
+                indices[new_i - 1] = old_i
+                d_accu_i[new_i - 1] = d_accu
 
-                # EQ 22
-                offset = (
-                    d_accu / self.smoothed_weights[i][old_i] * dx_edges_last[i][old_i]
-                ).detach()
-
-                self.x_edges[i][new_i] = x_edges_last[i][old_i] + offset
-
-                self.dx_edges[i][new_i - 1] = (
-                    self.x_edges[i][new_i] - self.x_edges[i][new_i - 1]
-                )
-
-            self.dx_edges[i][self.N_intervals - 1] = (
-                self.x_edges[i][self.N_edges - 1] - self.x_edges[i][self.N_edges - 2]
+            # EQ 22
+            self.x_edges[i][1:-1] = (
+                self.x_edges[i][indices]
+                + d_accu_i.detach()
+                / self.smoothed_weights[i][indices]
+                * self.dx_edges[i][indices]
             )
+
+            self.dx_edges[i] = self.x_edges[i][1:] - self.x_edges[i][:-1]
 
         self._reset_weight()

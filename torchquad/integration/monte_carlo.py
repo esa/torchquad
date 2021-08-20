@@ -1,11 +1,8 @@
-from .base_integrator import BaseIntegrator
-from .integration_grid import IntegrationGrid
-from .utils import _setup_integration_domain
 import torch
+from loguru import logger
 
-import logging
-
-logger = logging.getLogger(__name__)
+from .base_integrator import BaseIntegrator
+from .utils import _setup_integration_domain
 
 
 class MonteCarlo(BaseIntegrator):

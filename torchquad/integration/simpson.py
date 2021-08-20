@@ -1,13 +1,10 @@
+import torch
+from loguru import logger
+import warnings
+
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
 from .utils import _setup_integration_domain
-
-import torch
-
-import logging
-import warnings
-
-logger = logging.getLogger(__name__)
 
 
 class Simpson(BaseIntegrator):

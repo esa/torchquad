@@ -4,15 +4,17 @@ sys.path.append("../")
 
 import timeit
 
-import cProfile
+import cProfile, pstats
 
 from integration.vegas import VEGAS
 from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision
+from utils.set_log_level import set_log_level
 
 
 def test_integrate():
     """Tests the integrate function in integration.VEGAS."""
+    set_log_level("INFO")
     enable_cuda()
     set_precision("double")
 
@@ -31,7 +33,7 @@ def test_integrate():
         assert error < 5e-3
 
     for error in errors:
-        assert error < 3.0
+        assert error < 4.0
 
     for error in errors[6:]:
         assert error < 6e-3
@@ -56,9 +58,13 @@ def test_integrate():
 
 
 if __name__ == "__main__":
-    # Used to run this test individually
+    # used to run this test individually
+    profiler = cProfile.Profile()
+    profiler.enable()
     start = timeit.default_timer()
     test_integrate()
-    # cProfile.run("test_integrate()")
+    profiler.disable()
+    stats = pstats.Stats(profiler).sort_stats("tottime")
+    stats.print_stats()
     stop = timeit.default_timer()
     print("Test ran for ", stop - start, " seconds.")

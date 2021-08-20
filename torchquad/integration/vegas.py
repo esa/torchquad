@@ -1,14 +1,11 @@
+import torch
+from loguru import logger
+
+
 from .base_integrator import BaseIntegrator
 from .utils import _setup_integration_domain
-
 from .vegas_map import VEGASMap
 from .vegas_stratification import VEGASStratification
-
-import torch
-
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class VEGAS(BaseIntegrator):
@@ -19,7 +16,6 @@ class VEGAS(BaseIntegrator):
 
     def __init__(self):
         super().__init__()
-        # logger.setLevel(logging.INFO)
 
     def integrate(
         self,
@@ -183,7 +179,8 @@ class VEGAS(BaseIntegrator):
             jf = 0  # jacobians * function
             jf2 = 0
 
-            yrnd = torch.rand(size=[N_samples, self._dim])
+            # Multiplying by 0.99999999 as the edge case of y=1 leads to an error
+            yrnd = torch.rand(size=[N_samples, self._dim]) * 0.999999
             x = self.map.get_X(yrnd)
             f_eval = self._eval(x).squeeze()
             jac = self.map.get_Jac(yrnd)
