@@ -77,6 +77,8 @@ This project is built with the following packages:
 * [conda](https://docs.conda.io/en/latest/), which will take care of all requirements for you.
 
 
+If torchquad proves useful to you, please consider citing the [accompanying paper](https://joss.theoj.org/papers/10.21105/joss.03439).
+
 <!-- GOALS -->
 ## Goals
 
