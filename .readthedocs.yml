@@ -20,4 +20,4 @@ python:
       path: .
 
 conda:
-  environment: environment.yml
+  environment: rtd_environment.yml
