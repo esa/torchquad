@@ -1,4 +1,4 @@
-import torch
+from autoray import numpy as anp
 import warnings
 from loguru import logger
 
@@ -9,7 +9,7 @@ from .utils import _setup_integration_domain
 
 class Boole(BaseIntegrator):
 
-    """Boole's rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
+    """Boole's rule. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
 
     def __init__(self):
         super().__init__()
@@ -21,7 +21,7 @@ class Boole(BaseIntegrator):
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
             N (int, optional): Total number of sample points to use for the integration. N has to be such that N^(1/dim) - 1 % 4 == 0. Defaults to 5 points per dimension if None is given.
-            integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
+            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend (if it is a list, the backend is "torch").
 
         Returns:
             torch.Tensor: integral value
@@ -73,7 +73,7 @@ class Boole(BaseIntegrator):
                     + 7 * cur_dim_areas[..., 4:][..., ::4]
                 )
             )
-            cur_dim_areas = torch.sum(cur_dim_areas, dim=dim - cur_dim - 1)
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
         logger.info("Computed integral was " + str(cur_dim_areas) + ".")
 
         return cur_dim_areas

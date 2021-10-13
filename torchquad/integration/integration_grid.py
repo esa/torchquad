@@ -1,4 +1,5 @@
-import torch
+from autoray import numpy as anp
+from autoray import infer_backend
 from time import perf_counter
 from loguru import logger
 
@@ -19,11 +20,13 @@ class IntegrationGrid:
 
         Args:
             N (int): Total desired number of points in the grid (will take next lower root depending on dim)
-            integration_domain (list): Domain to choose points in, e.g. [[-1,1],[0,1]].
+            integration_domain (list or backend tensor): Domain to choose points in, e.g. [[-1,1],[0,1]]. It also determines the numerical backend (if it is a list, the backend is "torch").
         """
         start = perf_counter()
         self._check_inputs(N, integration_domain)
         self._dim = len(integration_domain)
+        if infer_backend(integration_domain) == "builtins":
+            integration_domain = anp.array(integration_domain, like="torch")
 
         # TODO Add that N can be different for each dimension
         # A rounding error occurs for certain numbers with certain powers,
@@ -31,7 +34,7 @@ class IntegrationGrid:
         # i.e. int(3.99999...) -> 3, a little error term is useful
         self._N = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
 
-        self.h = torch.zeros([self._dim])
+        self.h = anp.zeros([self._dim], like=integration_domain)
 
         logger.debug(
             "Creating "
@@ -64,8 +67,10 @@ class IntegrationGrid:
         logger.debug("Grid mesh width is " + str(self.h))
 
         # Get grid points
-        points = torch.meshgrid(*grid_1d)
-        self.points = torch.stack(list(map(torch.ravel, points)), dim=1)
+        points = anp.meshgrid(*grid_1d)
+        self.points = anp.stack(
+            list(map(anp.ravel, points)), axis=1, like=integration_domain
+        )
 
         logger.info("Integration grid created.")
 
