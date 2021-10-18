@@ -197,13 +197,13 @@ def compute_integration_test_errors(
 
 def setup_test_for_backend(test_func, backend, precision):
     """
-    Execute a test function with the given numerical backend.
+    Create a function to execute a test function with the given numerical backend.
     If the backend is not installed, skip the test.
 
     Args:
         test_func (function(backend, precision)): The function which runs tests
         backend (string): The numerical backend
-        precision ("float" or "double"): Floating point precision
+        precision ("float", "double" or None): Floating point precision. If None, the global precision is not changed.
 
     Returns:
         function: A test function for Pytest
@@ -214,7 +214,7 @@ def setup_test_for_backend(test_func, backend, precision):
         set_log_level("INFO")
         if backend == "torch":
             enable_cuda()
-        if backend in ["torch", "jax"]:
+        if precision is not None and backend in ["torch", "jax"]:
             set_precision(precision, backend=backend)
         assert not (backend == "numpy" and precision == "float") and not (
             backend == "tensorflow" and precision == "double"
@@ -224,6 +224,8 @@ def setup_test_for_backend(test_func, backend, precision):
 
             # The Tensorflow backend only works with numpy behaviour enabled.
             np_config.enable_numpy_behavior()
+        if precision is None:
+            return test_func(backend)
         return test_func(backend, precision)
 
     return func
