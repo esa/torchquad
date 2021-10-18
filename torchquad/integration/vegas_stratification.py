@@ -110,7 +110,7 @@ class VEGASStratification:
         res = torch.zeros([len(idx), self.dim])
         tmp = idx
         for i in range(self.dim):
-            q = tmp // self.N_strat
+            q = torch.div(tmp, self.N_strat, rounding_mode="floor")
             r = tmp - q * self.N_strat
             res[:, i] = r
             tmp = q
