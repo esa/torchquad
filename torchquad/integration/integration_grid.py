@@ -34,8 +34,6 @@ class IntegrationGrid:
         # i.e. int(3.99999...) -> 3, a little error term is useful
         self._N = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
 
-        self.h = anp.zeros([self._dim], like=integration_domain)
-
         logger.debug(
             "Creating "
             + str(self._dim)
@@ -62,14 +60,17 @@ class IntegrationGrid:
                     requires_grad=requires_grad,
                 )
             )
-            self.h[dim] = grid_1d[dim][1] - grid_1d[dim][0]
+        self.h = anp.stack(
+            [grid_1d[dim][1] - grid_1d[dim][0] for dim in range(self._dim)],
+            like=integration_domain,
+        )
 
         logger.debug("Grid mesh width is " + str(self.h))
 
         # Get grid points
         points = anp.meshgrid(*grid_1d)
         self.points = anp.stack(
-            list(map(anp.ravel, points)), axis=1, like=integration_domain
+            [mg.ravel() for mg in points], axis=1, like=integration_domain
         )
 
         logger.info("Integration grid created.")

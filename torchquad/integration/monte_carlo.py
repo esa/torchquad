@@ -52,14 +52,17 @@ class MonteCarlo(BaseIntegrator):
                 )
 
         logger.debug("Picking random sampling points")
-        sample_points = anp.zeros([N, dim], like=self._integration_domain)
+        sample_points = []
         for d in range(dim):
             scale = self._integration_domain[d, 1] - self._integration_domain[d, 0]
             offset = self._integration_domain[d, 0]
-            sample_points[:, d] = (
+            sample_points.append(
                 anp.random.uniform(size=[N], like=self._integration_domain) * scale
                 + offset
             )
+        # FIXME: Is there a performance difference when initializing it
+        # with zero instead of stacking it?
+        sample_points = anp.stack(sample_points, axis=1, like=self._integration_domain)
 
         logger.debug("Evaluating integrand")
         function_values = fn(sample_points)
