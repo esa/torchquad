@@ -13,15 +13,18 @@ class MonteCarlo(BaseIntegrator):
     def __init__(self):
         super().__init__()
 
-    def integrate(self, fn, dim, N=1000, integration_domain=None, seed=None):
+    def integrate(
+        self, fn, dim, N=1000, integration_domain=None, seed=None, backend="torch"
+    ):
         """Integrates the passed function on the passed domain using vanilla Monte Carlo Integration.
 
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the function to integrate.
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
-            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend (if it is a list, the backend is "torch").
+            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
+            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to "torch".
 
         Raises:
             ValueError: If len(integration_domain) != dim
@@ -42,7 +45,9 @@ class MonteCarlo(BaseIntegrator):
         self._dim = dim
         self._nr_of_fevals = 0
         self.fn = fn
-        self._integration_domain = _setup_integration_domain(dim, integration_domain)
+        self._integration_domain = _setup_integration_domain(
+            dim, integration_domain, backend
+        )
         if seed is not None:
             if infer_backend(self._integration_domain) == "torch":
                 anp.random.manual_seed(seed, like="torch")

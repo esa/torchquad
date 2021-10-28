@@ -29,11 +29,12 @@ def _linspace_with_grads(start, stop, N, requires_grad):
         return anp.linspace(start, stop, N, like=start)
 
 
-def _setup_integration_domain(dim, integration_domain):
+def _setup_integration_domain(dim, integration_domain, backend):
     """Sets up the integration domain if unspecified by the user.
     Args:
         dim (int): Dimensionality of the integration domain.
-        integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend (if it is a list, the backend is "torch").
+        integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
+        backend (string): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain.
     Returns:
         backend tensor: Integration domain.
     """
@@ -47,7 +48,7 @@ def _setup_integration_domain(dim, integration_domain):
                 "Dimension and length of integration domain don't match. Should be e.g. dim=1 dom=[[-1,1]]."
             )
         if infer_backend(integration_domain) == "builtins":
-            return anp.array(integration_domain, like="torch")
+            return anp.array(integration_domain, like=backend)
         return integration_domain
     else:
-        return anp.array([[-1, 1]] * dim, like="torch")
+        return anp.array([[-1, 1]] * dim, like=backend)
