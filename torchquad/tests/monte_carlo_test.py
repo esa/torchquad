@@ -6,6 +6,7 @@ from integration.monte_carlo import MonteCarlo
 from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision
 from utils.set_log_level import set_log_level
+from integration_test_utils import compute_test_errors
 
 
 def test_integrate():
@@ -13,9 +14,6 @@ def test_integrate():
     set_log_level("INFO")
     enable_cuda()
     set_precision("double")
-
-    # Needs to happen after precision / device settings to avoid having some tensors intialized on cpu and some on GPU
-    from integration_test_utils import compute_test_errors
 
     mc = MonteCarlo()
 
