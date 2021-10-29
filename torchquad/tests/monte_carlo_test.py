@@ -23,9 +23,10 @@ def test_integrate():
 
     # 1D Tests
     N = 100000  # integration points to use
-    torch.manual_seed(0)  # we have to seed torch to get reproducible results
 
-    errors = compute_test_errors(mc.integrate, {"N": N, "dim": 1}, use_complex=True)
+    errors = compute_test_errors(
+        mc.integrate, {"N": N, "dim": 1, "seed": 0}, use_complex=True
+    )
     print("1D Monte Carlo Test: Passed N =", N, "\n", "Errors: ", errors)
     # If this breaks check if test functions in integration_test_utils changed.
     for error in errors[:3]:
@@ -35,7 +36,7 @@ def test_integrate():
         assert error < 28.0
 
     for error in errors[6:10]:
-        assert error < 4e-3
+        assert error < 47e-4
 
     for error in errors[10:]:
         assert error < 28.0
@@ -43,7 +44,7 @@ def test_integrate():
     # 3D Tests
     N = 1000000
     errors = compute_test_errors(
-        mc.integrate, {"N": N, "dim": 3}, dim=3, use_complex=True
+        mc.integrate, {"N": N, "dim": 3, "seed": 0}, dim=3, use_complex=True
     )
     print("3D Monte Carlo Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:

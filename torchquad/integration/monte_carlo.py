@@ -4,7 +4,7 @@ from loguru import logger
 import warnings
 
 from .base_integrator import BaseIntegrator
-from .utils import _setup_integration_domain
+from .utils import _setup_integration_domain, _RNG
 
 
 class MonteCarlo(BaseIntegrator):
@@ -48,23 +48,14 @@ class MonteCarlo(BaseIntegrator):
         self._integration_domain = _setup_integration_domain(
             dim, integration_domain, backend
         )
-        if seed is not None:
-            if infer_backend(self._integration_domain) == "torch":
-                anp.random.manual_seed(seed, like="torch")
-            else:
-                warnings.warn(
-                    "The seed argument is not supported for the given backend."
-                )
+        rng = _RNG(seed=seed, backend=infer_backend(self._integration_domain))
 
         logger.debug("Picking random sampling points")
         sample_points = []
         for d in range(dim):
             scale = self._integration_domain[d, 1] - self._integration_domain[d, 0]
             offset = self._integration_domain[d, 0]
-            sample_points.append(
-                anp.random.uniform(size=[N], like=self._integration_domain) * scale
-                + offset
-            )
+            sample_points.append(rng.uniform(size=[N]) * scale + offset)
         # FIXME: Is there a performance difference when initializing it
         # with zero instead of stacking it?
         sample_points = anp.stack(sample_points, axis=1, like=self._integration_domain)

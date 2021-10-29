@@ -33,7 +33,6 @@ def test_gradients():
     N = 99997
     result_tolerence = 1e-2
     gradient_tolerance = 2e-2
-    torch.manual_seed(0)  # we have to seed torch to get reproducible results
 
     # Define integrators
     integrators = [MonteCarlo(), Trapezoid(), Simpson(), Boole(), VEGAS()]
@@ -43,8 +42,12 @@ def test_gradients():
         # Compute integral
         domain = torch.tensor([[-1.0, 1.0]])
         domain.requires_grad = True
+
+        extra_args = {}
+        if type(integrator).__name__ == "MonteCarlo":
+            extra_args["seed"] = 0
         result = integrator.integrate(
-            some_function, dim=1, N=N, integration_domain=domain
+            some_function, dim=1, N=N, integration_domain=domain, **extra_args
         )
 
         # Check results are correct
