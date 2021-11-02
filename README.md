@@ -200,13 +200,18 @@ If you want to contribute, please
       ```sh
       git clone https://github.com/esa/torchquad.git
       ```
-     3. Setup the environment. This will create a conda environment called `torchquad`
+     3. With the default configuration, all numerical backends with CUDA
+       support are installed.
+       If this should not happen, comment out unwanted packages in
+       `environment.yml`.
+     4. Set up the environment. This creates a conda environment called
+      `torchquad` and installs the required dependencies.
       ```sh
       conda env create -f environment.yml
       conda activate torchquad
       ```
 
-Once the installation is done, then you are ready to contribute. 
+Once the installation is done, you are ready to contribute.
 Please note that PRs should be created from and into the `develop` branch. For each release the develop branch is merged into main.
 
 3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
