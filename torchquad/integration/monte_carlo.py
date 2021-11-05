@@ -48,7 +48,7 @@ class MonteCarlo(BaseIntegrator):
         self._integration_domain = _setup_integration_domain(
             dim, integration_domain, backend
         )
-        rng = _RNG(seed=seed, backend=infer_backend(self._integration_domain))
+        rng = _RNG(backend=infer_backend(self._integration_domain), seed=seed)
 
         logger.debug("Picking random sampling points")
         sample_points = []

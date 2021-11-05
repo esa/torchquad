@@ -76,12 +76,12 @@ class _RNG:
       * tensorflow: uniform() is in [0, 1)
     """
 
-    def __init__(self, seed, backend):
+    def __init__(self, backend, seed=None):
         """Initialize a RNG which can be seeded and is stateful if the backend supports it
 
         Args:
-            seed (int or None): Random number generation seed. If set to None, the RNG is seeded randomly if possible. Defaults to None.
             backend (string): Numerical backend, e.g. "torch".
+            seed (int or None): Random number generation seed. If set to None, the RNG is seeded randomly if possible. Defaults to None.
 
         Returns:
             An object whose "uniform" method generates uniform random numbers for the given backend
@@ -130,3 +130,15 @@ class _RNG:
             self.uniform = lambda size: anp.random.uniform(
                 size=size, like=self._backend
             )
+
+    def uniform(self, size):
+        """Generate uniform random numbers in [0, 1) or [0, 1] for the given numerical backend.
+        This function is backend-specific; its definitions are in the constructor.
+
+        Args:
+            size (list): The shape of the generated numbers tensor
+
+        Returns:
+            backend tensor: A tensor with random values for the given numerical backend
+        """
+        pass
