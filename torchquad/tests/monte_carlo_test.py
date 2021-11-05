@@ -2,8 +2,6 @@ import sys
 
 sys.path.append("../")
 
-import torch
-
 from integration.monte_carlo import MonteCarlo
 from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision

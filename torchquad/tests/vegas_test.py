@@ -3,8 +3,8 @@ import sys
 sys.path.append("../")
 
 import timeit
-
-import cProfile, pstats
+import cProfile
+import pstats
 
 from integration.vegas import VEGAS
 from utils.enable_cuda import enable_cuda

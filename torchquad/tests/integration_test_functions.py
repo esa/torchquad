@@ -28,7 +28,7 @@ class IntegrationTestFunction:
 
         self.is_complex = is_complex
         # Initialize domain to [-1,1]^dim if not passed
-        if domain == None:
+        if domain is None:
             self.domain = torch.tensor([[-1, 1]] * self.dim)
         else:
             self.domain = domain

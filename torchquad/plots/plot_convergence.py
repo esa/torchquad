@@ -12,8 +12,7 @@ def plot_convergence(evals, fvals, ground_truth, labels, dpi=150):
         labels (list): Method names.
         dpi (int, optional): Plot dpi. Defaults to 150.
     """
-    fig = plt.figure(dpi=dpi)
-    n = 0
+    plt.figure(dpi=dpi)
     for evals_item, f_item, label in zip(evals, fvals, labels):
         evals_item = np.array(evals_item)
         abs_err = np.abs(np.asarray(f_item) - np.asarray(ground_truth))
