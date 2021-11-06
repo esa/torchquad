@@ -11,14 +11,14 @@ def _linspace_with_grads(start, stop, N, requires_grad):
     Args:
         start (backend tensor): Start point (inclusive).
         stop (backend tensor): End point (inclusive).
-        N (backend tensor): Number of points.
+        N (int): Number of points.
         requires_grad (bool): Indicates if output should be recorded for backpropagation.
     Returns:
         backend tensor: Equally spaced 1D grid
     """
     if requires_grad:
         # Create 0 to 1 spaced grid
-        grid = anp.linspace(0, 1, N, like=start)
+        grid = anp.linspace(anp.array(0.0, like=start), anp.array(1.0, like=start), N)
 
         # Scale to desired range, thus keeping gradients
         grid *= stop - start
@@ -26,7 +26,7 @@ def _linspace_with_grads(start, stop, N, requires_grad):
 
         return grid
     else:
-        return anp.linspace(start, stop, N, like=start)
+        return anp.linspace(start, stop, N)
 
 
 def _setup_integration_domain(dim, integration_domain, backend):
@@ -45,13 +45,19 @@ def _setup_integration_domain(dim, integration_domain, backend):
     if integration_domain is not None:
         if len(integration_domain) != dim:
             raise ValueError(
-                "Dimension and length of integration domain don't match. Should be e.g. dim=1 dom=[[-1,1]]."
+                "Dimension and length of integration domain don't match. Should be e.g."
+                " dim=1 dom=[[-1,1]]."
             )
         if infer_backend(integration_domain) == "builtins":
+            # Cast all integration domain values to Python3 float because
+            # some numerical backends create a tensor based on the Python3 types
+            integration_domain = [
+                [float(b) for b in bounds] for bounds in integration_domain
+            ]
             return anp.array(integration_domain, like=backend)
         return integration_domain
     else:
-        return anp.array([[-1, 1]] * dim, like=backend)
+        return anp.array([[-1.0, 1.0]] * dim, like=backend)
 
 
 class _RNG:
