@@ -18,7 +18,7 @@ def test_integrate():
     set_precision("double")
 
     # Needs to happen after precision / device settings to avoid having some tensors intialized on cpu and some on GPU
-    from tests.integration_test_utils import compute_test_errors
+    from integration_test_utils import compute_test_errors
 
     bl = Boole()
     # 1D Tests

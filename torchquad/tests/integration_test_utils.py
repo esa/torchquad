@@ -1,6 +1,6 @@
 import numpy as np
 
-from .integration_test_functions import Polynomial, Exponential, Sinusoid
+from integration_test_functions import Polynomial, Exponential, Sinusoid
 
 
 # Here we define a bunch of functions that will be used for testing
