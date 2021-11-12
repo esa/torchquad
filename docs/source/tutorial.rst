@@ -33,6 +33,9 @@ Minimal working example
     # Compute the function integral by sampling 10000 points over domain 
     integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
 
+To set the default logger verbosity, change the ``TORCHQUAD_LOG_LEVEL``
+environment variable; for example ``export TORCHQUAD_LOG_LEVEL=WARNING``.
+
 Detailed Introduction
 ---------------------
 
