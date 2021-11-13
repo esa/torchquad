@@ -119,9 +119,9 @@ def _run_setup_integration_domain_tests(dtype_name, backend):
     assert domain.dtype == custom_domain.dtype
 
     # Tests for invalid arguments
-    with pytest.raises(ValueError, match=r".* domain don't match.*"):
+    with pytest.raises(ValueError, match=r".*domain.*"):
         _setup_integration_domain(3, [[0, 1.0], [1, 2.0]], backend)
-    with pytest.raises(ValueError, match=r".* domain don't match.*"):
+    with pytest.raises(ValueError, match=r".*domain.*"):
         _setup_integration_domain(3, custom_domain, "unused")
 
 

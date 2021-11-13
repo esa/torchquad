@@ -12,7 +12,7 @@ def _linspace_with_grads(start, stop, N, requires_grad):
         start (backend tensor): Start point (inclusive).
         stop (backend tensor): End point (inclusive).
         N (int): Number of points.
-        requires_grad (bool): Indicates if output should be recorded for backpropagation.
+        requires_grad (bool): Indicates if output should be recorded for backpropagation in Torch.
     Returns:
         backend tensor: Equally spaced 1D grid
     """
@@ -38,26 +38,79 @@ def _setup_integration_domain(dim, integration_domain, backend):
     Returns:
         backend tensor: Integration domain.
     """
-
-    # Store integration_domain
-    # If not specified, create [-1,1]^d bounds
     logger.debug("Setting up integration domain.")
     if integration_domain is not None:
-        if len(integration_domain) != dim:
-            raise ValueError(
-                "Dimension and length of integration domain don't match. Should be e.g."
-                " dim=1 dom=[[-1,1]]."
-            )
+        # Convert integration_domain to a tensor if needed
         if infer_backend(integration_domain) == "builtins":
             # Cast all integration domain values to Python3 float because
             # some numerical backends create a tensor based on the Python3 types
-            integration_domain = [
-                [float(b) for b in bounds] for bounds in integration_domain
-            ]
-            return anp.array(integration_domain, like=backend)
-        return integration_domain
+            integration_domain = anp.array(
+                [[float(b) for b in bounds] for bounds in integration_domain],
+                like=backend,
+            )
     else:
-        return anp.array([[-1.0, 1.0]] * dim, like=backend)
+        # If no integration_domain is specified, create [-1,1]^d bounds
+        integration_domain = anp.array([[-1.0, 1.0]] * dim, like=backend)
+    if integration_domain.shape != (dim, 2):
+        raise ValueError(
+            "The integration domain has an unexpected shape. "
+            f"Expected {(dim, 2)}, got {integration_domain.shape}"
+        )
+    return integration_domain
+
+
+def _check_integration_domain(integration_domain):
+    """
+    Check if the integration domain has a valid shape and determine the dimension.
+
+    Args:
+        integration_domain (list or backend tensor): Integration domain, e.g. [[-1,1],[0,1]].
+    Returns:
+        int: Dimension represented by the domain
+    """
+    if infer_backend(integration_domain) == "builtins":
+        dim = len(integration_domain)
+        if dim < 1:
+            raise ValueError("len(integration_domain) needs to be 1 or larger.")
+
+        for bounds in integration_domain:
+            if len(bounds) != 2:
+                raise ValueError(
+                    bounds,
+                    " in ",
+                    integration_domain,
+                    " does not specify a valid integration bound.",
+                )
+            if bounds[0] > bounds[1]:
+                raise ValueError(
+                    bounds,
+                    " in ",
+                    integration_domain,
+                    " does not specify a valid integration bound.",
+                )
+        return dim
+    else:
+        if len(integration_domain.shape) != 2:
+            raise ValueError("The integration_domain tensor has an invalid shape")
+        dim, num_bounds = integration_domain.shape
+        if dim < 1:
+            raise ValueError("integration_domain.shape[0] needs to be 1 or larger.")
+        if num_bounds != 2:
+            raise ValueError("integration_domain must have 2 values per boundary")
+        # Skip the values check if an integrator.integrate method is JIT
+        # compiled with JAX
+        if "Jaxpr" in type(integration_domain).__name__:
+            return dim
+        boundaries_are_invalid = (
+            anp.min(integration_domain[:, 1] - integration_domain[:, 0]) < 0.0
+        )
+        # Skip the values check if an integrator.integrate method is
+        # compiled with tensorflow.function
+        if type(boundaries_are_invalid).__name__ == "Tensor":
+            return dim
+        if boundaries_are_invalid:
+            raise ValueError("integration_domain has invalid boundary values")
+        return dim
 
 
 class _RNG:

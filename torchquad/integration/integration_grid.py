@@ -3,7 +3,7 @@ from autoray import infer_backend
 from time import perf_counter
 from loguru import logger
 
-from .utils import _linspace_with_grads
+from .utils import _linspace_with_grads, _check_integration_domain
 
 
 class IntegrationGrid:
@@ -24,9 +24,9 @@ class IntegrationGrid:
         """
         start = perf_counter()
         self._check_inputs(N, integration_domain)
-        self._dim = len(integration_domain)
         if infer_backend(integration_domain) == "builtins":
             integration_domain = anp.array(integration_domain, like="torch")
+        self._dim = integration_domain.shape[0]
 
         # TODO Add that N can be different for each dimension
         # A rounding error occurs for certain numbers with certain powers,
@@ -81,10 +81,7 @@ class IntegrationGrid:
         """Used to check input validity"""
 
         logger.debug("Checking inputs to IntegrationGrid.")
-        dim = len(integration_domain)
-
-        if dim < 1:
-            raise ValueError("len(integration_domain) needs to be 1 or larger.")
+        dim = _check_integration_domain(integration_domain)
 
         if N < 2:
             raise ValueError("N has to be > 1.")
@@ -97,19 +94,3 @@ class IntegrationGrid:
                 N,
                 " points. Too few points per dimension.",
             )
-
-        for bounds in integration_domain:
-            if len(bounds) != 2:
-                raise ValueError(
-                    bounds,
-                    " in ",
-                    integration_domain,
-                    " does not specify a valid integration bound.",
-                )
-            if bounds[0] > bounds[1]:
-                raise ValueError(
-                    bounds,
-                    " in ",
-                    integration_domain,
-                    " does not specify a valid integration bound.",
-                )

@@ -3,6 +3,8 @@ from autoray import numpy as anp
 from autoray import infer_backend
 from loguru import logger
 
+from .utils import _check_integration_domain
+
 
 class BaseIntegrator:
     """The (abstract) integrator that all other integrators inherit from. Provides no explicit definitions for methods."""
@@ -33,7 +35,8 @@ class BaseIntegrator:
         Args:
             points (backend tensor): Integration points
         """
-        self._nr_of_fevals += len(points)
+        num_points = points.shape[0]
+        self._nr_of_fevals += num_points
         result = self._fn(points)
         if infer_backend(result) != infer_backend(points):
             warnings.warn(
@@ -41,9 +44,10 @@ class BaseIntegrator:
             )
             result = anp.array(result, like=points)
 
-        if len(result) != len(points):
+        num_results = result.shape[0]
+        if num_results != num_points:
             raise ValueError(
-                f"The passed function was given {len(points)} points but only returned {len(result)} value(s)."
+                f"The passed function was given {num_points} points but only returned {num_results} value(s)."
                 f"Please ensure that your function is vectorized, i.e. can be called with multiple evaluation points at once. It should return a tensor "
                 f"where first dimension matches length of passed elements. "
             )
@@ -66,29 +70,13 @@ class BaseIntegrator:
             if dim < 1:
                 raise ValueError("Dimension needs to be 1 or larger.")
 
-            if integration_domain is not None:
-                if dim != len(integration_domain):
-                    raise ValueError(
-                        "Dimension of integration_domain needs to match the passed function dimensionality dim."
-                    )
-
         if N is not None:
             if N < 1 or type(N) is not int:
                 raise ValueError("N has to be a positive integer.")
 
         if integration_domain is not None:
-            for bounds in integration_domain:
-                if len(bounds) != 2:
-                    raise ValueError(
-                        bounds,
-                        " in ",
-                        integration_domain,
-                        " does not specify a valid integration bound.",
-                    )
-                if bounds[0] > bounds[1]:
-                    raise ValueError(
-                        bounds,
-                        " in ",
-                        integration_domain,
-                        " does not specify a valid integration bound.",
-                    )
+            dim_domain = _check_integration_domain(integration_domain)
+            if dim is not None and dim != dim_domain:
+                raise ValueError(
+                    "The dimension of the integration domain must match the passed function dimensionality dim."
+                )
