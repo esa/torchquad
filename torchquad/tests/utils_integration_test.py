@@ -4,11 +4,53 @@ sys.path.append("../")
 
 from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name, to_numpy
-from itertools import product
+import importlib
 import pytest
+import warnings
 
 from integration.utils import _linspace_with_grads, _setup_integration_domain, _RNG
 from utils.set_precision import set_precision
+from utils.enable_cuda import enable_cuda
+
+
+def _run_tests_with_all_backends(func, func_extra_args=[{}]):
+    """Run a test function with all backends and supported precisions
+
+    Args:
+        func (function(dtype_name, backend, ...)): Function which runs tests
+        func_extra_args (list of dicts, optional): List of extra arguments which are passed to func. Defaults to one execution with no extra arguments.
+    """
+    # If JAX is tested before Tensorflow here, an out of memory error can
+    # happen because both allocate all memory on the GPU by default.
+    # The XLA_PYTHON_CLIENT_PREALLOCATE=false environment variable
+    # avoids the crash of JAX.
+    # For some reason it also does not crash if Tensorflow is tested
+    # before JAX, which is done here.
+    # Calling block_until_ready on all arrays created with JAX instead
+    # of changing the tests order did not avoid the crash for some
+    # reason.
+    for backend in ["numpy", "torch", "tensorflow", "jax"]:
+        if importlib.util.find_spec(backend) is None:
+            warnings.warn(f"Backend is not installed: {backend}")
+            continue
+        # Tensorflow support for double and numpy support for float aren't
+        # implemented yet
+        if backend == "numpy":
+            supported_precisions = ["double"]
+        elif backend == "tensorflow":
+            supported_precisions = ["float"]
+        else:
+            supported_precisions = ["float", "double"]
+        if backend == "torch":
+            enable_cuda()
+        for precision in supported_precisions:
+            if backend in ["torch", "jax"]:
+                set_precision(precision, backend=backend)
+            dtype_name = {"double": "float64", "float": "float32"}[precision]
+            # Iterate over arguments in an inner loop here instead of an outer
+            # loop so that there are less switches between backends
+            for kwargs in func_extra_args:
+                func(dtype_name=dtype_name, backend=backend, **kwargs)
 
 
 def _run_linspace_with_grads_tests(dtype_name, backend, requires_grad):
@@ -39,30 +81,10 @@ def _run_linspace_with_grads_tests(dtype_name, backend, requires_grad):
 
 def test_linspace_with_grads():
     """Test _linspace_with_grads with all possible configurations"""
-    for precision in ["float", "double"]:
-        set_precision(precision, backend="torch")
-        set_precision(precision, backend="jax")
-        dtype_name = {"double": "float64", "float": "float32"}[precision]
-        # Tensorflow support for double and numpy support for float aren't
-        # implemented yet
-        if precision == "double":
-            precision_supported_backends = ["numpy", "torch", "jax"]
-        else:
-            # If JAX is tested before Tensorflow here, an out of memory error
-            # happens because both allocate all memory on the GPU by default.
-            # The XLA_PYTHON_CLIENT_PREALLOCATE=false environment variable
-            # avoids the crash of JAX.
-            # For some reason it also does not crash if Tensorflow is tested
-            # before JAX, which is done here.
-            # Calling block_until_ready on all arrays created with JAX instead
-            # of changing the tests order did not avoid the crash for some
-            # reason.
-            precision_supported_backends = ["torch", "tensorflow", "jax"]
-
-        for backend, requires_grad in product(
-            precision_supported_backends, [False, True]
-        ):
-            _run_linspace_with_grads_tests(dtype_name, backend, requires_grad)
+    _run_tests_with_all_backends(
+        _run_linspace_with_grads_tests,
+        [{"requires_grad": True}, {"requires_grad": False}],
+    )
 
 
 def _run_setup_integration_domain_tests(dtype_name, backend):
@@ -105,18 +127,7 @@ def _run_setup_integration_domain_tests(dtype_name, backend):
 
 def test_setup_integration_domain():
     """Test _setup_integration_domain with all possible configurations"""
-    for precision in ["float", "double"]:
-        set_precision(precision, backend="torch")
-        set_precision(precision, backend="jax")
-        dtype_name = {"double": "float64", "float": "float32"}[precision]
-        # Tensorflow support for double and numpy support for float aren't
-        # implemented yet
-        if precision == "double":
-            precision_supported_backends = ["numpy", "torch", "jax"]
-        else:
-            precision_supported_backends = ["torch", "jax", "tensorflow"]
-        for backend in precision_supported_backends:
-            _run_setup_integration_domain_tests(dtype_name, backend)
+    _run_tests_with_all_backends(_run_setup_integration_domain_tests)
 
 
 def _run_RNG_tests(dtype_name, backend):
@@ -154,18 +165,7 @@ def _run_RNG_tests(dtype_name, backend):
 
 def test_RNG():
     """Test the random number generator with all possible configurations"""
-    for precision in ["float", "double"]:
-        set_precision(precision, backend="torch")
-        set_precision(precision, backend="jax")
-        dtype_name = {"double": "float64", "float": "float32"}[precision]
-        # Tensorflow support for double and numpy support for float aren't
-        # implemented yet
-        if precision == "double":
-            precision_supported_backends = ["numpy", "torch", "jax"]
-        else:
-            precision_supported_backends = ["torch", "jax", "tensorflow"]
-        for backend in precision_supported_backends:
-            _run_RNG_tests(dtype_name, backend)
+    _run_tests_with_all_backends(_run_RNG_tests)
 
 
 if __name__ == "__main__":
