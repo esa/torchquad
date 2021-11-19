@@ -141,7 +141,7 @@ def get_test_functions(dim, backend):
         raise ValueError("Not testing functions implemented for dim " + str(dim))
 
 
-def run_example_functions(
+def compute_integration_test_errors(
     integrator,
     integrator_args,
     dim,
@@ -189,29 +189,3 @@ def run_example_functions(
         chosen_functions.append(test_function)
 
     return errors, chosen_functions
-
-
-def compute_test_errors(
-    integrator,
-    integrator_args,
-    dim=1,
-    use_complex=False,
-    backend="torch",
-):
-    """Computes errors on all test functions for given dimension and integrator.
-
-    Args:
-        integrator (torchquad.base_integrator): Integrator to use.
-        integrator_args (dict): Arguments for the integrator.
-        dim (int, optional): Dimensionality of test functions to use. Defaults to 1.
-        use_complex (Boolean, optional): If complex test functions should be used. Defaults to False.
-        backend (string, optional): Numerical backend for the test functions. Defaults to "torch".
-
-    Returns:
-        list: Absolute errors on all test functions
-    """
-    errors, _ = run_example_functions(
-        integrator, integrator_args, dim, use_complex, backend
-    )
-
-    return errors

@@ -6,7 +6,7 @@ from integration.monte_carlo import MonteCarlo
 from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision
 from utils.set_log_level import set_log_level
-from integration_test_utils import run_example_functions
+from integration_test_utils import compute_integration_test_errors
 
 from tensorflow.python.ops.numpy_ops import np_config
 
@@ -21,7 +21,7 @@ def _run_monte_carlo_tests(backend):
     # 1D Tests
     N = 100000  # integration points to use
 
-    errors, funcs = run_example_functions(
+    errors, funcs = compute_integration_test_errors(
         mc.integrate,
         {"N": N, "dim": 1, "seed": 0},
         dim=1,
@@ -51,7 +51,7 @@ def _run_monte_carlo_tests(backend):
 
     # 3D Tests
     N = 1000000
-    errors, funcs = run_example_functions(
+    errors, funcs = compute_integration_test_errors(
         mc.integrate,
         {"N": N, "dim": 3, "seed": 0},
         dim=3,
@@ -68,7 +68,7 @@ def _run_monte_carlo_tests(backend):
 
     # 10D Tests
     N = 10000
-    errors, funcs = run_example_functions(
+    errors, funcs = compute_integration_test_errors(
         mc.integrate,
         {"N": N, "dim": 10, "seed": 0},
         dim=10,

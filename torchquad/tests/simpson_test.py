@@ -8,7 +8,7 @@ from integration.simpson import Simpson
 from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision
 from utils.set_log_level import set_log_level
-from integration_test_utils import run_example_functions
+from integration_test_utils import compute_integration_test_errors
 
 
 def _run_simpson_tests(backend):
@@ -19,7 +19,7 @@ def _run_simpson_tests(backend):
     # 1D Tests
     N = 100001
 
-    errors, funcs = run_example_functions(
+    errors, funcs = compute_integration_test_errors(
         simp.integrate, {"N": N, "dim": 1}, dim=1, use_complex=True, backend=backend
     )
     print(f"1D Simpson Test passed. N: {N}, backend: {backend}, Errors: {errors}")
@@ -30,7 +30,7 @@ def _run_simpson_tests(backend):
         assert error < 1e-7
 
     N = 3  # integration points, here 3 for order check (3 points should lead to almost 0 err for low order polynomials)
-    errors, funcs = run_example_functions(
+    errors, funcs = compute_integration_test_errors(
         simp.integrate, {"N": N, "dim": 1}, dim=1, use_complex=True, backend=backend
     )
     print(f"1D Simpson Test passed. N: {N}, backend: {backend}, Errors: {errors}")
@@ -43,7 +43,7 @@ def _run_simpson_tests(backend):
     N = 1076890  # N = 102.5 per dim (will change to 101 if all works)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        errors, funcs = run_example_functions(
+        errors, funcs = compute_integration_test_errors(
             simp.integrate, {"N": N, "dim": 3}, dim=3, use_complex=True, backend=backend
         )
     print(f"3D Simpson Test passed. N: {N}, backend: {backend}, Errors: {errors}")
@@ -54,7 +54,7 @@ def _run_simpson_tests(backend):
 
     # 10D Tests
     N = 3 ** 10
-    errors, funcs = run_example_functions(
+    errors, funcs = compute_integration_test_errors(
         simp.integrate, {"N": N, "dim": 10}, dim=10, use_complex=True, backend=backend
     )
     print(f"10D Simpson Test passed. N: {N}, backend: {backend}, Errors: {errors}")

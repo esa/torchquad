@@ -10,7 +10,7 @@ from integration.vegas import VEGAS
 from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision
 from utils.set_log_level import set_log_level
-from integration_test_utils import compute_test_errors
+from integration_test_utils import compute_integration_test_errors
 
 
 def test_integrate():
@@ -23,8 +23,12 @@ def test_integrate():
 
     # 1D Tests
     N = 10000
-    errors = compute_test_errors(
-        vegas.integrate, {"N": N, "dim": 1, "seed": 0}, use_complex=False
+    errors, _ = compute_integration_test_errors(
+        vegas.integrate,
+        {"N": N, "dim": 1, "seed": 0},
+        dim=1,
+        use_complex=False,
+        backend="torch",
     )
     print("1D VEGAS Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors[:3]:
@@ -38,8 +42,12 @@ def test_integrate():
 
     # 3D Tests
     N = 10000
-    errors = compute_test_errors(
-        vegas.integrate, {"N": N, "dim": 3, "seed": 0}, dim=3, use_complex=False
+    errors, _ = compute_integration_test_errors(
+        vegas.integrate,
+        {"N": N, "dim": 3, "seed": 0},
+        dim=3,
+        use_complex=False,
+        backend="torch",
     )
     print("3D VEGAS Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:
@@ -47,8 +55,12 @@ def test_integrate():
 
     # 10D Tests
     N = 10000
-    errors = compute_test_errors(
-        vegas.integrate, {"N": N, "dim": 10, "seed": 0}, dim=10, use_complex=False
+    errors, _ = compute_integration_test_errors(
+        vegas.integrate,
+        {"N": N, "dim": 10, "seed": 0},
+        dim=10,
+        use_complex=False,
+        backend="torch",
     )
     print("10D VEGAS Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:
