@@ -2,16 +2,14 @@ import sys
 
 sys.path.append("../")
 
-import pytest
-
 from integration.trapezoid import Trapezoid
-from utils.enable_cuda import enable_cuda
-from utils.set_precision import set_precision
-from utils.set_log_level import set_log_level
-from integration_test_utils import compute_integration_test_errors
+from integration_test_utils import (
+    compute_integration_test_errors,
+    setup_test_for_backend,
+)
 
 
-def _run_trapezoid_tests(backend):
+def _run_trapezoid_tests(backend, _precision):
     """Test the integrate function in integration.Trapezoid for the given backend."""
 
     tp = Trapezoid()
@@ -63,30 +61,9 @@ def _run_trapezoid_tests(backend):
         assert error < 7000
 
 
-def test_integrate_numpy():
-    """Test the integrate function in integration.Trapezoid with Numpy"""
-    pytest.importorskip("numpy")
-    set_log_level("INFO")
-    _run_trapezoid_tests("numpy")
-
-
-def test_integrate_torch():
-    """Test the integrate function in integration.Trapezoid with Torch"""
-    pytest.importorskip("torch")
-    set_log_level("INFO")
-    enable_cuda()
-    set_precision("double", backend="torch")
-    _run_trapezoid_tests("torch")
-
-
-def test_integrate_jax():
-    """Test the integrate function in integration.Trapezoid with JAX"""
-    pytest.importorskip("jax")
-    set_log_level("INFO")
-    set_precision("double", backend="jax")
-    _run_trapezoid_tests("jax")
-
-
+test_integrate_numpy = setup_test_for_backend(_run_trapezoid_tests, "numpy", "double")
+test_integrate_torch = setup_test_for_backend(_run_trapezoid_tests, "torch", "double")
+test_integrate_jax = setup_test_for_backend(_run_trapezoid_tests, "jax", "double")
 # Skip tensorflow since it does not yet support double as global precision
 
 

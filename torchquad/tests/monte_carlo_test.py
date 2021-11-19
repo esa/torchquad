@@ -2,16 +2,14 @@ import sys
 
 sys.path.append("../")
 
-import pytest
-
 from integration.monte_carlo import MonteCarlo
-from utils.enable_cuda import enable_cuda
-from utils.set_precision import set_precision
-from utils.set_log_level import set_log_level
-from integration_test_utils import compute_integration_test_errors
+from integration_test_utils import (
+    compute_integration_test_errors,
+    setup_test_for_backend,
+)
 
 
-def _run_monte_carlo_tests(backend):
+def _run_monte_carlo_tests(backend, _precision):
     """Test the integrate function in integration.MonteCarlo for the given backend."""
 
     mc = MonteCarlo()
@@ -83,41 +81,12 @@ def _run_monte_carlo_tests(backend):
         assert error < 26
 
 
-def test_integrate_numpy():
-    """Test the integrate function in integration.MonteCarlo with Numpy"""
-    pytest.importorskip("numpy")
-    set_log_level("INFO")
-    _run_monte_carlo_tests("numpy")
-
-
-def test_integrate_torch():
-    """Test the integrate function in integration.MonteCarlo with Torch"""
-    pytest.importorskip("torch")
-    set_log_level("INFO")
-    enable_cuda()
-    # 32 bit float precision suffices for Monte Carlo tests
-    set_precision("float", backend="torch")
-    _run_monte_carlo_tests("torch")
-
-
-def test_integrate_jax():
-    """Test the integrate function in integration.MonteCarlo with JAX"""
-    pytest.importorskip("jax")
-    set_log_level("INFO")
-    set_precision("float", backend="jax")
-    _run_monte_carlo_tests("jax")
-
-
-def test_integrate_tensorflow():
-    """Test the integrate function in integration.MonteCarlo with Tensorflow"""
-    pytest.importorskip("tensorflow")
-    from tensorflow.python.ops.numpy_ops import np_config
-
-    # The Tensorflow backend only works with numpy behaviour enabled.
-    np_config.enable_numpy_behavior()
-
-    set_log_level("INFO")
-    _run_monte_carlo_tests("tensorflow")
+test_integrate_numpy = setup_test_for_backend(_run_monte_carlo_tests, "numpy", "unused")
+test_integrate_torch = setup_test_for_backend(_run_monte_carlo_tests, "torch", "float")
+test_integrate_jax = setup_test_for_backend(_run_monte_carlo_tests, "jax", "float")
+test_integrate_tensorflow = setup_test_for_backend(
+    _run_monte_carlo_tests, "tensorflow", "float"
+)
 
 
 if __name__ == "__main__":

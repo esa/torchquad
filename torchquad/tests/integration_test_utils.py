@@ -1,6 +1,10 @@
 import numpy as np
+import pytest
 
 from integration_test_functions import Polynomial, Exponential, Sinusoid
+from utils.enable_cuda import enable_cuda
+from utils.set_precision import set_precision
+from utils.set_log_level import set_log_level
 
 
 def get_test_functions(dim, backend):
@@ -189,3 +193,37 @@ def compute_integration_test_errors(
         chosen_functions.append(test_function)
 
     return errors, chosen_functions
+
+
+def setup_test_for_backend(test_func, backend, precision):
+    """
+    Execute a test function with the given numerical backend.
+    If the backend is not installed, skip the test.
+
+    Args:
+        test_func (function(backend, precision)): The function which runs tests
+        backend (string): The numerical backend
+        precision ("float" or "double"): Floating point precision
+
+    Returns:
+        function: A test function for Pytest
+    """
+
+    def func():
+        pytest.importorskip(backend)
+        set_log_level("INFO")
+        if backend == "torch":
+            enable_cuda()
+        if backend in ["torch", "jax"]:
+            set_precision(precision, backend=backend)
+        assert not (backend == "numpy" and precision == "float") and not (
+            backend == "tensorflow" and precision == "double"
+        )
+        if backend == "tensorflow":
+            from tensorflow.python.ops.numpy_ops import np_config
+
+            # The Tensorflow backend only works with numpy behaviour enabled.
+            np_config.enable_numpy_behavior()
+        return test_func(backend, precision)
+
+    return func

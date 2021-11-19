@@ -2,17 +2,16 @@ import sys
 
 sys.path.append("../")
 
-import pytest
 import warnings
 
 from integration.boole import Boole
-from utils.enable_cuda import enable_cuda
-from utils.set_precision import set_precision
-from utils.set_log_level import set_log_level
-from integration_test_utils import compute_integration_test_errors
+from integration_test_utils import (
+    compute_integration_test_errors,
+    setup_test_for_backend,
+)
 
 
-def _run_boole_tests(backend):
+def _run_boole_tests(backend, _precision):
     """Test the integrate function in integration.Boole for the given backend.
     Note: For now the 10-D test is diabled due to lack of GPU memory on some computers."""
 
@@ -52,30 +51,9 @@ def _run_boole_tests(backend):
     # assert error < 5e-9
 
 
-def test_integrate_numpy():
-    """Test the integrate function in integration.Boole with Numpy"""
-    pytest.importorskip("numpy")
-    set_log_level("INFO")
-    _run_boole_tests("numpy")
-
-
-def test_integrate_torch():
-    """Test the integrate function in integration.Boole with Torch"""
-    pytest.importorskip("torch")
-    set_log_level("INFO")
-    enable_cuda()
-    set_precision("double", backend="torch")
-    _run_boole_tests("torch")
-
-
-def test_integrate_jax():
-    """Test the integrate function in integration.Boole with JAX"""
-    pytest.importorskip("jax")
-    set_log_level("INFO")
-    set_precision("double", backend="jax")
-    _run_boole_tests("jax")
-
-
+test_integrate_numpy = setup_test_for_backend(_run_boole_tests, "numpy", "double")
+test_integrate_torch = setup_test_for_backend(_run_boole_tests, "torch", "double")
+test_integrate_jax = setup_test_for_backend(_run_boole_tests, "jax", "double")
 # Skip tensorflow since it does not yet support double as global precision
 
 
