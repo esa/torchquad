@@ -50,4 +50,4 @@ jobs:
       run: |
         cd torchquad/tests
         conda install pytest
-        $CONDA/bin/pytest
+        $CONDA/bin/pytest -ra

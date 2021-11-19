@@ -2,6 +2,7 @@ import sys
 
 sys.path.append("../")
 
+import pytest
 import warnings
 
 from integration.simpson import Simpson
@@ -64,12 +65,14 @@ def _run_simpson_tests(backend):
 
 def test_integrate_numpy():
     """Test the integrate function in integration.Simpson with Numpy"""
+    pytest.importorskip("numpy")
     set_log_level("INFO")
     _run_simpson_tests("numpy")
 
 
 def test_integrate_torch():
     """Test the integrate function in integration.Simpson with Torch"""
+    pytest.importorskip("torch")
     set_log_level("INFO")
     enable_cuda()
     set_precision("double", backend="torch")
@@ -77,7 +80,8 @@ def test_integrate_torch():
 
 
 def test_integrate_jax():
-    """Test the integrate function in integration.Simpson with Torch"""
+    """Test the integrate function in integration.Simpson with JAX"""
+    pytest.importorskip("jax")
     set_log_level("INFO")
     set_precision("double", backend="jax")
     _run_simpson_tests("jax")

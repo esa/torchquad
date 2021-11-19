@@ -2,15 +2,13 @@ import sys
 
 sys.path.append("../")
 
+import pytest
+
 from integration.monte_carlo import MonteCarlo
 from utils.enable_cuda import enable_cuda
 from utils.set_precision import set_precision
 from utils.set_log_level import set_log_level
 from integration_test_utils import compute_integration_test_errors
-
-from tensorflow.python.ops.numpy_ops import np_config
-
-np_config.enable_numpy_behavior()
 
 
 def _run_monte_carlo_tests(backend):
@@ -87,12 +85,14 @@ def _run_monte_carlo_tests(backend):
 
 def test_integrate_numpy():
     """Test the integrate function in integration.MonteCarlo with Numpy"""
+    pytest.importorskip("numpy")
     set_log_level("INFO")
     _run_monte_carlo_tests("numpy")
 
 
 def test_integrate_torch():
     """Test the integrate function in integration.MonteCarlo with Torch"""
+    pytest.importorskip("torch")
     set_log_level("INFO")
     enable_cuda()
     # 32 bit float precision suffices for Monte Carlo tests
@@ -101,7 +101,8 @@ def test_integrate_torch():
 
 
 def test_integrate_jax():
-    """Test the integrate function in integration.MonteCarlo with Torch"""
+    """Test the integrate function in integration.MonteCarlo with JAX"""
+    pytest.importorskip("jax")
     set_log_level("INFO")
     set_precision("float", backend="jax")
     _run_monte_carlo_tests("jax")
@@ -109,6 +110,12 @@ def test_integrate_jax():
 
 def test_integrate_tensorflow():
     """Test the integrate function in integration.MonteCarlo with Tensorflow"""
+    pytest.importorskip("tensorflow")
+    from tensorflow.python.ops.numpy_ops import np_config
+
+    # The Tensorflow backend only works with numpy behaviour enabled.
+    np_config.enable_numpy_behavior()
+
     set_log_level("INFO")
     _run_monte_carlo_tests("tensorflow")
 
