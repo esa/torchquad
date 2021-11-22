@@ -6,7 +6,7 @@ from .set_precision import set_precision
 
 
 def enable_cuda(device=0, data_type="float"):
-    """This function will set the default device to CUDA if possible. Call before declaring any variables!
+    """This function sets torch's default device to CUDA if possible. Call before declaring any variables!
     The default precision can be set here initially, or using set_precision later.
 
     Args:

@@ -38,4 +38,5 @@ __all__ = [
 ]
 
 set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "INFO"))
+enable_cuda()
 logger.info("Initializing torchquad.")
