@@ -1,5 +1,4 @@
 import torch
-import os
 from loguru import logger
 
 from .set_precision import set_precision
@@ -14,7 +13,6 @@ def enable_cuda(device=0, data_type="float"):
         data_type (string, optional): Data type to use, either "float" or "double". Defaults to "float".
     """
     if torch.cuda.is_available():
-        os.environ["TORCH_DEVICE"] = "cuda:" + str(device)
         logger.info("PyTorch VERSION: " + str(torch.__version__))
         logger.info("CUDNN VERSION: " + str(torch.backends.cudnn.version()))
         logger.info("Number of CUDA Devices: " + str(torch.cuda.device_count()))
