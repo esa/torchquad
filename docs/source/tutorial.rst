@@ -16,10 +16,7 @@ Minimal working example
     # ideally allocate everything in torch on the GPU
     # and avoid non-torch function calls
     import torch 
-    from torchquad import MonteCarlo, enable_cuda
-
-    # Enable GPU support if available
-    enable_cuda() 
+    from torchquad import MonteCarlo
 
     # The function we want to integrate, in this example f(x0,x1) = sin(x0) + e^x1 for x0=[0,1] and x1=[-1,1]
     # Note that the function needs to support multiple evaluations at once (first dimension of x here)
@@ -111,20 +108,8 @@ Now let’s get started! First, the general imports:
     import torch
     torch.set_printoptions(precision=10) # Set displayed output precision to 10 digits
     
-    from torchquad import enable_cuda # Necessary to enable GPU support
     from torchquad import Trapezoid, Simpson, Boole, MonteCarlo, VEGAS # The available integrators
-    import torchquad
-
-.. code:: ipython3
-
-    enable_cuda() # Use this to enable GPU support 
-
-
-.. parsed-literal::
-
-    **Output:** Setting default tensor type to cuda.Float32 (CUDA is initialized).
-
-
+    import torchquad  # Initialize torchquad with CUDA support if possible
 
 
 One-dimensional integration
@@ -450,14 +435,12 @@ We selected the Trapezoid rule and the Monte Carlo method to showcase that getti
     import torch
     from torchquad.integration.monte_carlo import MonteCarlo
     from torchquad.integration.trapezoid import Trapezoid
-    from torchquad.utils.enable_cuda import enable_cuda
     from torchquad.utils.set_precision import set_precision
 
     def test_function(x):
         """V shaped test function."""
         return 2 * torch.abs(x)
 
-    enable_cuda()
     set_precision("double")
     N = 99997 # Number of iterations
     torch.manual_seed(0)  # We have to seed torch to get reproducible results

@@ -147,10 +147,7 @@ The full documentation can be found on [readthedocs](https://torchquad.readthedo
 # ideally allocate everything in torch on the GPU
 # and avoid non-torch function calls
 import torch 
-from torchquad import MonteCarlo, enable_cuda
-
-# Enable GPU support if available
-enable_cuda() 
+from torchquad import MonteCarlo
 
 # The function we want to integrate, in this example f(x0,x1) = sin(x0) + e^x1 for x0=[0,1] and x1=[-1,1]
 # Note that the function needs to support multiple evaluations at once (first dimension of x here)
