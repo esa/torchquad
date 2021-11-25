@@ -3,7 +3,11 @@ from autoray import infer_backend
 from time import perf_counter
 from loguru import logger
 
-from .utils import _linspace_with_grads, _check_integration_domain
+from .utils import (
+    _linspace_with_grads,
+    _check_integration_domain,
+    _setup_integration_domain,
+)
 
 
 class IntegrationGrid:
@@ -25,7 +29,9 @@ class IntegrationGrid:
         start = perf_counter()
         self._check_inputs(N, integration_domain)
         if infer_backend(integration_domain) == "builtins":
-            integration_domain = anp.array(integration_domain, like="torch")
+            integration_domain = _setup_integration_domain(
+                len(integration_domain), integration_domain, backend="torch"
+            )
         self._dim = integration_domain.shape[0]
 
         # TODO Add that N can be different for each dimension
