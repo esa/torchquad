@@ -54,7 +54,9 @@ def _run_boole_tests(backend, _precision):
 test_integrate_numpy = setup_test_for_backend(_run_boole_tests, "numpy", "double")
 test_integrate_torch = setup_test_for_backend(_run_boole_tests, "torch", "double")
 test_integrate_jax = setup_test_for_backend(_run_boole_tests, "jax", "double")
-# Skip tensorflow since it does not yet support double as global precision
+test_integrate_tensorflow = setup_test_for_backend(
+    _run_boole_tests, "tensorflow", "double"
+)
 
 
 if __name__ == "__main__":
@@ -62,3 +64,4 @@ if __name__ == "__main__":
     test_integrate_numpy()
     test_integrate_torch()
     test_integrate_jax()
+    test_integrate_tensorflow()

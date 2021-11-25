@@ -49,6 +49,12 @@ def _run_trapezoid_tests(backend, _precision):
     for error in errors:
         assert error < 6e-3
 
+    # Tensorflow crashes with an Op:StridedSlice UnimplementedError with 10
+    # dimensions
+    if backend == "tensorflow":
+        print("Skipping tensorflow 10D tests")
+        return
+
     # 10D Tests
     N = 10000
     errors, funcs = compute_integration_test_errors(
@@ -64,7 +70,9 @@ def _run_trapezoid_tests(backend, _precision):
 test_integrate_numpy = setup_test_for_backend(_run_trapezoid_tests, "numpy", "double")
 test_integrate_torch = setup_test_for_backend(_run_trapezoid_tests, "torch", "double")
 test_integrate_jax = setup_test_for_backend(_run_trapezoid_tests, "jax", "double")
-# Skip tensorflow since it does not yet support double as global precision
+test_integrate_tensorflow = setup_test_for_backend(
+    _run_trapezoid_tests, "tensorflow", "double"
+)
 
 
 if __name__ == "__main__":
@@ -72,3 +80,4 @@ if __name__ == "__main__":
     test_integrate_numpy()
     test_integrate_torch()
     test_integrate_jax()
+    test_integrate_tensorflow()

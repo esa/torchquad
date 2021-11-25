@@ -81,7 +81,7 @@ def _run_monte_carlo_tests(backend, _precision):
         assert error < 26
 
 
-test_integrate_numpy = setup_test_for_backend(_run_monte_carlo_tests, "numpy", "unused")
+test_integrate_numpy = setup_test_for_backend(_run_monte_carlo_tests, "numpy", "float")
 test_integrate_torch = setup_test_for_backend(_run_monte_carlo_tests, "torch", "float")
 test_integrate_jax = setup_test_for_backend(_run_monte_carlo_tests, "jax", "float")
 test_integrate_tensorflow = setup_test_for_backend(

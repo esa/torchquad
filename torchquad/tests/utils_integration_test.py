@@ -33,19 +33,10 @@ def _run_tests_with_all_backends(func, func_extra_args=[{}]):
         if importlib.util.find_spec(backend) is None:
             warnings.warn(f"Backend is not installed: {backend}")
             continue
-        # Tensorflow support for double and numpy support for float aren't
-        # implemented yet
-        if backend == "numpy":
-            supported_precisions = ["double"]
-        elif backend == "tensorflow":
-            supported_precisions = ["float"]
-        else:
-            supported_precisions = ["float", "double"]
         if backend == "torch":
             enable_cuda()
-        for precision in supported_precisions:
-            if backend in ["torch", "jax"]:
-                set_precision(precision, backend=backend)
+        for precision in ["float", "double"]:
+            set_precision(precision, backend=backend)
             dtype_name = {"double": "float64", "float": "float32"}[precision]
             # Iterate over arguments in an inner loop here instead of an outer
             # loop so that there are less switches between backends
@@ -65,8 +56,9 @@ def _run_linspace_with_grads_tests(dtype_name, backend, requires_grad):
         f"Testing _linspace_with_grads; backend: {backend}, requires_grad:"
         f" {requires_grad}, precision: {dtype_name}"
     )
-    start = anp.array(-2.0, like=backend)
-    stop = anp.array(-1.0, like=backend)
+    dtype_backend = to_backend_dtype(dtype_name, like=backend)
+    start = anp.array(-2.0, like=backend, dtype=dtype_backend)
+    stop = anp.array(-1.0, like=backend, dtype=dtype_backend)
     assert (
         get_dtype_name(start) == dtype_name
     ), "Unexpected dtype for the configured precision"
@@ -116,7 +108,10 @@ def _run_setup_integration_domain_tests(dtype_name, backend):
     assert domain.shape == (4, 2)
 
     # User-specified domain
-    custom_domain = anp.array([[0.0, 1.0], [1.0, 2.0]], like=backend)
+    dtype_backend = to_backend_dtype(dtype_name, like=backend)
+    custom_domain = anp.array(
+        [[0.0, 1.0], [1.0, 2.0]], like=backend, dtype=dtype_backend
+    )
     domain = _setup_integration_domain(2, custom_domain, "unused")
     assert domain.shape == custom_domain.shape
     assert domain.dtype == custom_domain.dtype

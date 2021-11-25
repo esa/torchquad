@@ -91,12 +91,14 @@ def get_test_functions(dim, backend):
             # e^x+e^y+e^z
             Exponential(
                 27 * (np.exp(3) - 1) / np.exp(2),
+                dim=3,
                 domain=[[-2, 1], [-2, 1], [-2, 1]],
                 is_complex=False,
                 backend=backend,
             ),
             Sinusoid(
                 24 * np.sin(1) ** 2,
+                dim=3,
                 domain=[[0, 2], [0, 2], [0, 2]],
                 is_complex=False,
                 backend=backend,
@@ -104,6 +106,7 @@ def get_test_functions(dim, backend):
             # e^x+e^y+e^z
             Exponential(
                 1.756,
+                dim=3,
                 domain=[[-0.05, 0.1], [-0.25, 0.2], [-np.exp(1), np.exp(1)]],
                 is_complex=False,
                 backend=backend,
@@ -214,11 +217,8 @@ def setup_test_for_backend(test_func, backend, precision):
         set_log_level("INFO")
         if backend == "torch":
             enable_cuda()
-        if precision is not None and backend in ["torch", "jax"]:
+        if precision is not None:
             set_precision(precision, backend=backend)
-        assert not (backend == "numpy" and precision == "float") and not (
-            backend == "tensorflow" and precision == "double"
-        )
         if backend == "tensorflow":
             from tensorflow.python.ops.numpy_ops import np_config
 

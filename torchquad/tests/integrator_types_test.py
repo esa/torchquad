@@ -54,14 +54,6 @@ def _run_simple_integrations(backend):
         [None, "float32", "float64"],
         zip(integrators_all, Ns_all),
     ):
-        # Numpy and Tensorflow don't support the configuration of their default
-        # dtype.
-        # They always default to float64 (Numpy) and float32 (Tensorflow).
-        if dtype_arg is None and (backend, dtype_global) in [
-            ("numpy", "float32"),
-            ("tensorflow", "float64"),
-        ]:
-            continue
         # JAX ignores the dtype argument when an array is created and always
         # uses the global precision.
         if (backend, dtype_global, dtype_arg) in [
@@ -70,10 +62,9 @@ def _run_simple_integrations(backend):
         ]:
             continue
 
-        # Set the global precision if the backend supports it
-        if backend in ["torch", "jax"]:
-            precision = {"float64": "double", "float32": "float"}[dtype_global]
-            set_precision(precision, backend=backend)
+        # Set the global precision
+        precision = {"float64": "double", "float32": "float"}[dtype_global]
+        set_precision(precision, backend=backend)
 
         integration_domain = [[0.0, 1.0], [-2.0, 0.0]]
         if dtype_arg is not None:

@@ -1,7 +1,13 @@
+import sys
+
+sys.path.append("../")
+
 from autoray import numpy as anp
 from autoray import infer_backend
 from numpy import inf
 from loguru import logger
+
+from integration.utils import _setup_integration_domain
 
 
 class IntegrationTestFunction:
@@ -31,15 +37,7 @@ class IntegrationTestFunction:
         self.expected_result = expected_result
 
         self.is_complex = is_complex
-        # Initialize domain to [-1,1]^dim if not passed
-        if domain is None:
-            self.domain = anp.array([[-1.0, 1.0]] * self.dim, like=backend)
-        elif infer_backend(domain) == "builtins":
-            # Ensure that integration domain numbers are always a python floats
-            domain = [list(map(float, dlist)) for dlist in domain]
-            self.domain = anp.array(domain, like=backend)
-        else:
-            self.domain = domain
+        self.domain = _setup_integration_domain(dim, domain, backend)
         logger.debug("Initialized Test function with ")
         logger.debug(
             "dim="
@@ -113,7 +111,10 @@ class Polynomial(IntegrationTestFunction):
                 coeffs = list(map(complex, coeffs))
             else:
                 coeffs = list(map(float, coeffs))
-        self.coeffs = anp.array(coeffs, like=self.domain)
+        if not is_complex:
+            self.coeffs = anp.array(coeffs, like=self.domain, dtype=self.domain.dtype)
+        else:
+            self.coeffs = anp.array(coeffs, like=self.domain)
         self.order = len(coeffs) - 1  # polynomial order is defined by the coeffs
         self.f = self._poly
 
@@ -122,7 +123,7 @@ class Polynomial(IntegrationTestFunction):
         # The shape of exponentials is (dim, N, order+1)
         if infer_backend(x) != "tensorflow":
             exponentials = x.reshape(x.shape + (1,)) ** anp.linspace(
-                0, self.order, self.order + 1, like=x
+                0, self.order, self.order + 1, like=x, dtype=x.dtype
             )
             assert exponentials.dtype == x.dtype
         else:
