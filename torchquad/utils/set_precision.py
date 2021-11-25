@@ -1,6 +1,10 @@
 from loguru import logger
 
 
+# Precisions for Numpy and Tensorflow if integration_domain is a list
+torchquad_default_dtypes = {"numpy": None, "tensorflow": None}
+
+
 def _set_precision_torch(data_type="float"):
     """This function allows the user to set the default precision for torch.
     Call before declaring your variables.
@@ -64,18 +68,21 @@ def set_precision(data_type="float", backend="torch"):
     """
     if backend == "torch":
         _set_precision_torch(data_type)
+    elif data_type not in ["float", "double"]:
+        logger.error(
+            f'Invalid data type for {backend}: "{data_type}". Only float or double are supported.'
+        )
     elif backend == "jax":
         from jax.config import config
 
-        if data_type == "double":
-            config.update("jax_enable_x64", True)
-            logger.info("JAX data type set to double")
-        elif data_type == "float":
-            config.update("jax_enable_x64", False)
-            logger.info("JAX data type set to float")
-        else:
-            logger.error(
-                f'Invalid data type for JAX: "{data_type}". Only float or double are supported.'
-            )
+        config.update("jax_enable_x64", data_type == "double")
+        logger.info(f"JAX data type set to {data_type}")
+    elif backend in ["numpy", "tensorflow"]:
+        torchquad_default_dtypes[backend] = {"float": "float32", "double": "float64"}[
+            data_type
+        ]
+        logger.info(
+            f"Default dtype config for backend {backend} set to {torchquad_default_dtypes[backend]}"
+        )
     else:
-        logger.error("Changing the data type is not supported for backend ", backend)
+        logger.error(f"Changing the data type is not supported for backend {backend}")

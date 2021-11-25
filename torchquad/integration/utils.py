@@ -1,8 +1,15 @@
 """This file contains various utility functions for the integrations methods."""
+import sys
+from pathlib import Path
+
+# import path required for torchquad_default_dtypes
+sys.path.append(str(Path(__file__).absolute().parent.parent))
 
 from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name
 from loguru import logger
+
+from utils.set_precision import torchquad_default_dtypes
 
 
 def _linspace_with_grads(start, stop, N, requires_grad):
@@ -46,18 +53,28 @@ def _setup_integration_domain(dim, integration_domain, backend):
         backend tensor: Integration domain.
     """
     logger.debug("Setting up integration domain.")
-    if integration_domain is not None:
-        # Convert integration_domain to a tensor if needed
-        if infer_backend(integration_domain) == "builtins":
-            # Cast all integration domain values to Python3 float because
-            # some numerical backends create a tensor based on the Python3 types
+
+    # If no integration_domain is specified, create [-1,1]^d bounds
+    if integration_domain is None:
+        integration_domain = [[-1.0, 1.0]] * dim
+
+    # Convert integration_domain to a tensor if needed
+    if infer_backend(integration_domain) == "builtins":
+        # Cast all integration domain values to Python3 float because
+        # some numerical backends create a tensor based on the Python3 types
+        integration_domain = [
+            [float(b) for b in bounds] for bounds in integration_domain
+        ]
+        dtype_arg = torchquad_default_dtypes.get(backend, None)
+        if dtype_arg is not None:
+            # For Numpy and Tensorflow there is no global dtype, so set the
+            # configured default dtype here
             integration_domain = anp.array(
-                [[float(b) for b in bounds] for bounds in integration_domain],
-                like=backend,
+                integration_domain, like=backend, dtype=dtype_arg
             )
-    else:
-        # If no integration_domain is specified, create [-1,1]^d bounds
-        integration_domain = anp.array([[-1.0, 1.0]] * dim, like=backend)
+        else:
+            integration_domain = anp.array(integration_domain, like=backend)
+
     if integration_domain.shape != (dim, 2):
         raise ValueError(
             "The integration domain has an unexpected shape. "
