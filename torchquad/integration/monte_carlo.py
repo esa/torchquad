@@ -47,14 +47,17 @@ class MonteCarlo(BaseIntegrator):
         self._integration_domain = _setup_integration_domain(
             dim, integration_domain, backend
         )
-        rng = _RNG(backend=infer_backend(self._integration_domain), seed=seed)
+        backend = infer_backend(self._integration_domain)
+        rng = _RNG(backend=backend, seed=seed)
 
         logger.debug("Picking random sampling points")
         sample_points = []
         for d in range(dim):
             scale = self._integration_domain[d, 1] - self._integration_domain[d, 0]
             offset = self._integration_domain[d, 0]
-            sample_points.append(rng.uniform(size=[N]) * scale + offset)
+            sample_points.append(
+                rng.uniform(size=[N], dtype=scale.dtype) * scale + offset
+            )
         # FIXME: Is there a performance difference when initializing it
         # with zero instead of stacking it?
         sample_points = anp.stack(sample_points, axis=1, like=self._integration_domain)
@@ -68,5 +71,8 @@ class MonteCarlo(BaseIntegrator):
 
         # Integral = V / N * sum(func values)
         integral = volume * anp.sum(function_values) / N
+        # Numpy automatically casts to float64 when dividing by N
+        if backend == "numpy" and function_values.dtype != integral.dtype:
+            integral = integral.astype(function_values.dtype)
         logger.info("Computed integral was " + str(integral))
         return integral

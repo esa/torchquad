@@ -3,7 +3,7 @@ import sys
 sys.path.append("../")
 
 from autoray import numpy as anp
-from autoray import infer_backend, get_dtype_name, to_numpy
+from autoray import infer_backend, get_dtype_name, to_backend_dtype, to_numpy
 import importlib
 import pytest
 import warnings
@@ -58,6 +58,9 @@ def _run_linspace_with_grads_tests(dtype_name, backend, requires_grad):
     Test _linspace_with_grads with the given dtype, numerical backend and
     requires_grad argument
     """
+    if requires_grad and backend != "torch":
+        # Currently only torch needs the requires_grad case distinction
+        return
     print(
         f"Testing _linspace_with_grads; backend: {backend}, requires_grad:"
         f" {requires_grad}, precision: {dtype_name}"
@@ -137,12 +140,14 @@ def _run_RNG_tests(dtype_name, backend):
     * With different seeds, different numbers should be generated
     * If seed is None / omitted, the RNG should be randomly seeded
     """
+    backend_dtype = to_backend_dtype(dtype_name, like=backend)
+    size = [3, 9]
     generateds = [
-        _RNG(backend, 547).uniform(size=[3, 9]),
-        _RNG(backend, None).uniform(size=[3, 9]),
-        _RNG(backend, 547).uniform(size=[3, 9]),
-        _RNG(backend).uniform(size=[3, 9]),
-        _RNG(backend, 42).uniform(size=[3, 9]),
+        _RNG(backend, 547).uniform(size=size, dtype=backend_dtype),
+        _RNG(backend, None).uniform(size=size, dtype=backend_dtype),
+        _RNG(backend, 547).uniform(size=size, dtype=backend_dtype),
+        _RNG(backend).uniform(size=size, dtype=backend_dtype),
+        _RNG(backend, 42).uniform(size=size, dtype=backend_dtype),
     ]
     numpy_arrs = list(map(to_numpy, generateds))
 

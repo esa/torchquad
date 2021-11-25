@@ -1,7 +1,7 @@
 """This file contains various utility functions for the integrations methods."""
 
 from autoray import numpy as anp
-from autoray import infer_backend
+from autoray import infer_backend, get_dtype_name
 from loguru import logger
 
 
@@ -16,9 +16,12 @@ def _linspace_with_grads(start, stop, N, requires_grad):
     Returns:
         backend tensor: Equally spaced 1D grid
     """
+    # The requires_grad case is only needed for Torch.
     if requires_grad:
         # Create 0 to 1 spaced grid
-        grid = anp.linspace(anp.array(0.0, like=start), anp.array(1.0, like=start), N)
+        grid = anp.linspace(
+            anp.array(0.0, like=start), anp.array(1.0, like=start), N, dtype=start.dtype
+        )
 
         # Scale to desired range, thus keeping gradients
         grid *= stop - start
@@ -26,7 +29,11 @@ def _linspace_with_grads(start, stop, N, requires_grad):
 
         return grid
     else:
-        return anp.linspace(start, stop, N)
+        if infer_backend(start) == "tensorflow":
+            # Tensorflow determines the dtype automatically and doesn't support
+            # the dtype argument here
+            return anp.linspace(start, stop, N)
+        return anp.linspace(start, stop, N, dtype=start.dtype)
 
 
 def _setup_integration_domain(dim, integration_domain, backend):
@@ -149,7 +156,7 @@ class _RNG:
             import numpy as np
 
             self._rng = np.random.default_rng(seed)
-            self.uniform = lambda size: self._rng.uniform(size=size)
+            self.uniform = lambda size, dtype: self._rng.random(size=size, dtype=dtype)
         elif backend == "torch":
             import torch
 
@@ -157,7 +164,7 @@ class _RNG:
                 torch.random.seed()
             else:
                 torch.random.manual_seed(seed)
-            self.uniform = lambda size: torch.rand(size=size)
+            self.uniform = lambda size, dtype: torch.rand(size=size, dtype=dtype)
         elif backend == "jax":
             from jax.random import PRNGKey, split, uniform
 
@@ -169,9 +176,9 @@ class _RNG:
                 seed = SystemRandom().randint(-(2 ** 63), 2 ** 63 - 1)
             self._jax_key = PRNGKey(seed)
 
-            def uniform_func(size):
+            def uniform_func(size, dtype):
                 self._jax_key, subkey = split(self._jax_key)
-                return uniform(subkey, shape=size)
+                return uniform(subkey, shape=size, dtype=dtype)
 
             self.uniform = uniform_func
         elif backend == "tensorflow":
@@ -181,21 +188,24 @@ class _RNG:
                 self._rng = tf.random.Generator.from_non_deterministic_state()
             else:
                 self._rng = tf.random.Generator.from_seed(seed)
-            self.uniform = lambda size: self._rng.uniform(shape=size)
+            self.uniform = lambda size, dtype: self._rng.uniform(
+                shape=size, dtype=dtype
+            )
         else:
             if seed is not None:
                 anp.random.seed(seed, like=backend)
             self._backend = backend
-            self.uniform = lambda size: anp.random.uniform(
-                size=size, like=self._backend
+            self.uniform = lambda size, dtype: anp.random.uniform(
+                size=size, dtype=get_dtype_name(dtype), like=self._backend
             )
 
-    def uniform(self, size):
-        """Generate uniform random numbers in [0, 1) or [0, 1] for the given numerical backend.
+    def uniform(self, size, dtype):
+        """Generate uniform random numbers in [0, 1) for the given numerical backend.
         This function is backend-specific; its definitions are in the constructor.
 
         Args:
             size (list): The shape of the generated numbers tensor
+            dtype (backend dtype): The dtype for the numbers, e.g. torch.float32
 
         Returns:
             backend tensor: A tensor with random values for the given numerical backend
