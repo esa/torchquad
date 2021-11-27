@@ -9,7 +9,7 @@ from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name
 from loguru import logger
 
-from utils.set_precision import torchquad_default_dtypes
+from utils.set_precision import _get_precision
 
 
 def _linspace_with_grads(start, stop, N, requires_grad):
@@ -65,7 +65,7 @@ def _setup_integration_domain(dim, integration_domain, backend):
         integration_domain = [
             [float(b) for b in bounds] for bounds in integration_domain
         ]
-        dtype_arg = torchquad_default_dtypes.get(backend, None)
+        dtype_arg = _get_precision(backend)
         if dtype_arg is not None:
             # For Numpy and Tensorflow there is no global dtype, so set the
             # configured default dtype here

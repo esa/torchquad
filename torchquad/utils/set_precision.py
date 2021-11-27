@@ -1,8 +1,17 @@
 from loguru import logger
+import os
 
 
-# Precisions for Numpy and Tensorflow if integration_domain is a list
-torchquad_default_dtypes = {"numpy": None, "tensorflow": None}
+def _get_precision(backend):
+    """Get the configured default precision for Numpy or Tensorflow.
+
+    Args:
+        backend ("numpy" or "tensorflow"): Numerical backend
+
+    Returns:
+        "float32", "float64" or None: Default floating point precision
+    """
+    return os.environ.get(f"TORCHQUAD_DTYPE_{backend.upper()}", None)
 
 
 def _set_precision_torch(data_type="float"):
@@ -58,9 +67,10 @@ def _set_precision_torch(data_type="float"):
 def set_precision(data_type="float", backend="torch"):
     """This function allows the user to set the default precision for floating point numbers for the given numerical backend.
     Call before declaring your variables.
-    Numpy and Tensorflow are not supported:
+    Numpy and Tensorflow don't have global dtypes:
     https://github.com/numpy/numpy/issues/6860
     https://github.com/tensorflow/tensorflow/issues/26033
+    Therefore, torchquad sets the dtype argument for these two when initialising the integration domain.
 
     Args:
         data_type (string, optional): Data type to use, either "float" or "double". Defaults to "float".
@@ -78,11 +88,10 @@ def set_precision(data_type="float", backend="torch"):
         config.update("jax_enable_x64", data_type == "double")
         logger.info(f"JAX data type set to {data_type}")
     elif backend in ["numpy", "tensorflow"]:
-        torchquad_default_dtypes[backend] = {"float": "float32", "double": "float64"}[
-            data_type
-        ]
+        dtype_name = {"float": "float32", "double": "float64"}[data_type]
+        os.environ[f"TORCHQUAD_DTYPE_{backend.upper()}"] = dtype_name
         logger.info(
-            f"Default dtype config for backend {backend} set to {torchquad_default_dtypes[backend]}"
+            f"Default dtype config for backend {backend} set to {_get_precision(backend)}"
         )
     else:
         logger.error(f"Changing the data type is not supported for backend {backend}")
