@@ -2,13 +2,15 @@
 import sys
 from pathlib import Path
 
-# import path required for torchquad_default_dtypes
+# Change the path to import from the parent folder.
+# A relative import currently does not work when executing the tests.
 sys.path.append(str(Path(__file__).absolute().parent.parent))
 
 from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name
 from loguru import logger
 
+# from ..utils.set_precision import _get_precision
 from utils.set_precision import _get_precision
 
 
