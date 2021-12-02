@@ -30,14 +30,29 @@ class BaseIntegrator:
         )
 
     def _eval(self, points):
-        """Evaluates the function at the passed points and updates nr_of_evals
+        """Call evaluate_integrand to evaluate self._fn function at the passed points and update self._nr_of_evals
 
         Args:
             points (backend tensor): Integration points
         """
-        num_points = points.shape[0]
+        result, num_points = self.evaluate_integrand(self._fn, points)
         self._nr_of_fevals += num_points
-        result = self._fn(points)
+        return result
+
+    @staticmethod
+    def evaluate_integrand(fn, points):
+        """Evaluate the integrand function at the passed points
+
+        Args:
+            fn (function): Integrand function
+            points (backend tensor): Integration points
+
+        Returns:
+            backend tensor: Integrand function output
+            int: Number of evaluated points
+        """
+        num_points = points.shape[0]
+        result = fn(points)
         if infer_backend(result) != infer_backend(points):
             warnings.warn(
                 "The passed function's return value has a different numerical backend than the passed points. Will try to convert. Note that this may be slow as it results in memory transfers between CPU and GPU, if torchquad uses the GPU."
@@ -52,9 +67,10 @@ class BaseIntegrator:
                 f"where first dimension matches length of passed elements. "
             )
 
-        return result
+        return result, num_points
 
-    def _check_inputs(self, dim=None, N=None, integration_domain=None):
+    @staticmethod
+    def _check_inputs(dim=None, N=None, integration_domain=None):
         """Used to check input validity
 
         Args:

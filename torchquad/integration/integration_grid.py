@@ -40,13 +40,11 @@ class IntegrationGrid:
         # i.e. int(3.99999...) -> 3, a little error term is useful
         self._N = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
 
-        logger.debug(
-            "Creating "
-            + str(self._dim)
-            + "-dimensional integration grid with "
-            + str(N)
-            + " points over"
-            + str(integration_domain),
+        logger.opt(lazy=True).debug(
+            "Creating {dim}-dimensional integration grid with {N} points over {dom}",
+            dim=lambda: str(self._dim),
+            N=lambda: str(N),
+            dom=lambda: str(integration_domain),
         )
 
         # Check if domain requires gradient
@@ -71,7 +69,7 @@ class IntegrationGrid:
             like=integration_domain,
         )
 
-        logger.debug("Grid mesh width is " + str(self.h))
+        logger.opt(lazy=True).debug("Grid mesh width is {h}", h=lambda: str(self.h))
 
         # Get grid points
         points = anp.meshgrid(*grid_1d)
