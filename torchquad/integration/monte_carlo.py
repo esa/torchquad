@@ -30,6 +30,7 @@ class MonteCarlo(BaseIntegrator):
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
+            rng (RNG, optional): An initialised RNG; this can be used when compiling the function for Tensorflow
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to "torch".
 
         Raises:
@@ -39,50 +40,70 @@ class MonteCarlo(BaseIntegrator):
             torch.Tensor: integral value
         """
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
-        logger.debug(
-            "Monte Carlo integrating a "
-            + str(dim)
-            + "-dimensional fn with "
-            + str(N)
-            + " points over "
-            + str(integration_domain),
+        logger.opt(lazy=True).debug(
+            "Monte Carlo integrating a {dim}-dimensional fn with {N} points over {dom}",
+            dim=lambda: dim,
+            N=lambda: N,
+            dom=lambda: integration_domain,
         )
+        integration_domain = _setup_integration_domain(dim, integration_domain, backend)
+        sample_points = self.calculate_sample_points(N, integration_domain, seed, rng)
+        logger.debug("Evaluating integrand")
+        function_values, self._nr_of_fevals = self.evaluate_integrand(fn, sample_points)
+        return self.calculate_result(function_values, integration_domain)
 
-        self._dim = dim
-        self._nr_of_fevals = 0
-        self.fn = fn
-        self._integration_domain = _setup_integration_domain(
-            dim, integration_domain, backend
-        )
-        backend = infer_backend(self._integration_domain)
+    def calculate_sample_points(self, N, integration_domain, seed=None, rng=None):
+        """Calculate random points for the integrand evaluation
+
+        Args:
+            N (int): Number of points
+            integration_domain (backend tensor): Integration domain
+            seed (int, optional): Random number generation seed for the sampling point creation, only set if provided. Defaults to None.
+            rng (RNG, optional): An initialised RNG; this can be used when compiling the function for Tensorflow
+
+        Returns:
+            backend tensor: Sample points
+        """
         if rng is None:
-            rng = RNG(backend=backend, seed=seed)
+            rng = RNG(backend=infer_backend(integration_domain), seed=seed)
         elif seed is not None:
             raise ValueError("seed and rng cannot both be passed")
 
         logger.debug("Picking random sampling points")
+        dim = integration_domain.shape[0]
         sample_points = []
         for d in range(dim):
-            scale = self._integration_domain[d, 1] - self._integration_domain[d, 0]
-            offset = self._integration_domain[d, 0]
+            scale = integration_domain[d, 1] - integration_domain[d, 0]
+            offset = integration_domain[d, 0]
             sample_points.append(
                 rng.uniform(size=[N], dtype=scale.dtype) * scale + offset
             )
-        # FIXME: Is there a performance difference when initializing it
-        # with zero instead of stacking it?
-        sample_points = anp.stack(sample_points, axis=1, like=self._integration_domain)
+        return anp.stack(sample_points, axis=1, like=integration_domain)
 
-        logger.debug("Evaluating integrand")
-        function_values = fn(sample_points)
+    def calculate_result(self, function_values, integration_domain):
+        """Calculate an integral result from the function evaluations
 
+        Args:
+            function_values (backend tensor): Output of the integrand
+            integration_domain (backend tensor): Integration domain
+
+        Returns:
+            backend tensor: Quadrature result
+        """
         logger.debug("Computing integration domain volume")
-        scales = self._integration_domain[:, 1] - self._integration_domain[:, 0]
+        scales = integration_domain[:, 1] - integration_domain[:, 0]
         volume = anp.prod(scales)
 
         # Integral = V / N * sum(func values)
+        N = function_values.shape[0]
         integral = volume * anp.sum(function_values) / N
         # Numpy automatically casts to float64 when dividing by N
-        if backend == "numpy" and function_values.dtype != integral.dtype:
+        if (
+            infer_backend(integration_domain) == "numpy"
+            and function_values.dtype != integral.dtype
+        ):
             integral = integral.astype(function_values.dtype)
-        logger.info("Computed integral was " + str(integral))
+        logger.opt(lazy=True).info(
+            "Computed integral: {result}", result=lambda: str(integral)
+        )
         return integral
