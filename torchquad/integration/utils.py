@@ -139,7 +139,7 @@ def _check_integration_domain(integration_domain):
         return dim
 
 
-class _RNG:
+class RNG:
     """
     A random number generator helper class for multiple numerical backends
 

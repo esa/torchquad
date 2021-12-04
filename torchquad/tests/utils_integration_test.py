@@ -8,7 +8,7 @@ import importlib
 import pytest
 import warnings
 
-from integration.utils import _linspace_with_grads, _setup_integration_domain, _RNG
+from integration.utils import _linspace_with_grads, _setup_integration_domain, RNG
 from utils.set_precision import set_precision
 from utils.enable_cuda import enable_cuda
 
@@ -138,11 +138,11 @@ def _run_RNG_tests(dtype_name, backend):
     backend_dtype = to_backend_dtype(dtype_name, like=backend)
     size = [3, 9]
     generateds = [
-        _RNG(backend, 547).uniform(size=size, dtype=backend_dtype),
-        _RNG(backend, None).uniform(size=size, dtype=backend_dtype),
-        _RNG(backend, 547).uniform(size=size, dtype=backend_dtype),
-        _RNG(backend).uniform(size=size, dtype=backend_dtype),
-        _RNG(backend, 42).uniform(size=size, dtype=backend_dtype),
+        RNG(backend, 547).uniform(size=size, dtype=backend_dtype),
+        RNG(backend, None).uniform(size=size, dtype=backend_dtype),
+        RNG(backend, 547).uniform(size=size, dtype=backend_dtype),
+        RNG(backend).uniform(size=size, dtype=backend_dtype),
+        RNG(backend, 42).uniform(size=size, dtype=backend_dtype),
     ]
     numpy_arrs = list(map(to_numpy, generateds))
 

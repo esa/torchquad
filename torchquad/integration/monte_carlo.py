@@ -3,7 +3,7 @@ from autoray import infer_backend
 from loguru import logger
 
 from .base_integrator import BaseIntegrator
-from .utils import _setup_integration_domain, _RNG
+from .utils import _setup_integration_domain, RNG
 
 
 class MonteCarlo(BaseIntegrator):
@@ -13,7 +13,14 @@ class MonteCarlo(BaseIntegrator):
         super().__init__()
 
     def integrate(
-        self, fn, dim, N=1000, integration_domain=None, seed=None, backend="torch"
+        self,
+        fn,
+        dim,
+        N=1000,
+        integration_domain=None,
+        seed=None,
+        rng=None,
+        backend="torch",
     ):
         """Integrates the passed function on the passed domain using vanilla Monte Carlo Integration.
 
@@ -48,7 +55,10 @@ class MonteCarlo(BaseIntegrator):
             dim, integration_domain, backend
         )
         backend = infer_backend(self._integration_domain)
-        rng = _RNG(backend=backend, seed=seed)
+        if rng is None:
+            rng = RNG(backend=backend, seed=seed)
+        elif seed is not None:
+            raise ValueError("seed and rng cannot both be passed")
 
         logger.debug("Picking random sampling points")
         sample_points = []
