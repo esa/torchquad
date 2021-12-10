@@ -50,4 +50,5 @@ jobs:
       run: |
         cd torchquad/tests
         conda install pytest
-        $CONDA/bin/pytest -ra
+        $CONDA/bin/pip3 install pytest-error-for-skips
+        $CONDA/bin/pytest -ra --error-for-skips
