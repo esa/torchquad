@@ -37,5 +37,5 @@ __all__ = [
     "_deployment_test",
 ]
 
-set_log_level("INFO")
+set_log_level("WARNING")
 logger.info("Initializing torchquad.")
