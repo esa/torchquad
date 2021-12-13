@@ -139,7 +139,9 @@ class AdaptiveGrid:
         self._check_inputs(N, integration_domain)
         self._dim = len(integration_domain)
         self._subdomains_per_dim = subdomains_per_dim
+        self.N_subdomains = self._subdomains_per_dim ** self._dim
         self._max_refinement_level = max_refinement_level
+        self.integration_domain = integration_domain
 
         # Check if domain requires gradient
         if hasattr(integration_domain, "requires_grad"):
@@ -148,7 +150,7 @@ class AdaptiveGrid:
             requires_grad = False
 
         logger.debug("Initializing subdomains")
-        self._create_subdomains(requires_grad)
+        self._create_subdomains(requires_grad, N // self.N_subdomains)
 
         self._runtime += perf_counter() - start
 
@@ -157,7 +159,6 @@ class AdaptiveGrid:
         self.subdomains = []
 
         # Compute total number of subdomains
-        total_subdomains = self._subdomains_per_dim ** self._dim
 
         # We create the subdomains by first identifying all lower and upper bounds
         # For this we first create a meshgrid for the points at them
@@ -209,7 +210,7 @@ class AdaptiveGrid:
             # Compute how often we need to repeat the values
             # and do it
             values = list(np.repeat(values, self._subdomains_per_dim ** d))
-            repetitions = int(total_subdomains / len(values))
+            repetitions = int(self.N_subdomains / len(values))
             indices = list(values) * repetitions
 
             permutations_per_dim.append(np.array(indices))
@@ -219,7 +220,7 @@ class AdaptiveGrid:
         permutations = np.dstack(permutations_per_dim).squeeze()
 
         # Now we get the actual bounds for each of them
-        for i in range(total_subdomains):
+        for i in range(self.N_subdomains):
             subdomain_bound = []
             for d in range(self._dim):
                 index = permutations[i, d]
@@ -228,25 +229,36 @@ class AdaptiveGrid:
 
     def _compute_refinement_criterion(self, subdomain):
         """Computes the refinement criterion for each subdomain"""
-        raise NotImplementedError()
+        val = subdomain.integral_value * torch.var(subdomain.fval) / len(subdomain.fval)
+        return val
 
     def refine(self):
         """Refines the grid by doubling the number of points in the subdomain with largest variance."""
         criterion_values = []
         for subdomain in self.subdomains:
-            raise NotImplementedError()
-            # TODO compute criterion
+            criterion_values.append(self._compute_refinement_criterion(subdomain))
 
         domain_to_refine = self.subdomains[np.argmax(criterion_values)]
         domain_to_refine.refine()
 
+    def get_integral(self):
+        """Returns the integral value of the grid."""
+        integral_value = 0
+        for subdomain in self.subdomains:
+            integral_value += subdomain.integral_value
+        return integral_value
+
     def get_next_eval_points(self):
         """Returns the next evaluation points for the adaptive grid."""
-        raise NotImplementedError()
+        points = []
+        for subdomain in self.subdomains:
+            points += subdomain.get_next_eval_points()
+        return points
 
     def set_fvals(self, fvals):
         """Sets the fvals in the matching subdomains"""
-        raise NotImplementedError()
+        for subdomain, fval in zip(self.subdomains, fvals):
+            subdomain.set_fvals(fval)
 
     def _check_inputs(self, N, integration_domain):
         """Used to check input validity"""

@@ -47,11 +47,15 @@ class AdaptiveTrapezoid(BaseIntegrator):
         self._dim = dim
         self._fn = fn
 
-        # TODO determine some initial N
+        # TODO determine a smarter initial N
+        initial_N = N // 20
 
         # Initialize the adaptive grid
         self._grid = AdaptiveGrid(
-            N, self._integration_domain, subdomains_per_dim, max_refinement_level
+            initial_N,
+            self._integration_domain,
+            subdomains_per_dim,
+            max_refinement_level,
         )
 
         while self._nr_of_fevals < N:
@@ -92,7 +96,4 @@ class AdaptiveTrapezoid(BaseIntegrator):
             # Refine the grid
             self._grid.refine()
 
-        # TODO compute complete integral
-        raise NotImplementedError()
-
-        return cur_dim_areas
+        return self._grid.get_integral()

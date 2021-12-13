@@ -13,6 +13,7 @@ from .integration.trapezoid import Trapezoid
 from .integration.simpson import Simpson
 from .integration.boole import Boole
 from .integration.vegas import VEGAS
+from .integration.adaptive_trapezoid import AdaptiveTrapezoid
 
 from .plots.plot_convergence import plot_convergence
 from .plots.plot_runtime import plot_runtime
@@ -29,6 +30,7 @@ __all__ = [
     "Simpson",
     "Boole",
     "VEGAS",
+    "AdaptiveTrapezoid",
     "plot_convergence",
     "plot_runtime",
     "enable_cuda",
