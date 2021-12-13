@@ -27,6 +27,7 @@ class Subdomain:
             N (int): Number of points to use for this subdomain. (will take next lower root depending on dim)
             integration_domain (list): Domain to choose points in, e.g. [[-1,1],[0,1]].
         """
+        self._dim = len(integration_domain)
         self.integration_domain = integration_domain
         self.refinement_level = 1
         self.N_per_dim = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
@@ -40,10 +41,13 @@ class Subdomain:
             + " points over"
             + str(integration_domain),
         )
+        self._create_grid()
+        logger.debug("Subdomain created.")
 
+    def _create_grid(self):
         # Check if domain requires gradient
-        if hasattr(integration_domain, "requires_grad"):
-            requires_grad = integration_domain.requires_grad
+        if hasattr(self.integration_domain, "requires_grad"):
+            requires_grad = self.integration_domain.requires_grad
         else:
             requires_grad = False
 
@@ -52,8 +56,8 @@ class Subdomain:
         for dim in range(self._dim):
             grid_1d.append(
                 _linspace_with_grads(
-                    integration_domain[dim][0],
-                    integration_domain[dim][1],
+                    self.integration_domain[dim][0],
+                    self.integration_domain[dim][1],
                     self.N_per_dim,
                     requires_grad=requires_grad,
                 )
@@ -69,7 +73,21 @@ class Subdomain:
         self.points = torch.stack(list(map(torch.ravel, points)), dim=1)
         self.fval = torch.zeros_like(self.points)
 
-        logger.debug("Subdomain created.")
+    def get_points_to_eval(self):
+        """Get points to evaluate the function at.
+
+        Returns:
+            [torch.Tensor]: Points to evaluate the function at.
+        """
+        # TODO Implement only giving the points that were not evaluated before
+
+        return self.points
+
+    def set_fvals(self, vals):
+        """Set the function values at the points."""
+        # TODO Set only new points, maybe add some sanity check here?
+
+        self.fval = vals
 
     def set_integral(self, val):
         """Set the integral value
@@ -85,8 +103,14 @@ class Subdomain:
         if self.integral_value is None or self.requires_integral_value:
             raise RuntimeError("Integral value has to be set for subdomain refinement.")
 
-        # TODO refine
-        raise NotImplementedError()
+        # Double the number of grid points
+        self.N_per_dim *= 2
+        self.refinement_level += 1
+        self.h = self.h / 2.0
+
+        # Recreate grid
+        # TODO find a smarter way to do without reallocating all the tensors
+        self._create_grid()
 
         # After refinement, integral value is outdated
         self._integral_value = None
@@ -114,9 +138,8 @@ class AdaptiveGrid:
         start = perf_counter()
         self._check_inputs(N, integration_domain)
         self._dim = len(integration_domain)
-
-        # TODO Initialize subdomains
-        logger.debug("Initializing subdomains")
+        self._subdomains_per_dim = subdomains_per_dim
+        self._max_refinement_level = max_refinement_level
 
         # Check if domain requires gradient
         if hasattr(integration_domain, "requires_grad"):
@@ -124,7 +147,84 @@ class AdaptiveGrid:
         else:
             requires_grad = False
 
+        logger.debug("Initializing subdomains")
+        self._create_subdomains(requires_grad)
+
         self._runtime += perf_counter() - start
+
+    def _create_subdomains(self, requires_grad, N_per_subdomain):
+        """Create all subdomains."""
+        self.subdomains = []
+
+        # Compute total number of subdomains
+        total_subdomains = self._subdomains_per_dim ** self._dim
+
+        # We create the subdomains by first identifying all lower and upper bounds
+        # For this we first create a meshgrid for the points at them
+        lower_bounds = []
+        upper_bounds = []
+        # Determine for each dimension subdomain points and mesh width
+        for dim in range(self._dim):
+            offset = (
+                self.integration_domain[dim][1] - self.integration_domain[dim][0]
+            ) / self._subdomains_per_dim
+            lower_bounds.append(
+                _linspace_with_grads(
+                    self.integration_domain[dim][0],
+                    self.integration_domain[dim][1] - offset,
+                    self._subdomains_per_dim,
+                    requires_grad=requires_grad,
+                )
+            )
+            upper_bounds.append(
+                _linspace_with_grads(
+                    self.integration_domain[dim][0] + offset,
+                    self.integration_domain[dim][1],
+                    self._subdomains_per_dim,
+                    requires_grad=requires_grad,
+                )
+            )
+
+        # Store them in a single tensor for convenience
+        bounds = []
+        for d in range(self._dim):
+            bounds.append(torch.stack([lower_bounds[d], upper_bounds[d]], dim=1))
+
+        # Convert to a 1D single tensor to make it work in abritrary dimensions
+        # Otherwise we would have to do n for loops which is programmatically
+        # rather challenging...
+        bounds = torch.cat(bounds)
+
+        # Compute the indices of all permutations from the bounds
+        permutations_per_dim = []
+
+        # For each dimension we compute the permutations
+        for d in range(self._dim):
+            # Get the permutations for this dimension (alternating values depending on current dim)
+            # e.g. in the last one we want [0,1,...,n_subdomains]
+            values = np.array(range(self._subdomains_per_dim)) + (
+                (self._dim - d - 1) * self._subdomains_per_dim
+            )
+
+            # Compute how often we need to repeat the values
+            # and do it
+            values = list(np.repeat(values, self._subdomains_per_dim ** d))
+            repetitions = int(total_subdomains / len(values))
+            indices = list(values) * repetitions
+
+            permutations_per_dim.append(np.array(indices))
+
+        # Reverse order of dimensions for compatibility with bounds tensor
+        permutations_per_dim.reverse()
+        permutations = np.dstack(permutations_per_dim).squeeze()
+
+        # Now we get the actual bounds for each of them
+        for i in range(total_subdomains):
+            subdomain_bound = []
+            for d in range(self._dim):
+                index = permutations[i, d]
+                subdomain_bound.append(bounds[index])
+            self.subdomains.append(Subdomain(N_per_subdomain, subdomain_bound))
 
     def _compute_refinement_criterion(self, subdomain):
         """Computes the refinement criterion for each subdomain"""
@@ -143,17 +243,6 @@ class AdaptiveGrid:
     def get_next_eval_points(self):
         """Returns the next evaluation points for the adaptive grid."""
         raise NotImplementedError()
-
-    def get_N(self):
-        """Returns number of total grid points
-
-        Returns:
-            [int]: Number of points summed over all subdomains.
-        """
-        N = 0
-        for subdomain in self.subdomains:
-            N = +subdomain.N_per_dim ** self._dim
-        return N
 
     def set_fvals(self, fvals):
         """Sets the fvals in the matching subdomains"""
