@@ -29,6 +29,10 @@ class Subdomain:
         self.integration_domain = integration_domain
         self.refinement_level = 1
         self.N_per_dim = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
+        if self.N_per_dim < 2:
+            raise ValueError(
+                "Too small subdomain. Number of points per dimension has to be at least 2."
+            )
         self.h = torch.zeros([self._dim])
 
         logger.debug(
@@ -236,6 +240,10 @@ class AdaptiveGrid:
         # Reverse order of dimensions for compatibility with bounds tensor
         permutations_per_dim.reverse()
         permutations = np.dstack(permutations_per_dim).squeeze()
+
+        # For 1D needs to be unsqueezed
+        if len(permutations.shape) == 1:
+            permutations = np.expand_dims(permutations, axis=1)
 
         # Now we get the actual bounds for each of them
         for i in range(self.N_subdomains):
