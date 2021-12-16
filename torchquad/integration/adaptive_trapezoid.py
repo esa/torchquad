@@ -17,9 +17,9 @@ class AdaptiveTrapezoid(BaseIntegrator):
         self,
         fn,
         dim,
+        N=1000,
         subdomains_per_dim=2,
         max_refinement_level=4,
-        N=1000,
         integration_domain=None,
     ):
         """Integrates the passed function on the passed domain using a trapezoid rule on an adaptively refined grid.
@@ -58,11 +58,14 @@ class AdaptiveTrapezoid(BaseIntegrator):
             max_refinement_level,
         )
 
-        while self._nr_of_fevals < N:
-            eval_points = self._grid.get_next_eval_points()
+        hit_maximum_evals = False
+        while not hit_maximum_evals:
+            eval_points, chunksizes = self._grid.get_next_eval_points()
 
             logger.debug("Evaluating integrand on the grid.")
             function_values = self._eval(eval_points)
+
+            self._grid.set_fvals(function_values, chunksizes)
 
             logger.debug("Computing trapezoid areas for subdomains.")
             # Compute integral for each subdomain
@@ -70,11 +73,14 @@ class AdaptiveTrapezoid(BaseIntegrator):
 
                 # Skip up-to-date subdomains
                 if not subdomain.requires_integral_value:
+                    logger.trace("Skipping up-to-date subdomain.")
                     continue
+
+                function_values = subdomain.fval
 
                 # Reshape the output to be [N,N,...] points
                 # instead of [dim*N] points
-                function_values = function_values.reshape([self._grid._N] * dim)
+                function_values = function_values.reshape([subdomain.N_per_dim] * dim)
 
                 # This will contain the trapezoid areas per dimension
                 cur_dim_areas = function_values
@@ -82,7 +88,7 @@ class AdaptiveTrapezoid(BaseIntegrator):
                 # We collapse dimension by dimension
                 for cur_dim in range(dim):
                     cur_dim_areas = (
-                        self._grid.h[cur_dim]
+                        subdomain.h[cur_dim]
                         / 2.0
                         * (cur_dim_areas[..., 0:-1] + cur_dim_areas[..., 1:])
                     )
@@ -93,7 +99,10 @@ class AdaptiveTrapezoid(BaseIntegrator):
                 )
                 subdomain.set_integral(cur_dim_areas)
 
-            # Refine the grid
-            self._grid.refine()
+            hit_maximum_evals = self._nr_of_fevals < N
+
+            if not hit_maximum_evals:
+                # Refine the grid
+                self._grid.refine()
 
         return self._grid.get_integral()

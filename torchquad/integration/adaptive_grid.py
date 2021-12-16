@@ -16,9 +16,7 @@ class Subdomain:
     N_per_dim = None  # Number of points in each dimension
     h = None  # Mesh width
     requires_integral_value = True
-    _integral_value = (
-        None  # Integral value in this domain, has to be set for refinement
-    )
+    integral_value = None  # Integral value in this domain, has to be set for refinement
 
     def __init__(self, N, integration_domain):
         """Initialize a subdomain.
@@ -44,7 +42,24 @@ class Subdomain:
         self._create_grid()
         logger.debug("Subdomain created.")
 
+    def print_subdomain_properties(self):
+        """Prints the properties of the subdomain."""
+        # fmt: off
+        logger.debug(
+            "Subdomain properties: "
+            "Refinement level=" + str(self.refinement_level) + "\n" +
+            "Integral value=" + str(self.integral_value) + "\n" +
+            "Requires integral value=" + str(self.requires_integral_value) + "\n" +
+            "N Points=" + str(len(self.points)) + "\n" +
+            "N Function values=" + str(len(self.fval)) + "\n" +
+            "Mesh width=" + str(self.h) + "\n" +
+            "Number of points per dimension=" + str(self.N_per_dim) + "\n" +
+            "Integration domain=" + str(self.integration_domain)
+        )
+        # fmt: on
+
     def _create_grid(self):
+        logger.debug("Creating subdomain grid.")
         # Check if domain requires gradient
         if hasattr(self.integration_domain, "requires_grad"):
             requires_grad = self.integration_domain.requires_grad
@@ -80,26 +95,29 @@ class Subdomain:
             [torch.Tensor]: Points to evaluate the function at.
         """
         # TODO Implement only giving the points that were not evaluated before
-
+        logger.debug("Getting points to evaluate.")
         return self.points
 
     def set_fvals(self, vals):
         """Set the function values at the points."""
         # TODO Set only new points, maybe add some sanity check here?
-
+        logger.debug("Setting subdomain function values.")
         self.fval = vals
 
     def set_integral(self, val):
         """Set the integral value
 
         Args:
-            val ([type]): [description]
+            val (float): Integral value of the subdomain.
         """
-        self._integral_value = val
+        logger.debug("Setting integral value to " + str(val))
+        self.integral_value = val
         self.requires_integral_value = False
 
     def refine(self):
         """Refines the subdomain by doubling the number of points in it"""
+        logger.debug("Refining subdomain.")
+
         if self.integral_value is None or self.requires_integral_value:
             raise RuntimeError("Integral value has to be set for subdomain refinement.")
 
@@ -113,7 +131,7 @@ class Subdomain:
         self._create_grid()
 
         # After refinement, integral value is outdated
-        self._integral_value = None
+        self.integral_value = None
         self.requires_integral_value = True
 
 
@@ -121,7 +139,7 @@ class AdaptiveGrid:
     """This class is used to store the integration grid for methods like AdaptiveTrapezoid, which require an adaptive grid."""
 
     _dim = None  # dimensionality of the grid
-    _runtime = None  # runtime for the creation of the adaptive grid
+    _runtime = 0  # runtime for the creation of the adaptive grid
     subdomains = None  # List of subdomains
     _subdomains_per_dim = None  # Number of subdomains in each dimension
     _max_refinement_level = None  # Maximum refinements called on a subdomain
@@ -245,18 +263,23 @@ class AdaptiveGrid:
         """Returns the integral value of the grid."""
         integral_value = 0
         for subdomain in self.subdomains:
+            subdomain.print_subdomain_properties()
             integral_value += subdomain.integral_value
         return integral_value
 
     def get_next_eval_points(self):
         """Returns the next evaluation points for the adaptive grid."""
-        points = []
+        all_points = []
+        chunks = []  # size of each chunk of points to eval
         for subdomain in self.subdomains:
-            points += subdomain.get_next_eval_points()
-        return points
+            points = subdomain.get_points_to_eval()
+            chunks.append(len(points))
+            all_points += [points]
+        return torch.cat(all_points), chunks
 
-    def set_fvals(self, fvals):
+    def set_fvals(self, fvals, chunksizes):
         """Sets the fvals in the matching subdomains"""
+        fvals = torch.split(fvals, chunksizes)
         for subdomain, fval in zip(self.subdomains, fvals):
             subdomain.set_fvals(fval)
 
