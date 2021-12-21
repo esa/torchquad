@@ -34,7 +34,9 @@ class NewtonCotes(BaseIntegrator):
 
         return self.calculate_result(function_values, dim, n_per_dim, hs)
 
-    def jit_integrate(self, dim, N=None, integration_domain=None, backend="torch"):
+    def get_jit_compiled_integrate(
+        self, dim, N=None, integration_domain=None, backend="torch"
+    ):
         """Create an integrate function where the performance-relevant steps except the integrand evaluation are JIT compiled.
         Use this method only if the integrand cannot be compiled.
         The compilation happens when the function is executed the first time.

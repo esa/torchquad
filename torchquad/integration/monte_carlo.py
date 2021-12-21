@@ -52,7 +52,7 @@ class MonteCarlo(BaseIntegrator):
         function_values, self._nr_of_fevals = self.evaluate_integrand(fn, sample_points)
         return self.calculate_result(function_values, integration_domain)
 
-    def jit_integrate(
+    def get_jit_compiled_integrate(
         self, dim, N=1000, integration_domain=None, seed=None, rng=None, backend="torch"
     ):
         """Create an integrate function where the performance-relevant steps except the integrand evaluation are JIT compiled.
@@ -74,6 +74,13 @@ class MonteCarlo(BaseIntegrator):
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)
         backend = infer_backend(integration_domain)
+        # autoray's autojit function does JIT compilation, too, but in its
+        # current version it does not abstract away the differences between
+        # backends enough for our purposes,
+        # e.g. with PyTorch the to-be-compiled function cannot have keyword
+        # arguments and all its positional arguments are considered
+        # to be variable inputs for the compiled function.
+        # https://github.com/jcmgray/autoray/blob/35677037863d7d0d25ff025998d9fda75dce3b44/autoray/compiler.py
         if backend in ["tensorflow", "jax"]:
             # Tensorflow and JAX automatically recompile functions if
             # the parameters change
