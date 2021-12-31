@@ -230,3 +230,17 @@ class RNG:
             backend tensor: A tensor with random values for the given numerical backend
         """
         pass
+
+    def jax_get_key(self):
+        """
+        Get the current PRNGKey.
+        This function is needed for non-determinism when JIT-compiling with JAX.
+        """
+        return self._jax_key
+
+    def jax_set_key(self, key):
+        """
+        Set the PRNGKey.
+        This function is needed for non-determinism when JIT-compiling with JAX.
+        """
+        self._jax_key = key

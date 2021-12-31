@@ -53,7 +53,7 @@ class MonteCarlo(BaseIntegrator):
         return self.calculate_result(function_values, integration_domain)
 
     def get_jit_compiled_integrate(
-        self, dim, N=1000, integration_domain=None, seed=None, rng=None, backend="torch"
+        self, dim, N=1000, integration_domain=None, seed=None, backend="torch"
     ):
         """Create an integrate function where the performance-relevant steps except the integrand evaluation are JIT compiled.
         Use this method only if the integrand cannot be compiled.
@@ -64,8 +64,7 @@ class MonteCarlo(BaseIntegrator):
             dim (int): Dimensionality of the integration domain.
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
-            seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
-            rng (RNG, optional): An initialised RNG; this must be specified with Tensorflow and omitted with JAX
+            seed (int, optional): Random number generation seed for the sequence of sampling point calculations, only set if provided. The returned integrate function calculates different points in each invocation with and without specified seed. Defaults to None.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to "torch".
 
         Returns:
@@ -81,37 +80,53 @@ class MonteCarlo(BaseIntegrator):
         # arguments and all its positional arguments are considered
         # to be variable inputs for the compiled function.
         # https://github.com/jcmgray/autoray/blob/35677037863d7d0d25ff025998d9fda75dce3b44/autoray/compiler.py
-        if backend in ["tensorflow", "jax"]:
-            # Tensorflow and JAX automatically recompile functions if
-            # the parameters change
-            if backend == "tensorflow":
-                if not hasattr(self, "_tf_jit_calculate_sample_points"):
-                    import tensorflow as tf
+        if backend == "tensorflow":
+            if not hasattr(self, "_tf_jit_calculate_sample_points"):
+                import tensorflow as tf
 
-                    self._tf_jit_calculate_sample_points = tf.function(
-                        self.calculate_sample_points, jit_compile=True
-                    )
-                    self._tf_jit_calculate_result = tf.function(
-                        self.calculate_result, jit_compile=True
-                    )
-                jit_calculate_sample_points = self._tf_jit_calculate_sample_points
-                jit_calculate_result = self._tf_jit_calculate_result
-            elif backend == "jax":
-                if not hasattr(self, "_jax_jit_calculate_sample_points"):
-                    import jax
-
-                    self._jax_jit_calculate_sample_points = jax.jit(
-                        self.calculate_sample_points, static_argnames=["N"]
-                    )
-                    self._jax_jit_calculate_result = jax.jit(
-                        self.calculate_result, static_argnames=["dim", "n_per_dim"]
-                    )
-                jit_calculate_sample_points = self._jax_jit_calculate_sample_points
-                jit_calculate_result = self._jax_jit_calculate_result
+                self._tf_jit_calculate_sample_points = tf.function(
+                    self.calculate_sample_points, jit_compile=True
+                )
+                self._tf_jit_calculate_result = tf.function(
+                    self.calculate_result, jit_compile=True
+                )
+            jit_calculate_sample_points = self._tf_jit_calculate_sample_points
+            jit_calculate_result = self._tf_jit_calculate_result
+            rng = RNG(backend="tensorflow", seed=seed)
 
             def compiled_integrate(fn, integration_domain):
                 sample_points = jit_calculate_sample_points(
-                    N, integration_domain, seed, rng
+                    N, integration_domain, rng=rng
+                )
+                function_values, _ = self.evaluate_integrand(fn, sample_points)
+                return jit_calculate_result(function_values, integration_domain)
+
+            return compiled_integrate
+        elif backend == "jax":
+            import jax
+
+            rng = RNG(backend="jax", seed=seed)
+            rng_key = rng.jax_get_key()
+
+            @jax.jit
+            def jit_calc_sample_points(integration_domain, rng_key):
+                rng.jax_set_key(rng_key)
+                sample_points = self.calculate_sample_points(
+                    N, integration_domain, seed=None, rng=rng
+                )
+                return sample_points, rng.jax_get_key()
+
+            if not hasattr(self, "_jax_jit_calculate_result"):
+                self._jax_jit_calculate_result = jax.jit(
+                    self.calculate_result, static_argnames=["dim", "n_per_dim"]
+                )
+
+            jit_calculate_result = self._jax_jit_calculate_result
+
+            def compiled_integrate(fn, integration_domain):
+                nonlocal rng_key
+                sample_points, rng_key = jit_calc_sample_points(
+                    integration_domain, rng_key
                 )
                 function_values, _ = self.evaluate_integrand(fn, sample_points)
                 return jit_calculate_result(function_values, integration_domain)
@@ -126,7 +141,7 @@ class MonteCarlo(BaseIntegrator):
                 # Define traceable first and third steps
                 def step1(integration_domain):
                     return self.calculate_sample_points(
-                        N, integration_domain, seed, rng
+                        N, integration_domain, seed=seed
                     )
 
                 step3 = self.calculate_result
@@ -141,6 +156,11 @@ class MonteCarlo(BaseIntegrator):
                 )
 
                 # Trace the third step
+                if function_values.requires_grad:
+                    # Avoid the warning about a .grad attribute access of a
+                    # non-leaf Tensor
+                    function_values = function_values.detach()
+                    function_values.requires_grad = True
                 step3 = torch.jit.trace(step3, (function_values, integration_domain))
 
                 # Define a compiled integrate function

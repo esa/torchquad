@@ -109,8 +109,9 @@ class NewtonCotes(BaseIntegrator):
                         torch.Tensor([n_per_dim]),
                     )  # n_per_dim is constant
 
+                dim = int(integration_domain.shape[0])
+
                 def step3(function_values, hs):
-                    dim = int(integration_domain.shape[0])
                     return self.calculate_result(function_values, dim, n_per_dim, hs)
 
                 # Trace the first step
@@ -124,6 +125,14 @@ class NewtonCotes(BaseIntegrator):
                 )
 
                 # Trace the third step
+                # Avoid the warnings about a .grad attribute access of a
+                # non-leaf Tensor
+                if hs.requires_grad:
+                    hs = hs.detach()
+                    hs.requires_grad = True
+                if function_values.requires_grad:
+                    function_values = function_values.detach()
+                    function_values.requires_grad = True
                 step3 = torch.jit.trace(step3, (function_values, hs))
 
                 # Define a compiled integrate function
