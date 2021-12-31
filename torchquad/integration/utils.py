@@ -125,7 +125,9 @@ def _check_integration_domain(integration_domain):
             raise ValueError("integration_domain must have 2 values per boundary")
         # Skip the values check if an integrator.integrate method is JIT
         # compiled with JAX
-        if "Jaxpr" in type(integration_domain).__name__:
+        if any(
+            nam in type(integration_domain).__name__ for nam in ["Jaxpr", "JVPTracer"]
+        ):
             return dim
         boundaries_are_invalid = (
             anp.min(integration_domain[:, 1] - integration_domain[:, 0]) < 0.0
