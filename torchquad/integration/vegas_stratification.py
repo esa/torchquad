@@ -1,5 +1,4 @@
-import torch
-import math
+from autoray import numpy as anp
 
 
 class VEGASStratification:
@@ -8,41 +7,53 @@ class VEGASStratification:
     EQ <n> refers to equation <n> in the above paper.
     """
 
-    def __init__(self, N_increment, dim=1, beta=0.75):
+    def __init__(self, N_increment, dim, rng, beta=0.75, backend="torch"):
         """Initialize the VEGAS stratification.
 
         Args:
-            N_increment (int, optional): Number of evaluations per iteration.
-            dim (int, optional): Dimensionality. Defaults to 1.
+            N_increment (int): Number of evaluations per iteration.
+            dim (int): Dimensionality
+            rng (RNG): Random number generator
             beta (float, optional): Beta parameter from VEGAS Enhanced. Defaults to 0.75.
+            backend (string, optional): Numerical backend. Defaults to "torch"
         """
+        self.rng = rng
         self.dim = dim
         # stratification steps per dim, EQ 33
-        self.N_strat = math.floor((N_increment / 2.0) ** (1.0 / dim))
+        self.N_strat = int((N_increment / 2.0) ** (1.0 / dim))
         self.N_strat = 1000 if self.N_strat > 1000 else self.N_strat
         self.beta = beta  # variable controlling adaptiveness in stratification 0 to 1
         self.N_cubes = self.N_strat ** self.dim  # total number of subdomains
         self.V_cubes = (1.0 / self.N_strat) ** self.dim  # volume of hypercubes
-        self.JF = torch.zeros(self.N_cubes)  # jacobian times f eval
-        self.JF2 = torch.zeros(self.N_cubes)  # jacobian^2 times f
-        self.dh = torch.ones(self.N_cubes) * 1.0 / self.N_cubes  # dampened counts
-        self.strat_counts = torch.zeros(self.N_cubes)  # current index counts
+
+        # Use the backend-default dtype; doesn't work with numpy or tensorflow
+        self.dtype = anp.zeros([1], like=backend).dtype
+
+        # jacobian times f eval and jacobian^2 times f
+        self.JF = anp.zeros([self.N_cubes], like=backend)
+        self.JF2 = anp.zeros([self.N_cubes], like=backend)
+
+        # dampened counts
+        self.dh = anp.ones([self.N_cubes], like=backend) * 1.0 / self.N_cubes
+
+        # current index counts
+        self.strat_counts = anp.zeros([self.N_cubes], like=backend)
 
     def accumulate_weight(self, nevals, weight_all_cubes):
         """Accumulate weights for the cubes.
 
         Args:
-            nevals (torch.tensor): Number of evals belonging to each cube (sorted).
-            weight_all_cubes (torch.tensor): Function values.
+            nevals (backend tensor): Number of evals belonging to each cube (sorted).
+            weight_all_cubes (backend tensor): Function values.
 
         Returns:
-            torch.tensor,torch.tensor: Computed JF and JF2
+            backend tensor, backend tensor: Computed JF and JF2
         """
         # Build indices for weights
-        indices = torch.cumsum(nevals, dim=0)
+        indices = anp.cumsum(nevals, axis=0)
 
         # Compute squares of all weights ahead
-        square_weights = torch.pow(weight_all_cubes, 2.0)
+        square_weights = weight_all_cubes ** 2.0
 
         # Used to store previous indexstarting point
         prev = 0
@@ -76,7 +87,7 @@ class VEGASStratification:
         self.dh = d_tmp ** self.beta
 
         # for very small d_tmp d_tmp ** self.beta becomes NaN
-        self.dh[torch.isnan(self.dh)] = 0
+        self.dh[anp.isnan(self.dh)] = 0
 
         # Normalize dampening
         d_sum = sum(self.dh)
@@ -91,26 +102,25 @@ class VEGASStratification:
             nevals_exp (int): Expected number of evaluations.
 
         Returns:
-            torch.tensor: Stratified sample counts per cube.
+            backend tensor: Stratified sample counts per cube.
         """
-        nh = torch.multiply(self.dh, nevals_exp)
-        nh = torch.floor(nh)
-        nh = torch.clip(nh, 2, None).int()
+        nh = anp.floor(self.dh * nevals_exp)
+        nh = anp.clip(nh, 2, None).int()
         return nh
 
     def _get_indices(self, idx):
         """Maps point to stratified point.
 
         Args:
-            idx (int): Target points index.
+            idx (backend tensor): Target points indices.
 
         Returns:
-            torch.tensor: Mapped point.
+            backend tensor: Mapped points.
         """
-        res = torch.zeros([len(idx), self.dim])
+        res = anp.zeros([len(idx), self.dim], like=idx)
         tmp = idx
         for i in range(self.dim):
-            q = torch.div(tmp, self.N_strat, rounding_mode="floor")
+            q = anp.div(tmp, self.N_strat, rounding_mode="floor")
             r = tmp - q * self.N_strat
             res[:, i] = r
             tmp = q
@@ -120,22 +130,27 @@ class VEGASStratification:
         """Compute randomly sampled points.
 
         Args:
-            nevals (torch.tensor): Number of samples to draw per stratification cube.
+            nevals (backend tensor): Number of samples to draw per stratification cube.
 
         Returns:
-            torch.tensor: Sampled points.
+            backend tensor: Sampled points.
         """
         dy = 1.0 / self.N_strat
         res_in_all_cubes = []
 
         # Get indices
-        indices = torch.arange(len(nevals))
+        indices = anp.arange(len(nevals), like=nevals)
         indices = self._get_indices(indices)
 
         # Get random numbers (we get a few more just to vectorize properly)
         # This might increase the memory requirements slightly but is probably
         # worth it.
-        random_uni = torch.rand(size=[len(nevals), nevals.max(), self.dim]) * 0.999999
+        random_uni = (
+            self.rng.uniform(
+                size=[len(nevals), nevals.max(), self.dim], dtype=self.dtype
+            )
+            * 0.999999
+        )
 
         # Sum the random numbers onto the index locations and scale with dy
         # Note that the resulting tensor is still slightly too large
@@ -147,4 +162,4 @@ class VEGASStratification:
         for idx, N in enumerate(nevals):
             res_in_all_cubes.append(res[idx, 0:N, :])
 
-        return torch.cat(res_in_all_cubes, dim=0)
+        return anp.concatenate(res_in_all_cubes, axis=0, like=res)

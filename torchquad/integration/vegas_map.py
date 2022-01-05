@@ -1,4 +1,5 @@
-import torch
+from autoray import numpy as anp
+from autoray import infer_backend
 
 
 class VEGASMap:
@@ -12,7 +13,7 @@ class VEGASMap:
 
         Args:
             dim (int): Dimensionality of the integrand.
-            integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
+            integration_domain (backend tensor): Integration domain.
             N_intervals (int, optional): Number of intervals to split the domain in. Defaults to 100.
             alpha (float, optional): Alpha from the paper, EQ 19. Defaults to 0.5.
         """
@@ -20,8 +21,11 @@ class VEGASMap:
         self.N_intervals = N_intervals  # # of subdivisions
         self.N_edges = self.N_intervals + 1  # # of subdivsion boundaries
         self.alpha = alpha  # Weight smoothing
-        self.x_edges = torch.zeros((self.dim, self.N_edges))  # boundary locations
-        self.dx_edges = torch.zeros((self.dim, self.N_intervals))  # subdomain stepsizes
+        self.backend = infer_backend(integration_domain)
+
+        # boundary locations and subdomain stepsizes
+        self.x_edges = anp.zeros((self.dim, self.N_edges), like=self.backend)
+        self.dx_edges = anp.zeros((self.dim, self.N_intervals), like=self.backend)
 
         # Subdivide initial domain equally spaced in N-d, EQ 8
         for dim in range(self.dim):
@@ -35,28 +39,35 @@ class VEGASMap:
                     self.dx_edges[dim][i - 1] = stepsize
 
         # weights in each intervall
-        self.weights = torch.zeros((self.dim, self.N_intervals))
-        self.smoothed_weights = torch.zeros((self.dim, self.N_intervals))
-        self.summed_weights = torch.zeros(self.dim)  # sum of weights per dim
-        self.delta_weights = torch.zeros(self.dim)  # EQ 11
-        self.std_weight = torch.zeros(self.dim)  # EQ 13
-        self.avg_weight = torch.zeros(self.dim)  # EQ 14
+        self.weights = anp.zeros((self.dim, self.N_intervals), like=self.backend)
+        self.smoothed_weights = anp.zeros(
+            (self.dim, self.N_intervals), like=self.backend
+        )
+        self.summed_weights = anp.zeros(
+            [self.dim], like=self.backend
+        )  # sum of weights per dim
+        self.delta_weights = anp.zeros([self.dim], like=self.backend)  # EQ 11
+        self.std_weight = anp.zeros([self.dim], like=self.backend)  # EQ 13
+        self.avg_weight = anp.zeros([self.dim], like=self.backend)  # EQ 14
         # numbers of random samples in specific interval
-        self.counts = torch.zeros((self.dim, self.N_intervals)).long()
+        self.counts = anp.zeros(
+            (self.dim, self.N_intervals),
+            like=self.backend,
+        ).long()
 
     def get_X(self, y):
         """Get mapped sampling points, EQ 9.
 
         Args:
-            y (torch.tensor): Randomly sampled location(s)
+            y (backend tensor): Randomly sampled location(s)
 
         Returns:
-            torch.tensor: Mapped points.
+            backend tensor: Mapped points.
         """
         ID, offset = self._get_interval_ID(y), self._get_interval_offset(y)
-        res = torch.zeros_like(y)
+        res = anp.zeros_like(y)
         for i in range(self.dim):
-            ID_i = torch.floor(ID[:, i]).long()
+            ID_i = anp.floor(ID[:, i]).long()
             res[:, i] = self.x_edges[i, ID_i] + self.dx_edges[i, ID_i] * offset[:, i]
         return res
 
@@ -67,12 +78,12 @@ class VEGASMap:
             y ([type]): Sampled locations.
 
         Returns:
-            torch.tensor: Jacobian
+            backend tensor: Jacobian
         """
         ID = self._get_interval_ID(y)
-        jac = torch.ones(y.shape[0])
+        jac = anp.ones([y.shape[0]], like=y)
         for i in range(self.dim):
-            ID_i = torch.floor(ID[:, i]).long()
+            ID_i = anp.floor(ID[:, i]).long()
             jac *= self.N_intervals * self.dx_edges[i][ID_i]
         return jac
 
@@ -80,21 +91,21 @@ class VEGASMap:
         """Get the integer part of the desired mapping , EQ 10.
 
         Args:
-            y (float): Sampled point
+            y (backend tensor): Sampled points
 
         Returns:
-            int: Integer part of mapped point.
+            backend tensor: Integer part of mapped points.
         """
-        return torch.floor(y * float(self.N_intervals))
+        return anp.floor(y * float(self.N_intervals))
 
     def _get_interval_offset(self, y):
         """Get the fractional part of the desired mapping , EQ 11.
 
         Args:
-            y (float): Sampled point.
+            y (backend tensor): Sampled points.
 
         Returns:
-            float: Fractional part of mapped point.
+            backend tensor: Fractional part of mapped points.
         """
         return (y * self.N_intervals) - self._get_interval_ID(y)
 
@@ -102,13 +113,13 @@ class VEGASMap:
         """Accumulate weights and counts of the map.
 
         Args:
-            y (float): Sampled point.
-            jf_vec2 (float): Square of the product of function value and jacobian
+            y (backend tensor): Sampled points.
+            jf_vec2 (backend tensor): Square of the product of function values and jacobians
         """
         ID = self._get_interval_ID(y)
         for i in range(self.dim):
-            ID_i = torch.floor(ID[:, i]).long()
-            unique_vals, unique_counts = torch.unique(ID_i, return_counts=True)
+            ID_i = anp.floor(ID[:, i]).long()
+            unique_vals, unique_counts = anp.unique(ID_i, return_counts=True)
             weights_vals = jf_vec2
             for val in unique_vals:
                 self.weights[i][val] += weights_vals[ID_i == val].sum()
@@ -130,9 +141,7 @@ class VEGASMap:
 
             # i == 0
             d_tmp = (7.0 * self.weights[dim][0] + self.weights[dim][1]) / (8.0 * d_sum)
-            d_tmp = (
-                pow((d_tmp - 1.0) / torch.log(d_tmp), self.alpha) if d_tmp != 0 else 0
-            )
+            d_tmp = pow((d_tmp - 1.0) / anp.log(d_tmp), self.alpha) if d_tmp != 0 else 0
             self.smoothed_weights[dim][0] = d_tmp
 
             # i == last
@@ -140,9 +149,7 @@ class VEGASMap:
                 self.weights[dim][self.N_intervals - 2]
                 + 7.0 * self.weights[dim][self.N_intervals - 1]
             ) / (8.0 * d_sum)
-            d_tmp = (
-                pow((d_tmp - 1.0) / torch.log(d_tmp), self.alpha) if d_tmp != 0 else 0
-            )
+            d_tmp = pow((d_tmp - 1.0) / anp.log(d_tmp), self.alpha) if d_tmp != 0 else 0
             self.smoothed_weights[dim][-1] = d_tmp
 
             # rest
@@ -152,7 +159,7 @@ class VEGASMap:
                 + self.weights[dim][2:]
             ) / (8.0 * d_sum)
             d_tmp[d_tmp != 0] = pow(
-                (d_tmp[d_tmp != 0] - 1.0) / torch.log(d_tmp[d_tmp != 0]), self.alpha
+                (d_tmp[d_tmp != 0] - 1.0) / anp.log(d_tmp[d_tmp != 0]), self.alpha
             )
             self.smoothed_weights[dim][1:-1] = d_tmp
 
@@ -166,8 +173,11 @@ class VEGASMap:
         self,
     ):
         """Resets weights."""
-        self.weights = torch.zeros((self.dim, self.N_intervals))
-        self.counts = torch.zeros((self.dim, self.N_intervals)).long()
+        self.weights = anp.zeros((self.dim, self.N_intervals), like=self.backend)
+        self.counts = anp.zeros(
+            (self.dim, self.N_intervals),
+            like=self.backend,
+        ).long()
 
     def update_map(
         self,
@@ -179,8 +189,8 @@ class VEGASMap:
             old_i = 0
             d_accu = 0
 
-            indices = torch.zeros(self.N_intervals - 1).long()
-            d_accu_i = torch.zeros(self.N_intervals - 1)
+            indices = anp.zeros([self.N_intervals - 1], like=self.backend).long()
+            d_accu_i = anp.zeros([self.N_intervals - 1], like=self.backend)
 
             for new_i in range(1, self.N_intervals):
                 d_accu += self.delta_weights[i]
