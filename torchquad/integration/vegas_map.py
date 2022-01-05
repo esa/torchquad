@@ -140,49 +140,45 @@ class VEGASMap:
                 self.weights[i][val] += weights_vals[ID_i == val].sum()
             self.counts[i, unique_vals] += unique_counts
 
-    def _smooth_map(self):
+    @staticmethod
+    def _smooth_map(weights, counts, alpha):
         """Smooth the weights in the map, EQ 18 - 22."""
+        # Get the average values for J^2 f^2 (weights)
+        # EQ 17
+        nnz_idx = counts != 0  # non zero count indices
+        weights[nnz_idx] = weights[nnz_idx] / counts[nnz_idx]
+
+        # Convolve with [1/8, 6/8, 1/8] in each dimension to smooth the
+        # weights; boundary behaviour: repeat border values.
+        # Divide by d_sum to normalize (divide by the sum before smoothing)
         # EQ 18
-        for dim in range(self.dim):
-            nnz_idx = self.counts[dim] != 0  # non zero count indices
-            self.weights[dim][nnz_idx] = (
-                self.weights[dim][nnz_idx] / self.counts[dim][nnz_idx]
-            )
+        dim, N_intervals = weights.shape
+        i_tmp = N_intervals - 2
+        d_tmp = anp.concatenate(
+            [
+                7.0 * weights[:, 0:1] + weights[:, 1:2],
+                weights[:, :-2] + 6.0 * weights[:, 1:-1] + weights[:, 2:],
+                weights[:, i_tmp : i_tmp + 1] + 7.0 * weights[:, i_tmp + 1 : i_tmp + 2],
+            ],
+            axis=1,
+            like=weights,
+        )
+        d_tmp = d_tmp / (8.0 * anp.reshape(anp.sum(weights, axis=1), [dim, 1]))
 
-        # EQ 18, 19
-        for dim in range(self.dim):
-            d_sum = sum(self.weights[dim])
-            self.summed_weights[dim] = 0
+        # Range compression
+        # EQ 19
+        d_tmp[d_tmp != 0] = (
+            (d_tmp[d_tmp != 0] - 1.0) / anp.log(d_tmp[d_tmp != 0])
+        ) ** alpha
+        smoothed_weights = d_tmp
 
-            # i == 0
-            d_tmp = (7.0 * self.weights[dim][0] + self.weights[dim][1]) / (8.0 * d_sum)
-            d_tmp = pow((d_tmp - 1.0) / anp.log(d_tmp), self.alpha) if d_tmp != 0 else 0
-            self.smoothed_weights[dim][0] = d_tmp
+        # sum all weights
+        summed_weights = anp.sum(smoothed_weights, axis=1)
 
-            # i == last
-            d_tmp = (
-                self.weights[dim][self.N_intervals - 2]
-                + 7.0 * self.weights[dim][self.N_intervals - 1]
-            ) / (8.0 * d_sum)
-            d_tmp = pow((d_tmp - 1.0) / anp.log(d_tmp), self.alpha) if d_tmp != 0 else 0
-            self.smoothed_weights[dim][-1] = d_tmp
+        # EQ 20
+        delta_weights = summed_weights / N_intervals
 
-            # rest
-            d_tmp = (
-                self.weights[dim][:-2]
-                + 6.0 * self.weights[dim][1:-1]
-                + self.weights[dim][2:]
-            ) / (8.0 * d_sum)
-            d_tmp[d_tmp != 0] = pow(
-                (d_tmp[d_tmp != 0] - 1.0) / anp.log(d_tmp[d_tmp != 0]), self.alpha
-            )
-            self.smoothed_weights[dim][1:-1] = d_tmp
-
-            # sum all weights
-            self.summed_weights[dim] = self.smoothed_weights[dim].sum()
-
-            # EQ 20
-            self.delta_weights[dim] = self.summed_weights[dim] / self.N_intervals
+        return smoothed_weights, summed_weights, delta_weights
 
     def _reset_weight(
         self,
@@ -201,7 +197,11 @@ class VEGASMap:
         self,
     ):
         """Update the adaptive map, Section II C."""
-        self._smooth_map()
+        (
+            self.smoothed_weights,
+            self.summed_weights,
+            self.delta_weights,
+        ) = self._smooth_map(self.weights, self.counts, self.alpha)
 
         for i in range(self.dim):  # Update per dim
             old_i = 0
