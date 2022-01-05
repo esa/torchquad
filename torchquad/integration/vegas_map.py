@@ -22,10 +22,15 @@ class VEGASMap:
         self.N_edges = self.N_intervals + 1  # # of subdivsion boundaries
         self.alpha = alpha  # Weight smoothing
         self.backend = infer_backend(integration_domain)
+        self.dtype = integration_domain.dtype
 
         # boundary locations and subdomain stepsizes
-        self.x_edges = anp.zeros((self.dim, self.N_edges), like=self.backend)
-        self.dx_edges = anp.zeros((self.dim, self.N_intervals), like=self.backend)
+        self.x_edges = anp.zeros(
+            (self.dim, self.N_edges), dtype=self.dtype, like=self.backend
+        )
+        self.dx_edges = anp.zeros(
+            (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
+        )
 
         # Subdivide initial domain equally spaced in N-d, EQ 8
         for dim in range(self.dim):
@@ -39,16 +44,24 @@ class VEGASMap:
                     self.dx_edges[dim][i - 1] = stepsize
 
         # weights in each intervall
-        self.weights = anp.zeros((self.dim, self.N_intervals), like=self.backend)
+        self.weights = anp.zeros(
+            (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
+        )
         self.smoothed_weights = anp.zeros(
-            (self.dim, self.N_intervals), like=self.backend
+            (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
         )
         self.summed_weights = anp.zeros(
-            [self.dim], like=self.backend
+            [self.dim], dtype=self.dtype, like=self.backend
         )  # sum of weights per dim
-        self.delta_weights = anp.zeros([self.dim], like=self.backend)  # EQ 11
-        self.std_weight = anp.zeros([self.dim], like=self.backend)  # EQ 13
-        self.avg_weight = anp.zeros([self.dim], like=self.backend)  # EQ 14
+        self.delta_weights = anp.zeros(
+            [self.dim], dtype=self.dtype, like=self.backend
+        )  # EQ 11
+        self.std_weight = anp.zeros(
+            [self.dim], dtype=self.dtype, like=self.backend
+        )  # EQ 13
+        self.avg_weight = anp.zeros(
+            [self.dim], dtype=self.dtype, like=self.backend
+        )  # EQ 14
         # numbers of random samples in specific interval
         self.counts = anp.zeros(
             (self.dim, self.N_intervals),
@@ -82,7 +95,7 @@ class VEGASMap:
             backend tensor: Jacobian
         """
         ID = self._get_interval_ID(y)
-        jac = anp.ones([y.shape[0]], like=y)
+        jac = anp.ones([y.shape[0]], dtype=y.dtype, like=y)
         for i in range(self.dim):
             ID_i = ID[:, i]
             jac *= self.N_intervals * self.dx_edges[i][ID_i]
@@ -175,7 +188,9 @@ class VEGASMap:
         self,
     ):
         """Resets weights."""
-        self.weights = anp.zeros((self.dim, self.N_intervals), like=self.backend)
+        self.weights = anp.zeros(
+            (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
+        )
         self.counts = anp.zeros(
             (self.dim, self.N_intervals),
             dtype=to_backend_dtype("int64", like=self.backend),
@@ -193,7 +208,9 @@ class VEGASMap:
             d_accu = 0
 
             indices = [0] * (self.N_intervals - 1)
-            d_accu_i = anp.zeros([self.N_intervals - 1], like=self.backend)
+            d_accu_i = anp.zeros(
+                [self.N_intervals - 1], dtype=self.dtype, like=self.backend
+            )
 
             for new_i in range(1, self.N_intervals):
                 d_accu += self.delta_weights[i]

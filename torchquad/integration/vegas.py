@@ -92,7 +92,11 @@ class VEGAS(BaseIntegrator):
         # Initialize VEGAS' stratification
         # Paper section III
         self.strat = VEGASStratification(
-            self._N_increment, dim=self._dim, rng=self.rng, backend=self.backend
+            self._N_increment,
+            dim=self._dim,
+            rng=self.rng,
+            backend=self.backend,
+            dtype=self.dtype,
         )
 
         logger.debug("Starting VEGAS")
@@ -132,7 +136,7 @@ class VEGAS(BaseIntegrator):
                 acc = err / res
 
                 if anp.isnan(acc):  # capture 0 error
-                    acc = anp.array(0.0, like=acc)
+                    acc = anp.array(0.0, dtype=acc.dtype, like=acc)
 
                 # Abort if errors acceptable
                 logger.debug(f"Iteration {self.it},Chi2={chi2:.4e}")
@@ -145,6 +149,7 @@ class VEGAS(BaseIntegrator):
                     self._starting_N = anp.minimum(
                         anp.array(
                             self._starting_N + self._N_increment,
+                            dtype=acc.dtype,
                             like=acc,
                         ),
                         self._starting_N * anp.sqrt(acc / (eps_rel + 1e-8)),
@@ -272,7 +277,7 @@ class VEGAS(BaseIntegrator):
             res_den += 1.0 / self.sigma2[idx]
 
         if anp.isnan(res_num / res_den):  # if variance is 0 just return mean result
-            return anp.mean(anp.array(self.results, like=res_num))
+            return anp.mean(anp.array(self.results, dtype=res_num.dtype, like=res_num))
         else:
             return res_num / res_den
 

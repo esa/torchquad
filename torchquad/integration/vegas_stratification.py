@@ -8,15 +8,16 @@ class VEGASStratification:
     EQ <n> refers to equation <n> in the above paper.
     """
 
-    def __init__(self, N_increment, dim, rng, beta=0.75, backend="torch"):
+    def __init__(self, N_increment, dim, rng, backend, dtype, beta=0.75):
         """Initialize the VEGAS stratification.
 
         Args:
             N_increment (int): Number of evaluations per iteration.
             dim (int): Dimensionality
             rng (RNG): Random number generator
+            backend (string): Numerical backend
+            dtype (backend dtype): dtype used for the calculations
             beta (float, optional): Beta parameter from VEGAS Enhanced. Defaults to 0.75.
-            backend (string, optional): Numerical backend. Defaults to "torch"
         """
         self.rng = rng
         self.dim = dim
@@ -27,19 +28,22 @@ class VEGASStratification:
         self.N_cubes = self.N_strat ** self.dim  # total number of subdomains
         self.V_cubes = (1.0 / self.N_strat) ** self.dim  # volume of hypercubes
 
-        # Use the backend-default dtype; doesn't work with numpy or tensorflow
-        self.dtype = anp.zeros([1], like=backend).dtype
+        self.dtype = dtype
         self.backend = backend
 
         # jacobian times f eval and jacobian^2 times f
-        self.JF = anp.zeros([self.N_cubes], like=backend)
-        self.JF2 = anp.zeros([self.N_cubes], like=backend)
+        self.JF = anp.zeros([self.N_cubes], dtype=self.dtype, like=backend)
+        self.JF2 = anp.zeros([self.N_cubes], dtype=self.dtype, like=backend)
 
         # dampened counts
-        self.dh = anp.ones([self.N_cubes], like=backend) * 1.0 / self.N_cubes
+        self.dh = (
+            anp.ones([self.N_cubes], dtype=self.dtype, like=backend)
+            * 1.0
+            / self.N_cubes
+        )
 
         # current index counts
-        self.strat_counts = anp.zeros([self.N_cubes], like=backend)
+        self.strat_counts = anp.zeros([self.N_cubes], dtype=self.dtype, like=backend)
 
     def accumulate_weight(self, nevals, weight_all_cubes):
         """Accumulate weights for the cubes.
@@ -157,7 +161,7 @@ class VEGASStratification:
 
         # Get indices
         indices = anp.arange(len(nevals), like=nevals)
-        indices = self._get_indices(indices)
+        indices = astype(self._get_indices(indices), self.dtype)
 
         # Get random numbers (we get a few more just to vectorize properly)
         # This might increase the memory requirements slightly but is probably
