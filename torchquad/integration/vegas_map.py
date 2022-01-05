@@ -1,5 +1,5 @@
 from autoray import numpy as anp
-from autoray import infer_backend
+from autoray import astype, infer_backend, to_backend_dtype
 
 
 class VEGASMap:
@@ -52,8 +52,9 @@ class VEGASMap:
         # numbers of random samples in specific interval
         self.counts = anp.zeros(
             (self.dim, self.N_intervals),
+            dtype=to_backend_dtype("int64", like=self.backend),
             like=self.backend,
-        ).long()
+        )
 
     def get_X(self, y):
         """Get mapped sampling points, EQ 9.
@@ -67,7 +68,7 @@ class VEGASMap:
         ID, offset = self._get_interval_ID(y), self._get_interval_offset(y)
         res = anp.zeros_like(y)
         for i in range(self.dim):
-            ID_i = anp.floor(ID[:, i]).long()
+            ID_i = ID[:, i]
             res[:, i] = self.x_edges[i, ID_i] + self.dx_edges[i, ID_i] * offset[:, i]
         return res
 
@@ -83,7 +84,7 @@ class VEGASMap:
         ID = self._get_interval_ID(y)
         jac = anp.ones([y.shape[0]], like=y)
         for i in range(self.dim):
-            ID_i = anp.floor(ID[:, i]).long()
+            ID_i = ID[:, i]
             jac *= self.N_intervals * self.dx_edges[i][ID_i]
         return jac
 
@@ -96,7 +97,7 @@ class VEGASMap:
         Returns:
             backend tensor: Integer part of mapped points.
         """
-        return anp.floor(y * float(self.N_intervals))
+        return astype(anp.floor(y * float(self.N_intervals)), "int64")
 
     def _get_interval_offset(self, y):
         """Get the fractional part of the desired mapping , EQ 11.
@@ -107,7 +108,8 @@ class VEGASMap:
         Returns:
             backend tensor: Fractional part of mapped points.
         """
-        return (y * self.N_intervals) - self._get_interval_ID(y)
+        y = y * float(self.N_intervals)
+        return y - anp.floor(y)
 
     def accumulate_weight(self, y, jf_vec2):
         """Accumulate weights and counts of the map.
@@ -118,12 +120,12 @@ class VEGASMap:
         """
         ID = self._get_interval_ID(y)
         for i in range(self.dim):
-            ID_i = anp.floor(ID[:, i]).long()
+            ID_i = ID[:, i]
             unique_vals, unique_counts = anp.unique(ID_i, return_counts=True)
             weights_vals = jf_vec2
             for val in unique_vals:
                 self.weights[i][val] += weights_vals[ID_i == val].sum()
-            self.counts[i, unique_vals.long()] += unique_counts
+            self.counts[i, unique_vals] += unique_counts
 
     def _smooth_map(self):
         """Smooth the weights in the map, EQ 18 - 22."""
@@ -176,8 +178,9 @@ class VEGASMap:
         self.weights = anp.zeros((self.dim, self.N_intervals), like=self.backend)
         self.counts = anp.zeros(
             (self.dim, self.N_intervals),
+            dtype=to_backend_dtype("int64", like=self.backend),
             like=self.backend,
-        ).long()
+        )
 
     def update_map(
         self,
@@ -189,7 +192,7 @@ class VEGASMap:
             old_i = 0
             d_accu = 0
 
-            indices = anp.zeros([self.N_intervals - 1], like=self.backend).long()
+            indices = [0] * (self.N_intervals - 1)
             d_accu_i = anp.zeros([self.N_intervals - 1], like=self.backend)
 
             for new_i in range(1, self.N_intervals):
@@ -201,10 +204,19 @@ class VEGASMap:
                 indices[new_i - 1] = old_i
                 d_accu_i[new_i - 1] = d_accu
 
+            indices = anp.array(
+                indices,
+                like=self.backend,
+                dtype=to_backend_dtype("int64", like=self.backend),
+            )
+
+            if self.backend == "torch":
+                d_accu_i = d_accu_i.detach()
+
             # EQ 22
             self.x_edges[i][1:-1] = (
                 self.x_edges[i][indices]
-                + d_accu_i.detach()
+                + d_accu_i
                 / self.smoothed_weights[i][indices]
                 * self.dx_edges[i][indices]
             )

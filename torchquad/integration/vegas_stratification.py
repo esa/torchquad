@@ -1,4 +1,5 @@
 from autoray import numpy as anp
+from autoray import astype
 
 
 class VEGASStratification:
@@ -28,6 +29,7 @@ class VEGASStratification:
 
         # Use the backend-default dtype; doesn't work with numpy or tensorflow
         self.dtype = anp.zeros([1], like=backend).dtype
+        self.backend = backend
 
         # jacobian times f eval and jacobian^2 times f
         self.JF = anp.zeros([self.N_cubes], like=backend)
@@ -105,8 +107,8 @@ class VEGASStratification:
             backend tensor: Stratified sample counts per cube.
         """
         nh = anp.floor(self.dh * nevals_exp)
-        nh = anp.clip(nh, 2, None).int()
-        return nh
+        nh = anp.clip(nh, 2, None)
+        return astype(nh, "int64")
 
     def _get_indices(self, idx):
         """Maps point to stratified point.
@@ -117,10 +119,25 @@ class VEGASStratification:
         Returns:
             backend tensor: Mapped points.
         """
+        # A commented-out alternative way for mapped points calculation.
+        # torch.meshgrid's indexing argument was added in version 1.10.1,
+        # so don't use it yet.
+        """
+        grid_1d = torch.arange(self.N_strat)
+        points = anp.meshgrid(*([grid_1d] * self.dim), indexing="xy")
+        points = torch.stack(
+            [mg.ravel() for mg in points], dim=1
+        )
+        """
         res = anp.zeros([len(idx), self.dim], like=idx)
         tmp = idx
         for i in range(self.dim):
-            q = anp.div(tmp, self.N_strat, rounding_mode="floor")
+            if self.backend == "torch":
+                # Torch shows a compatibility warning with //, so use torch.div
+                # instead
+                q = anp.div(tmp, self.N_strat, rounding_mode="floor")
+            else:
+                q = tmp // self.N_strat
             r = tmp - q * self.N_strat
             res[:, i] = r
             tmp = q
@@ -130,10 +147,10 @@ class VEGASStratification:
         """Compute randomly sampled points.
 
         Args:
-            nevals (backend tensor): Number of samples to draw per stratification cube.
+            nevals (int backend tensor): Number of samples to draw per stratification cube.
 
         Returns:
-            backend tensor: Sampled points.
+            int backend tensor: Sampled points.
         """
         dy = 1.0 / self.N_strat
         res_in_all_cubes = []
@@ -156,7 +173,8 @@ class VEGASStratification:
         # Note that the resulting tensor is still slightly too large
         # that gets remedied in the for-loop after
         # Also, indices needs the unsqueeye to fill the missing dimension
-        res = (random_uni + indices.unsqueeze(1)) * dy
+        indices = indices.reshape(indices.shape[0], 1, indices.shape[1])
+        res = (random_uni + indices) * dy
 
         # Note this loop is tricky to vectorize as cubes have different N
         for idx, N in enumerate(nevals):
