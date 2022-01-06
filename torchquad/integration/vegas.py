@@ -43,7 +43,7 @@ class VEGAS(BaseIntegrator):
             use_grid_improve (bool, optional): If True will improve the grid after each iteration.
             eps_rel (float, optional): Relative error to abort at. Defaults to 0.
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
-            max_iterations (int, optional): Maximum number of vegas iterations to perform. Defaults to 32.
+            max_iterations (int, optional): Maximum number of vegas iterations to perform. Defaults to 20.
             use_warmup (bool, optional): If a warmup should be used to initialize the map. Defaults to True.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to "torch".
 
