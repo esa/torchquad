@@ -125,6 +125,7 @@ def _run_gradient_tests(backend, precision):
     Ns_2d = [549, 121, 81, 99997, 99997]
     for integrator, N_1d, N_2d in zip(integrators, Ns_1d, Ns_2d):
         integrator_name = type(integrator).__name__
+        requires_seed = integrator_name in ["MonteCarlo", "VEGAS"]
         if backend != "torch" and integrator_name == "VEGAS":
             # Currently VEGAS supports only Torch.
             continue
@@ -135,7 +136,7 @@ def _run_gradient_tests(backend, precision):
 
         # Test gradient calculation with the one-dimensional V-shaped function
         integrate_kwargs = {"fn": _v_function, "dim": 1, "N": N_1d}
-        if integrator_name == "MonteCarlo":
+        if requires_seed:
             integrate_kwargs["seed"] = 0
         gradient, integral = _calculate_gradient(
             backend,
@@ -155,7 +156,7 @@ def _run_gradient_tests(backend, precision):
 
         # Test gradient calculation with a two-dimensional polynomial
         integrate_kwargs = {"fn": _polynomial_function, "dim": 2, "N": N_2d}
-        if integrator_name == "MonteCarlo":
+        if requires_seed:
             integrate_kwargs["seed"] = 0
         gradient, integral = _calculate_gradient(
             backend,
