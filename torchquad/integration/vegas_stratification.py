@@ -21,8 +21,8 @@ class VEGASStratification:
         """
         self.rng = rng
         self.dim = dim
-        # stratification steps per dim, EQ 33
-        self.N_strat = int((N_increment / 2.0) ** (1.0 / dim))
+        # stratification steps per dim, EQ 41
+        self.N_strat = int((N_increment / 4.0) ** (1.0 / dim))
         self.N_strat = 1000 if self.N_strat > 1000 else self.N_strat
         self.beta = beta  # variable controlling adaptiveness in stratification 0 to 1
         self.N_cubes = self.N_strat ** self.dim  # total number of subdomains

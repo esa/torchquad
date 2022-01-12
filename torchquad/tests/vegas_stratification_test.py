@@ -57,7 +57,7 @@ def _run_vegas_stratification_checks(backend, precision):
     assert strat.dh.shape == (strat.N_cubes,)
     assert strat.dh.dtype == dtype_float
     assert anp.min(strat.dh) >= 0.0, "Invalid probabilities for hypercubes"
-    assert anp.abs(strat.dh.sum() - 1.0) < 3e-7, "Invalid probabilities for hypercubes"
+    assert anp.abs(strat.dh.sum() - 1.0) < 4e-7, "Invalid probabilities for hypercubes"
     assert (
         strat.dh[-1] > strat.dh[0]
     ), "The hypercube at the peak should have a higher probability to get points"

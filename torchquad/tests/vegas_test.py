@@ -48,7 +48,7 @@ def _run_example_integrations(backend, precision):
         assert error < 5e-3
 
     for error in errors:
-        assert error < 4.0
+        assert error < 9.0
 
     for error in errors[6:]:
         assert error < 6e-3
@@ -114,7 +114,7 @@ def _run_vegas_accuracy_checks(backend, precision):
             integration_domain=integration_domain,
             seed=seed,
         )
-        assert anp.abs(integral - reference_integral) < 0.03
+        assert anp.abs(integral - reference_integral) < 0.04
 
     print("Integrating a function with peaks on the diagonal")
     peak_distance = 100.0
