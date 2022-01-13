@@ -38,11 +38,85 @@ def _polynomial_function(x):
     return 1.0 + 2.0 * x[:, 0] + 3.0 * x[:, 1] ** 2
 
 
-def _calculate_gradient(
+def _polynomial_function_parameterized(x, coeffs):
+    """
+    2D test function coeffs_2 x_1 ^ 2 + coeffs_1 x_0 + coeffs_0.
+    """
+    return coeffs[0] + coeffs[1] * x[:, 0] + coeffs[2] * x[:, 1] ** 2
+
+
+def _v_function_parameterized(x, c):
+    """
+    V shaped test function 2 |x + c|.
+    """
+    return 2 * anp.abs(x + c)
+
+
+def _calculate_gradient(backend, param, func, dtype_name):
+    """Backend-specific gradient calculation
+
+    Args:
+        backend (string): Numerical backend, e.g. "torch"
+        param (list or float): Parameter value(s) for func. The gradient of func is calculated over param.
+        func (function): A function which receives param and should be derived
+        dtype_name (string): Floating point precision
+
+    Returns:
+        backend tensor: Gradient of func over param
+        backend tensor: Value of func at param
+    """
+    if backend == "torch":
+        import torch
+
+        # Set up param for gradient calculation
+        param = torch.tensor(param)
+        param.requires_grad = True
+
+        # Compute the value of func at param
+        result = func(param)
+
+        # Check for presence of gradient
+        assert hasattr(result, "grad_fn")
+
+        # Backpropagate to get the gradient of func over param
+        result.backward()
+        gradient = param.grad
+
+    elif backend == "jax":
+        import jax
+
+        # Convert param to a JAX tensor
+        param = anp.array(param, like="jax")
+
+        # Calculate the value and gradient
+        value_and_grad_func = jax.value_and_grad(func)
+        result, gradient = value_and_grad_func(param)
+
+    elif backend == "tensorflow":
+        import tensorflow as tf
+
+        # Set up param as Variable
+        dtype = to_backend_dtype(dtype_name, like=backend)
+        param = tf.Variable(param, dtype=dtype)
+
+        # Calculate the value and gradient
+        with tf.GradientTape() as tape:
+            result = func(param)
+        gradient = tape.gradient(result, param)
+
+    else:
+        raise ValueError(f"No gradient calculation for the backend {backend}")
+
+    assert get_dtype_name(result) == dtype_name
+    assert get_dtype_name(gradient) == dtype_name
+    assert gradient.shape == param.shape
+    return to_numpy(gradient), to_numpy(result)
+
+
+def _calculate_gradient_over_domain(
     backend, integration_domain, integrate, integrate_kwargs, dtype_name
 ):
-    """
-    Backend-specific gradient calculation
+    """Backend-specific calculation of the gradient of integrate over integration_domain
 
     Args:
         backend (string): Numerical backend, e.g. "torch"
@@ -53,64 +127,41 @@ def _calculate_gradient(
 
     Returns:
         backend tensor: Gradient with respect to integration_domain
-        backend tensor or None: Integral result if available
+        backend tensor: Integral result
     """
-    if backend == "torch":
-        import torch
+    return _calculate_gradient(
+        backend,
+        integration_domain,
+        lambda dom: integrate(integration_domain=dom, **integrate_kwargs),
+        dtype_name,
+    )
 
-        # Set up integration_domain for gradient calculation
-        integration_domain = torch.tensor(integration_domain)
-        integration_domain.requires_grad = True
 
-        # Compute integral
-        result = integrate(integration_domain=integration_domain, **integrate_kwargs)
-        result_np = to_numpy(result)
+def _calculate_gradient_over_param(
+    backend, param, integrand_with_param, integrate, integrate_kwargs, dtype_name
+):
+    """Backend-specific calculation of the gradient of integrate over an integrand parameter
 
-        # Check for presence of gradient and correct dtype
-        assert hasattr(result, "grad_fn")
-        assert get_dtype_name(result) == dtype_name
+    Args:
+        backend (string): Numerical backend, e.g. "torch"
+        param (list or float): Parameter value(s) for the integrand. The gradient of integrate is calculated over param.
+        integrand_with_param (function): An integrand function which receives sample points and param
+        integrate (function): A integrator's integrate method
+        integrate_kwargs (dict): Arguments for integrate except fn (the integrand)
+        dtype_name (string): Floating point precision
 
-        # Backprop gradient through integral and get the gradient
-        result.backward()
-        gradient = integration_domain.grad
-        assert get_dtype_name(gradient) == dtype_name
-
-        return to_numpy(gradient), result_np
-
-    elif backend == "jax":
-        import jax
-
-        integration_domain = anp.array(integration_domain, like="jax")
-
-        # Create a derivation of integrate with respect to integration_domain
-        @jax.grad
-        def grad_integrate(dom):
-            return integrate(integration_domain=dom, **integrate_kwargs)
-
-        # Calculate the gradient
-        gradient = grad_integrate(integration_domain)
-        assert get_dtype_name(gradient) == dtype_name
-        return to_numpy(gradient), None
-
-    elif backend == "tensorflow":
-        import tensorflow as tf
-
-        # Set up integration_domain as Variable
-        dtype = to_backend_dtype(dtype_name, like=backend)
-        integration_domain = tf.Variable(integration_domain, dtype=dtype)
-
-        # Calculate the integral and gradient
-        with tf.GradientTape() as tape:
-            result = integrate(
-                integration_domain=integration_domain, **integrate_kwargs
-            )
-        assert get_dtype_name(result) == dtype_name
-        gradient = tape.gradient(result, integration_domain)
-        assert get_dtype_name(gradient) == dtype_name
-        return to_numpy(gradient), to_numpy(result)
-
-    else:
-        raise ValueError(f"No gradient calculation for the backend {backend}")
+    Returns:
+        backend tensor: Gradient with respect to param
+        backend tensor: Integral result
+    """
+    return _calculate_gradient(
+        backend,
+        param,
+        lambda par: integrate(
+            lambda x: integrand_with_param(x, par), **integrate_kwargs
+        ),
+        dtype_name,
+    )
 
 
 def _run_gradient_tests(backend, precision):
@@ -131,48 +182,82 @@ def _run_gradient_tests(backend, precision):
             continue
 
         print(
-            f"Calculating gradients with backend {backend} and integrator {integrator}"
+            f"Calculating gradients; backend: {backend}, integrator: {integrator_name}"
         )
 
-        # Test gradient calculation with the one-dimensional V-shaped function
+        print("Calculating gradients of the one-dimensional V-shaped function")
         integrate_kwargs = {"fn": _v_function, "dim": 1, "N": N_1d}
         if requires_seed:
             integrate_kwargs["seed"] = 0
-        gradient, integral = _calculate_gradient(
+        gradient, integral = _calculate_gradient_over_domain(
             backend,
             [[-1.0, 1.0]],
             integrator.integrate,
             integrate_kwargs,
             dtype_name,
         )
-        if integral is not None:
-            # Check if the integral is accurate enough
-            true_integral = 2.0
-            assert np.abs(integral - true_integral) < 1e-2
-        # Check if the gradient is accurate enough
-        true_gradient = np.array([-2.0, 2.0])
-        assert gradient.shape == (1, 2)
-        assert np.all(np.abs(gradient - true_gradient) < 2e-2)
+        # Check if the integral and gradient are accurate enough
+        assert np.abs(integral - 2.0) < 1e-2
+        assert np.all(np.abs(gradient - np.array([-2.0, 2.0])) < 2e-2)
 
-        # Test gradient calculation with a two-dimensional polynomial
+        print("Calculating gradients of a 2D polynomial over the integration domain")
         integrate_kwargs = {"fn": _polynomial_function, "dim": 2, "N": N_2d}
         if requires_seed:
             integrate_kwargs["seed"] = 0
-        gradient, integral = _calculate_gradient(
+        gradient, integral = _calculate_gradient_over_domain(
             backend,
             [[0.0, 1.0], [0.0, 2.0]],
             integrator.integrate,
             integrate_kwargs,
             dtype_name,
         )
-        if integral is not None:
-            # Check if the integral is accurate enough
-            true_integral = 12.0
-            assert np.abs(integral - true_integral) < 4e-2
-        # Check if the gradient is accurate enough
-        true_gradient = np.array([[-10.0, 14.0], [-2.0, 14.0]])
-        assert gradient.shape == (2, 2)
-        assert np.all(np.abs(gradient - true_gradient) < 5e-2)
+        # Check if the integral and gradient are accurate enough
+        assert np.abs(integral - 12.0) < 4e-2
+        assert np.all(np.abs(gradient - np.array([[-10.0, 14.0], [-2.0, 14.0]])) < 5e-2)
+
+        print("Calculating gradients of a 2D polynomial over polynomial coefficients")
+        param = [1.0, 2.0, 3.0]
+        integrate_kwargs = {
+            "integration_domain": [[0.0, 1.0], [0.0, 2.0]],
+            "dim": 2,
+            "N": N_2d,
+            "backend": backend,
+        }
+        if requires_seed:
+            integrate_kwargs["seed"] = 0
+        gradient, integral = _calculate_gradient_over_param(
+            backend,
+            param,
+            _polynomial_function_parameterized,
+            integrator.integrate,
+            integrate_kwargs,
+            dtype_name,
+        )
+        # Check if the integral and gradient are accurate enough
+        assert np.abs(integral - 12.0) < 4e-2
+        assert np.all(np.abs(gradient - np.array([2.0, 1.0, 8.0 / 3.0])) < 5e-2)
+
+        print("Calculating gradients of a V-shaped function over an offset")
+        param = 2.0
+        integrate_kwargs = {
+            "integration_domain": [[-5.0, 3.0]],
+            "dim": 1,
+            "N": N_1d,
+            "backend": backend,
+        }
+        if requires_seed:
+            integrate_kwargs["seed"] = 0
+        gradient, integral = _calculate_gradient_over_param(
+            backend,
+            param,
+            _v_function_parameterized,
+            integrator.integrate,
+            integrate_kwargs,
+            dtype_name,
+        )
+        # Check if the integral and gradient are accurate enough
+        assert np.abs(integral - 34.0) < 0.2
+        assert np.abs(gradient - 4.0) < 0.1
 
 
 test_gradients_torch = setup_test_for_backend(_run_gradient_tests, "torch", "double")
