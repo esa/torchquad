@@ -207,6 +207,9 @@ class VEGASMap:
             old_i = 0
             d_accu = 0
 
+            # Use a list instead of a tensor for indices to reduce the overhead
+            # of converting Python integers to backend-specific integer types
+            # in the following Python loops
             indices = [0] * (self.N_intervals - 1)
             d_accu_i = anp.zeros(
                 [self.N_intervals - 1], dtype=self.dtype, like=self.backend
@@ -221,6 +224,7 @@ class VEGASMap:
                 indices[new_i - 1] = old_i
                 d_accu_i[new_i - 1] = d_accu
 
+            # Convert all indices at once to a tensor
             indices = anp.array(
                 indices,
                 like=self.backend,
