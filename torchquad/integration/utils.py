@@ -45,6 +45,53 @@ def _linspace_with_grads(start, stop, N, requires_grad):
         return anp.linspace(start, stop, N, dtype=start.dtype)
 
 
+def _add_at_indices(target, indices, source, is_sorted=False):
+    """
+    Add source[i] to target at target[indices[i]] for each index i in-place.
+    For example, with targets=[0,0,0] indices=[2,1,1,2] and source=[a,b,c,d],
+    targets will be changed to [0,b+c,a+d].
+    This function supports only numpy and torch.
+
+    Args:
+        target (backend tensor): Tensor to which the source values are added
+        indices (int backend tensor): Indices into target for each value in source
+        source (backend tensor): Values which are added to target
+        is_sorted (bool, optional): Set this to True if indices is monotonically increasing to skip a redundant sorting step with the numpy backend. Defaults to False.
+    """
+    backend = infer_backend(target)
+    if backend == "torch":
+        target.scatter_add_(dim=0, index=indices, src=source)
+    else:
+        # Use indicator matrices to reduce the Python interpreter overhead
+        # Based on VegasFlow's consume_array_into_indices function
+        # https://github.com/N3PDF/vegasflow/blob/21209c928d07c00ae4f789d03b83e518621f174a/src/vegasflow/utils.py#L16
+        if not is_sorted:
+            # Sort the indices and corresponding source array
+            sort_permutation = anp.argsort(indices)
+            indices = indices[sort_permutation]
+            source = source[sort_permutation]
+        # Maximum number of columns for the indicator matrices.
+        # A higher number leads to more redundant comparisons and higher memory
+        # usage but reduces the Python interpreter overhead.
+        max_indicator_width = 500
+        zero = anp.array(0.0, dtype=target.dtype, like=backend)
+        num_indices = indices.shape[0]
+        for i1 in range(0, num_indices, max_indicator_width):
+            # Create an indicator matrix for source indices in {i1, i1+1, …, i2-1}
+            # and corresponding target array indices in {t1, t1+1, …, t2-1}.
+            # All other target array indices are irrelevant: because the indices
+            # array is sorted, all values in indices[i1:i2] are bound by t1 and t2.
+            i2 = min(i1 + max_indicator_width, num_indices)
+            t1, t2 = indices[i1], indices[i2 - 1] + 1
+            target_indices = anp.arange(t1, t2, dtype=indices.dtype, like=backend)
+            indicator = anp.equal(indices[i1:i2], target_indices.reshape([t2 - t1, 1]))
+            # Create a matrix which is zero everywhere except at entries where
+            # the corresponding value from source should be added to the
+            # corresponding entry in target, sum these source values, and add
+            # the resulting vector to target
+            target[t1:t2] += anp.sum(anp.where(indicator, source[i1:i2], zero), axis=1)
+
+
 def _setup_integration_domain(dim, integration_domain, backend):
     """Sets up the integration domain if unspecified by the user.
     Args:

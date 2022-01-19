@@ -8,7 +8,12 @@ import importlib
 import pytest
 import warnings
 
-from integration.utils import _linspace_with_grads, _setup_integration_domain, RNG
+from integration.utils import (
+    _linspace_with_grads,
+    _add_at_indices,
+    _setup_integration_domain,
+    RNG,
+)
 from utils.set_precision import set_precision
 from utils.enable_cuda import enable_cuda
 
@@ -80,6 +85,46 @@ def test_linspace_with_grads():
         _run_linspace_with_grads_tests,
         [{"requires_grad": True}, {"requires_grad": False}],
     )
+
+
+def _run_add_at_indices_tests(dtype_name, backend):
+    """
+    Test _add_at_indices with the given dtype and numerical backend
+    """
+    # JAX and Tensorflow are not yet supported
+    if backend in ["jax", "tensorflow"]:
+        return
+    dtype_backend = to_backend_dtype(dtype_name, like=backend)
+
+    print("Testing _add_at_indices for a simple identity case")
+    indices = anp.array(list(range(500)), like=backend)
+    target = anp.array([0.0] * 500, dtype=dtype_backend, like=backend)
+    source = anp.array([1.0] * 500, dtype=dtype_backend, like=backend)
+    _add_at_indices(target, indices, source, is_sorted=True)
+    assert target.dtype == dtype_backend
+    assert target.shape == (500,)
+    assert anp.max(anp.abs(target - source)) == 0.0
+
+    print("Testing _add_at_indices when all indices refer to the same target index")
+    target = target * 0.0
+    indices = indices * 0 + 203
+    _add_at_indices(target, indices, source, is_sorted=True)
+    assert target[203] == 500.0
+    target[203] = 0.0
+    assert anp.max(anp.abs(target)) == 0.0
+
+    print("Testing _add_at_indices with unsorted indices and integer dtype")
+    target = anp.array([0, 0, 0], like=backend)
+    indices = anp.array([2, 1, 1, 2], like=backend)
+    source = anp.array([1, 10, 100, 1000], like=backend)
+    _add_at_indices(target, indices, source)
+    assert target.dtype == indices.dtype
+    assert anp.max(anp.abs(target - anp.array([0, 110, 1001], like=backend))) == 0
+
+
+def test_add_at_indices():
+    """Test _add_at_indices with all possible configurations"""
+    _run_tests_with_all_backends(_run_add_at_indices_tests)
 
 
 def _run_setup_integration_domain_tests(dtype_name, backend):
@@ -172,6 +217,7 @@ if __name__ == "__main__":
     try:
         # used to run this test individually
         test_linspace_with_grads()
+        test_add_at_indices()
         test_setup_integration_domain()
         test_RNG()
     except KeyboardInterrupt:

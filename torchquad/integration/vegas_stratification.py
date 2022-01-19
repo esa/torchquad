@@ -1,6 +1,8 @@
 from autoray import numpy as anp
 from autoray import astype
 
+from .utils import _add_at_indices
+
 
 class VEGASStratification:
     """The stratification used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112 .
@@ -42,7 +44,7 @@ class VEGASStratification:
             / self.N_cubes
         )
 
-        # current index counts
+        # current index counts as floating point numbers
         self.strat_counts = anp.zeros([self.N_cubes], dtype=self.dtype, like=backend)
 
     def accumulate_weight(self, nevals, weight_all_cubes):
@@ -55,26 +57,23 @@ class VEGASStratification:
         Returns:
             backend tensor, backend tensor: Computed JF and JF2
         """
-        # Build indices for weights
-        indices = anp.cumsum(nevals, axis=0)
+        # indices maps each index of weight_all_cubes to the corresponding
+        # hypercube index.
+        N_cubes_arange = anp.arange(self.N_cubes, dtype=nevals.dtype, like=self.backend)
+        if self.backend == "torch":
+            # autoray doesn't support repeat yet
+            indices = anp.repeat_interleave(N_cubes_arange, nevals)
+        else:
+            indices = anp.repeat(N_cubes_arange, nevals)
+        # Reset JF and JF2, and accumulate the weights and squared weights
+        # into them.
+        self.JF = anp.zeros([self.N_cubes], dtype=self.dtype, like=self.backend)
+        self.JF2 = anp.zeros([self.N_cubes], dtype=self.dtype, like=self.backend)
+        _add_at_indices(self.JF, indices, weight_all_cubes, is_sorted=True)
+        _add_at_indices(self.JF2, indices, weight_all_cubes ** 2.0, is_sorted=True)
 
-        # Compute squares of all weights ahead
-        square_weights = weight_all_cubes ** 2.0
-
-        # Used to store previous indexstarting point
-        prev = 0
-        for idx in range(len(nevals)):
-            # Get the values for the idx-th cubes
-            cur_weights = weight_all_cubes[prev : indices[idx]]
-            cur_square_weights = square_weights[prev : indices[idx]]
-
-            # Compute jacobians
-            self.JF2[idx] = cur_square_weights.sum()
-            self.JF[idx] = cur_weights.sum()
-
-            # Store counts
-            self.strat_counts[idx] = len(cur_weights)
-            prev = indices[idx]
+        # Store counts
+        self.strat_counts = astype(nevals, self.dtype)
 
         return self.JF, self.JF2
 
@@ -96,7 +95,7 @@ class VEGASStratification:
         self.dh[anp.isnan(self.dh)] = 0
 
         # Normalize dampening
-        d_sum = sum(self.dh)
+        d_sum = anp.sum(self.dh)
 
         if d_sum != 0:
             self.dh = self.dh / d_sum
@@ -118,34 +117,36 @@ class VEGASStratification:
         """Maps point to stratified point.
 
         Args:
-            idx (backend tensor): Target points indices.
+            idx (int backend tensor): Target points indices.
 
         Returns:
-            backend tensor: Mapped points.
+            int backend tensor: Mapped points.
         """
-        # A commented-out alternative way for mapped points calculation.
+        # A commented-out alternative way for mapped points calculation if
+        # idx is anp.arange(len(nevals), like=nevals).
         # torch.meshgrid's indexing argument was added in version 1.10.1,
         # so don't use it yet.
         """
-        grid_1d = torch.arange(self.N_strat)
-        points = anp.meshgrid(*([grid_1d] * self.dim), indexing="xy")
-        points = torch.stack(
-            [mg.ravel() for mg in points], dim=1
+        grid_1d = anp.arange(self.N_strat, like=self.backend)
+        points = anp.meshgrid(*([grid_1d] * self.dim), indexing="xy", like=self.backend)
+        points = anp.stack(
+            [mg.ravel() for mg in points], axis=1, like=self.backend
         )
+        return points
         """
-        res = anp.zeros([len(idx), self.dim], like=idx)
-        tmp = idx
-        for i in range(self.dim):
-            if self.backend == "torch":
-                # Torch shows a compatibility warning with //, so use torch.div
-                # instead
-                q = anp.div(tmp, self.N_strat, rounding_mode="floor")
-            else:
-                q = tmp // self.N_strat
-            r = tmp - q * self.N_strat
-            res[:, i] = r
-            tmp = q
-        return res
+        # Repeat idx via broadcasting and divide it by self.N_strat ** d
+        # for all dimensions d
+        points = anp.reshape(idx, [idx.shape[0], 1])
+        strides = self.N_strat ** anp.arange(self.dim, like=points)
+        if self.backend == "torch":
+            # Torch shows a compatibility warning with //, so use torch.div
+            # instead
+            points = anp.div(points, strides, rounding_mode="floor")
+        else:
+            points = points // strides
+        # Calculate the component-wise remainder: points mod self.N_strat
+        points[:, :-1] = points[:, :-1] - self.N_strat * points[:, 1:]
+        return points
 
     def get_Y(self, nevals):
         """Compute randomly sampled points.
@@ -154,34 +155,25 @@ class VEGASStratification:
             nevals (int backend tensor): Number of samples to draw per stratification cube.
 
         Returns:
-            int backend tensor: Sampled points.
+            backend tensor: Sampled points.
         """
-        dy = 1.0 / self.N_strat
-        res_in_all_cubes = []
+        # Get integer positions for each hypercube
+        nevals_arange = anp.arange(len(nevals), dtype=nevals.dtype, like=nevals)
+        positions = self._get_indices(nevals_arange)
 
-        # Get indices
-        indices = anp.arange(len(nevals), like=nevals)
-        indices = astype(self._get_indices(indices), self.dtype)
+        # For each hypercube i, repeat its position nevals[i] times
+        if self.backend == "torch":
+            # Autoray doesn't yet support repeat.
+            position_indices = anp.repeat_interleave(nevals_arange, nevals)
+        else:
+            position_indices = anp.repeat(nevals_arange, nevals)
+        positions = positions[position_indices, :]
 
-        # Get random numbers (we get a few more just to vectorize properly)
-        # This might increase the memory requirements slightly but is probably
-        # worth it.
+        # Convert the positions to float, add random offsets to them and scale
+        # the result so that each point is in [0, 1)^dim
+        positions = astype(positions, self.dtype)
         random_uni = (
-            self.rng.uniform(
-                size=[len(nevals), nevals.max(), self.dim], dtype=self.dtype
-            )
+            self.rng.uniform(size=[positions.shape[0], self.dim], dtype=self.dtype)
             * 0.999999
         )
-
-        # Sum the random numbers onto the index locations and scale with dy
-        # Note that the resulting tensor is still slightly too large
-        # that gets remedied in the for-loop after
-        # Also, indices needs the unsqueeye to fill the missing dimension
-        indices = indices.reshape(indices.shape[0], 1, indices.shape[1])
-        res = (random_uni + indices) * dy
-
-        # Note this loop is tricky to vectorize as cubes have different N
-        for idx, N in enumerate(nevals):
-            res_in_all_cubes.append(res[idx, 0:N, :])
-
-        return anp.concatenate(res_in_all_cubes, axis=0, like=res)
+        return (positions + random_uni) / self.N_strat

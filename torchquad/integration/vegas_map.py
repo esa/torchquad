@@ -1,6 +1,8 @@
 from autoray import numpy as anp
 from autoray import astype, infer_backend, to_backend_dtype
 
+from .utils import _add_at_indices
+
 
 class VEGASMap:
     """The map used for VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112 .
@@ -24,24 +26,21 @@ class VEGASMap:
         self.backend = infer_backend(integration_domain)
         self.dtype = integration_domain.dtype
 
-        # boundary locations and subdomain stepsizes
-        self.x_edges = anp.zeros(
-            (self.dim, N_edges), dtype=self.dtype, like=self.backend
-        )
-        self.dx_edges = anp.zeros(
-            (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
-        )
-
+        # Boundary locations x_edges and subdomain stepsizes dx_edges
         # Subdivide initial domain equally spaced in N-d, EQ 8
-        for dim in range(self.dim):
-            start = integration_domain[dim][0]
-            stepsize = (
-                integration_domain[dim][1] - integration_domain[dim][0]
-            ) / self.N_intervals
-            for i in range(N_edges):
-                self.x_edges[dim][i] = start + i * stepsize
-                if i > 0:
-                    self.dx_edges[dim][i - 1] = stepsize
+        domain_starts = integration_domain[:, :1]
+        domain_ends = integration_domain[:, 1:]
+        domain_sizes = domain_ends - domain_starts
+        self.dx_edges = (
+            anp.ones((self.dim, self.N_intervals), dtype=self.dtype, like=self.backend)
+            * domain_sizes
+            / self.N_intervals
+        )
+        self.x_edges = (
+            anp.linspace(0.0, 1.0, N_edges, dtype=self.dtype, like=self.backend)
+            * domain_sizes
+            + domain_starts
+        )
 
         # weights in each intervall
         self.weights = anp.zeros(
@@ -116,14 +115,12 @@ class VEGASMap:
             y (backend tensor): Sampled points.
             jf_vec2 (backend tensor): Square of the product of function values and jacobians
         """
+        ones = anp.ones(jf_vec2.shape, dtype=self.counts.dtype, like=jf_vec2)
         ID = self._get_interval_ID(y)
         for i in range(self.dim):
             ID_i = ID[:, i]
-            unique_vals, unique_counts = anp.unique(ID_i, return_counts=True)
-            weights_vals = jf_vec2
-            for val in unique_vals:
-                self.weights[i][val] += weights_vals[ID_i == val].sum()
-            self.counts[i, unique_vals] += unique_counts
+            _add_at_indices(self.weights[i], ID_i, jf_vec2)
+            _add_at_indices(self.counts[i], ID_i, ones)
 
     @staticmethod
     def _smooth_map(weights, counts, alpha):
@@ -173,39 +170,44 @@ class VEGASMap:
         """Update the adaptive map, Section II C."""
         smoothed_weights = self._smooth_map(self.weights, self.counts, self.alpha)
 
-        # The amounts of the sum of smoothed_weights for each interval of
-        # the new grid
+        # The amount of the sum of smoothed_weights for each interval of
+        # the new 1D grid, for each dimension
         # EQ 20
         delta_weights = anp.sum(smoothed_weights, axis=1) / self.N_intervals
 
         for i in range(self.dim):  # Update per dim
-            old_i = 0
-            d_accu = 0
             delta_d = delta_weights[i]
-
-            # Use a list instead of a tensor for indices to reduce the overhead
-            # of converting Python integers to backend-specific integer types
-            # in the following Python loops
-            indices = [0] * (self.N_intervals - 1)
-            d_accu_i = anp.zeros(
-                [self.N_intervals - 1], dtype=self.dtype, like=self.backend
+            # For each inner edge, determine how many delta_d fit into the
+            # accumulated smoothed weights
+            delta_d_multiples = astype(
+                anp.cumsum(smoothed_weights[i, :-1], axis=0) / delta_d, "int64"
             )
-
-            for new_i in range(1, self.N_intervals):
-                d_accu += delta_d
-
-                while d_accu > smoothed_weights[i][old_i]:
-                    d_accu -= smoothed_weights[i][old_i]
-                    old_i = old_i + 1
-                indices[new_i - 1] = old_i
-                d_accu_i[new_i - 1] = d_accu
-
-            # Convert all indices at once to a tensor
-            indices = anp.array(
-                indices,
-                like=self.backend,
-                dtype=to_backend_dtype("int64", like=self.backend),
+            # For each number of delta_d multiples in {0, 1, …, N_intervals},
+            # determine how many intervals belong to it (num_sw_per_dw)
+            # and the sum of smoothed weights in these intervals (val_sw_per_dw)
+            dtype_int = delta_d_multiples.dtype
+            num_sw_per_dw = anp.zeros(
+                [self.N_intervals + 1], dtype=dtype_int, like=delta_d
             )
+            _add_at_indices(
+                num_sw_per_dw,
+                delta_d_multiples,
+                anp.ones(delta_d_multiples.shape, dtype=dtype_int, like=delta_d),
+                is_sorted=True,
+            )
+            val_sw_per_dw = anp.zeros(
+                [self.N_intervals + 1], dtype=self.dtype, like=delta_d
+            )
+            _add_at_indices(
+                val_sw_per_dw, delta_d_multiples, smoothed_weights[i], is_sorted=True
+            )
+            # The cumulative sum of the number of smoothed weights per delta_d
+            # multiple determines the old inner edges indices for the new inner
+            # edges calculation
+            indices = anp.cumsum(num_sw_per_dw[:-2], axis=0)
+            # d_accu_i is used for the interpolation in the new inner edges
+            # calculation when adding it to the old inner edges
+            d_accu_i = anp.cumsum(delta_d - val_sw_per_dw[:-2], axis=0)
 
             if self.backend == "torch":
                 d_accu_i = d_accu_i.detach()

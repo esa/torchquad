@@ -130,7 +130,7 @@ def _run_vegas_map_checks(backend, precision):
     _check_tensor_similarity(
         anp.sum(vegasmap.dx_edges, axis=1),
         integration_domain_sizes,
-        0.0,
+        3e-7,
         dtype_float,
     )
     assert anp.min(vegasmap.dx_edges) > 0.0, "Non-positive edge distance"
