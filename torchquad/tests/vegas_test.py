@@ -154,7 +154,7 @@ def _run_vegas_accuracy_checks(backend, precision):
             integration_domain=integration_domain,
             seed=seed,
         )
-        assert anp.abs(integral - reference_integral) < 0.03
+        assert anp.abs(integral - reference_integral) < 0.06
 
 
 def _run_vegas_tests(backend, precision):

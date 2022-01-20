@@ -73,7 +73,7 @@ class VEGASStratification:
             self.JF[idx] = cur_weights.sum()
 
             # Store counts
-            self.strat_counts[idx] += len(cur_weights)
+            self.strat_counts[idx] = len(cur_weights)
             prev = indices[idx]
 
         return self.JF, self.JF2
