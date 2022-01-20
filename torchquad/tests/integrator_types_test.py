@@ -15,6 +15,7 @@ from integration.trapezoid import Trapezoid
 from integration.simpson import Simpson
 from integration.boole import Boole
 from integration.monte_carlo import MonteCarlo
+from integration.vegas import VEGAS
 from utils.set_precision import set_precision
 from integration_test_utils import setup_test_for_backend
 
@@ -37,8 +38,8 @@ def _run_simple_integrations(backend):
     * MonteCarlo and the Newton Cotes composite integrators integrate a
       constant function (almost) exactly.
     """
-    integrators_all = [Trapezoid(), Simpson(), Boole(), MonteCarlo()]
-    Ns_all = [13 ** 2, 13 ** 2, 13 ** 2, 20]
+    integrators_all = [Trapezoid(), Simpson(), Boole(), MonteCarlo(), VEGAS()]
+    Ns_all = [13 ** 2, 13 ** 2, 13 ** 2, 20, 1000]
 
     expected_dtype_name = None
 
@@ -61,6 +62,10 @@ def _run_simple_integrations(backend):
             ("jax", "float64", "float32"),
         ]:
             continue
+        integrator_name = type(integrator).__name__
+        # VEGAS supports only numpy and torch
+        if integrator_name == "VEGAS" and backend in ["jax", "tensorflow"]:
+            continue
 
         # Set the global precision
         precision = {"float64": "double", "float32": "float"}[dtype_global]
@@ -81,21 +86,27 @@ def _run_simple_integrations(backend):
         else:
             expected_dtype_name = dtype_global
 
-        integrator_name = type(integrator).__name__
         print(
             f"[2mTesting {integrator_name} with {backend}, argument dtype"
             f" {dtype_arg}, global/default dtype {dtype_global}[m"
         )
+        if integrator_name in ["MonteCarlo", "VEGAS"]:
+            extra_kwargs = {"seed": 0}
+        else:
+            extra_kwargs = {}
         result = integrator.integrate(
             fn=fn_const,
             dim=2,
             N=N,
             integration_domain=integration_domain,
             backend=backend,
+            **extra_kwargs,
         )
         assert infer_backend(result) == backend
         assert get_dtype_name(result) == expected_dtype_name
-        assert anp.abs(result - (-4.0)) < 1e-5
+        # VEGAS seems to be bad at integrating constant functions currently
+        max_error = 0.03 if integrator_name == "VEGAS" else 1e-5
+        assert anp.abs(result - (-4.0)) < max_error
 
 
 test_integrate_numpy = setup_test_for_backend(_run_simple_integrations, "numpy", None)

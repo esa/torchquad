@@ -1,5 +1,5 @@
 from autoray import numpy as anp
-from autoray import infer_backend
+from autoray import infer_backend, astype
 from loguru import logger
 
 
@@ -247,12 +247,13 @@ class VEGAS(BaseIntegrator):
             self.map.accumulate_weight(y, jf_vec2)  # EQ 25
         jf, jf2 = self.strat.accumulate_weight(neval, jf_vec)  # update strat
 
-        ih = (jf / neval) * self.strat.V_cubes  # Compute integral per cube
+        neval_inverse = 1.0 / astype(neval, y.dtype)
+        ih = jf * neval_inverse * self.strat.V_cubes  # Compute integral per cube
 
         # Collect results
-        sig2 = (jf2 / neval) * (self.strat.V_cubes ** 2) - pow(ih, 2)
+        sig2 = jf2 * neval_inverse * (self.strat.V_cubes ** 2) - pow(ih, 2)
         self.results[-1] = ih.sum()  # store results
-        self.sigma2[-1] = (sig2 / neval).sum()
+        self.sigma2[-1] = (sig2 * neval_inverse).sum()
 
         if self.use_grid_improve:  # if on, update adaptive map
             logger.debug("Running grid improvement")
@@ -270,11 +271,14 @@ class VEGAS(BaseIntegrator):
         Returns:
             backend tensor float: Estimated integral.
         """
-        res_num = 0
-        res_den = 0
-        for idx, res in enumerate(self.results):
-            res_num += res / self.sigma2[idx]
-            res_den += 1.0 / self.sigma2[idx]
+        res_num = sum(res / sig2 for res, sig2 in zip(self.results, self.sigma2))
+        res_den = sum(1.0 / sig2 for sig2 in self.sigma2)
+
+        if self.backend == "numpy" and res_num.dtype != self.results[-1].dtype:
+            # Numpy automatically casts float32 to float64 in the res_num and
+            # res_den calculations
+            res_num = astype(res_num, self.results[-1].dtype)
+            res_den = astype(res_den, self.results[-1].dtype)
 
         if anp.isnan(res_num / res_den):  # if variance is 0 just return mean result
             return anp.mean(anp.array(self.results, dtype=res_num.dtype, like=res_num))
