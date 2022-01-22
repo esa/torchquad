@@ -19,14 +19,14 @@ class VEGASMap:
         """
         self.dim = dim
         self.N_intervals = N_intervals  # # of subdivisions
-        self.N_edges = self.N_intervals + 1  # # of subdivsion boundaries
+        N_edges = self.N_intervals + 1  # # of subdivsion boundaries
         self.alpha = alpha  # Weight smoothing
         self.backend = infer_backend(integration_domain)
         self.dtype = integration_domain.dtype
 
         # boundary locations and subdomain stepsizes
         self.x_edges = anp.zeros(
-            (self.dim, self.N_edges), dtype=self.dtype, like=self.backend
+            (self.dim, N_edges), dtype=self.dtype, like=self.backend
         )
         self.dx_edges = anp.zeros(
             (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
@@ -38,7 +38,7 @@ class VEGASMap:
             stepsize = (
                 integration_domain[dim][1] - integration_domain[dim][0]
             ) / self.N_intervals
-            for i in range(self.N_edges):
+            for i in range(N_edges):
                 self.x_edges[dim][i] = start + i * stepsize
                 if i > 0:
                     self.dx_edges[dim][i - 1] = stepsize
@@ -47,21 +47,6 @@ class VEGASMap:
         self.weights = anp.zeros(
             (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
         )
-        self.smoothed_weights = anp.zeros(
-            (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
-        )
-        self.summed_weights = anp.zeros(
-            [self.dim], dtype=self.dtype, like=self.backend
-        )  # sum of weights per dim
-        self.delta_weights = anp.zeros(
-            [self.dim], dtype=self.dtype, like=self.backend
-        )  # EQ 11
-        self.std_weight = anp.zeros(
-            [self.dim], dtype=self.dtype, like=self.backend
-        )  # EQ 13
-        self.avg_weight = anp.zeros(
-            [self.dim], dtype=self.dtype, like=self.backend
-        )  # EQ 14
         # numbers of random samples in specific interval
         self.counts = anp.zeros(
             (self.dim, self.N_intervals),
@@ -170,19 +155,10 @@ class VEGASMap:
         d_tmp[d_tmp != 0] = (
             (d_tmp[d_tmp != 0] - 1.0) / anp.log(d_tmp[d_tmp != 0])
         ) ** alpha
-        smoothed_weights = d_tmp
 
-        # sum all weights
-        summed_weights = anp.sum(smoothed_weights, axis=1)
+        return d_tmp
 
-        # EQ 20
-        delta_weights = summed_weights / N_intervals
-
-        return smoothed_weights, summed_weights, delta_weights
-
-    def _reset_weight(
-        self,
-    ):
+    def _reset_weight(self):
         """Resets weights."""
         self.weights = anp.zeros(
             (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
@@ -193,19 +169,19 @@ class VEGASMap:
             like=self.backend,
         )
 
-    def update_map(
-        self,
-    ):
+    def update_map(self):
         """Update the adaptive map, Section II C."""
-        (
-            self.smoothed_weights,
-            self.summed_weights,
-            self.delta_weights,
-        ) = self._smooth_map(self.weights, self.counts, self.alpha)
+        smoothed_weights = self._smooth_map(self.weights, self.counts, self.alpha)
+
+        # The amounts of the sum of smoothed_weights for each interval of
+        # the new grid
+        # EQ 20
+        delta_weights = anp.sum(smoothed_weights, axis=1) / self.N_intervals
 
         for i in range(self.dim):  # Update per dim
             old_i = 0
             d_accu = 0
+            delta_d = delta_weights[i]
 
             # Use a list instead of a tensor for indices to reduce the overhead
             # of converting Python integers to backend-specific integer types
@@ -216,10 +192,10 @@ class VEGASMap:
             )
 
             for new_i in range(1, self.N_intervals):
-                d_accu += self.delta_weights[i]
+                d_accu += delta_d
 
-                while d_accu > self.smoothed_weights[i][old_i]:
-                    d_accu -= self.smoothed_weights[i][old_i]
+                while d_accu > smoothed_weights[i][old_i]:
+                    d_accu -= smoothed_weights[i][old_i]
                     old_i = old_i + 1
                 indices[new_i - 1] = old_i
                 d_accu_i[new_i - 1] = d_accu
@@ -237,9 +213,7 @@ class VEGASMap:
             # EQ 22
             self.x_edges[i][1:-1] = (
                 self.x_edges[i][indices]
-                + d_accu_i
-                / self.smoothed_weights[i][indices]
-                * self.dx_edges[i][indices]
+                + d_accu_i / smoothed_weights[i][indices] * self.dx_edges[i][indices]
             )
 
             self.dx_edges[i] = self.x_edges[i][1:] - self.x_edges[i][:-1]

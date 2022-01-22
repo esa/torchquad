@@ -108,24 +108,10 @@ def _run_vegas_map_checks(backend, precision):
         dtype=dtype_float,
         like=backend,
     )
-    summed_weights_expected = anp.array(
-        [2.8653219, 2.2295702],
-        dtype=dtype_float,
-        like=backend,
-    )
-    delta_weights_expected = anp.array(
-        [0.47755364, 0.37159503],
-        dtype=dtype_float,
-        like=backend,
-    )
-    smoothed_weights, summed_weights, delta_weights = VEGASMap._smooth_map(
-        weights, counts, alpha
-    )
+    smoothed_weights = VEGASMap._smooth_map(weights, counts, alpha)
     _check_tensor_similarity(
         smoothed_weights, smoothed_weights_expected, 3e-7, dtype_float
     )
-    _check_tensor_similarity(summed_weights, summed_weights_expected, 3e-7, dtype_float)
-    _check_tensor_similarity(delta_weights, delta_weights_expected, 3e-7, dtype_float)
 
     # Test if vegasmap.update_map changes the edge locations and distances
     # correctly
