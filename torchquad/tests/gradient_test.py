@@ -212,8 +212,8 @@ def _run_gradient_tests(backend, precision):
             dtype_name,
         )
         # Check if the integral and gradient are accurate enough
-        assert np.abs(integral - 12.0) < 4e-2
-        assert np.all(np.abs(gradient - np.array([[-10.0, 14.0], [-2.0, 14.0]])) < 5e-2)
+        assert np.abs(integral - 12.0) < 8e-2
+        assert np.all(np.abs(gradient - np.array([[-10.0, 14.0], [-2.0, 14.0]])) < 0.1)
 
         print("Calculating gradients of a 2D polynomial over polynomial coefficients")
         param = [1.0, 2.0, 3.0]
@@ -234,7 +234,7 @@ def _run_gradient_tests(backend, precision):
             dtype_name,
         )
         # Check if the integral and gradient are accurate enough
-        assert np.abs(integral - 12.0) < 4e-2
+        assert np.abs(integral - 12.0) < 8e-2
         assert np.all(np.abs(gradient - np.array([2.0, 1.0, 8.0 / 3.0])) < 5e-2)
 
         print("Calculating gradients of a V-shaped function over an offset")

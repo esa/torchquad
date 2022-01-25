@@ -203,14 +203,13 @@ class MonteCarlo(BaseIntegrator):
 
         logger.debug("Picking random sampling points")
         dim = integration_domain.shape[0]
-        sample_points = []
-        for d in range(dim):
-            scale = integration_domain[d, 1] - integration_domain[d, 0]
-            offset = integration_domain[d, 0]
-            sample_points.append(
-                rng.uniform(size=[N], dtype=scale.dtype) * scale + offset
-            )
-        return anp.stack(sample_points, axis=1, like=integration_domain)
+        domain_starts = integration_domain[:, 0]
+        domain_sizes = integration_domain[:, 1] - domain_starts
+        # Scale and translate random numbers via broadcasting
+        return (
+            rng.uniform(size=[N, dim], dtype=domain_sizes.dtype) * domain_sizes
+            + domain_starts
+        )
 
     def calculate_result(self, function_values, integration_domain):
         """Calculate an integral result from the function evaluations
