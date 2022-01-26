@@ -1,4 +1,7 @@
-"""This file contains various utility functions for the integrations methods."""
+"""
+Utility functions for the integrator implementations including extensions for
+autoray, which are registered when importing this file
+"""
 import sys
 from pathlib import Path
 
@@ -7,7 +10,8 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).absolute().parent.parent))
 
 from autoray import numpy as anp
-from autoray import infer_backend, get_dtype_name
+from autoray import infer_backend, get_dtype_name, register_function
+from functools import partial
 from loguru import logger
 
 # from ..utils.set_precision import _get_precision
@@ -293,3 +297,13 @@ class RNG:
         This function is needed for non-determinism when JIT-compiling with JAX.
         """
         self._jax_key = key
+
+
+# Register anp.repeat for torch
+@partial(register_function, "torch", "repeat")
+def _torch_repeat(a, repeats, axis=None):
+    import torch
+
+    # torch.repeat_interleave corresponds to np.repeat and should not be
+    # confused with torch.Tensor.repeat.
+    return torch.repeat_interleave(a, repeats, dim=axis)

@@ -60,11 +60,7 @@ class VEGASStratification:
         # indices maps each index of weight_all_cubes to the corresponding
         # hypercube index.
         N_cubes_arange = anp.arange(self.N_cubes, dtype=nevals.dtype, like=self.backend)
-        if self.backend == "torch":
-            # autoray doesn't support repeat yet
-            indices = anp.repeat_interleave(N_cubes_arange, nevals)
-        else:
-            indices = anp.repeat(N_cubes_arange, nevals)
+        indices = anp.repeat(N_cubes_arange, nevals)
         # Reset JF and JF2, and accumulate the weights and squared weights
         # into them.
         self.JF = anp.zeros([self.N_cubes], dtype=self.dtype, like=self.backend)
@@ -162,11 +158,7 @@ class VEGASStratification:
         positions = self._get_indices(nevals_arange)
 
         # For each hypercube i, repeat its position nevals[i] times
-        if self.backend == "torch":
-            # Autoray doesn't yet support repeat.
-            position_indices = anp.repeat_interleave(nevals_arange, nevals)
-        else:
-            position_indices = anp.repeat(nevals_arange, nevals)
+        position_indices = anp.repeat(nevals_arange, nevals)
         positions = positions[position_indices, :]
 
         # Convert the positions to float, add random offsets to them and scale
