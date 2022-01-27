@@ -138,14 +138,20 @@ class Subdomain:
             [torch.Tensor]: Points to evaluate the function at.
         """
         logger.debug("Getting points to evaluate.")
-        logger.trace(f"Currently {len(self.points)} points to evaluate.")
         if self.points_to_eval is None:
             return []
+
+        logger.trace(f"Currently {len(self.points_to_eval)} points to evaluate.")
 
         return self.points[self.points_to_eval]
 
     def set_fvals(self, vals):
         """Set the function values at the points."""
+
+        if self.points_to_eval is None:
+            logger.warning("No points to evaluate. Returning...")
+            return
+
         if len(vals) != self.points_to_eval.sum():
             raise ValueError(
                 "Number of evaluated points does not match number of points to evaluate in this subdomain."
@@ -349,17 +355,19 @@ class AdaptiveGrid:
         chunksizes = []  # size of each chunk of points to eval
         for subdomain in self.subdomains:
             points = subdomain.get_points_to_eval()
-            print("points", points)
+            if len(points) == 0:
+                all_points += [torch.empty(0)]
+            else:
+                all_points += [points]
             chunksizes.append(len(points))
-            all_points += [points]
-        print("all_points", all_points)
         return torch.cat(all_points), chunksizes
 
     def set_fvals(self, fvals, chunksizes):
         """Sets the fvals in the matching subdomains"""
         fvals = torch.split(fvals, chunksizes)
         for subdomain, fval in zip(self.subdomains, fvals):
-            subdomain.set_fvals(fval)
+            if len(fval) > 0:
+                subdomain.set_fvals(fval)
 
     def _check_inputs(self, N, integration_domain):
         """Used to check input validity"""
