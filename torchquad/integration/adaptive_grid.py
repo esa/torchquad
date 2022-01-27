@@ -338,7 +338,7 @@ class AdaptiveGrid:
         for subdomain in self.subdomains:
             criterion_values.append(self._compute_refinement_criterion(subdomain))
 
-        domain_to_refine = self.subdomains[np.argmax(criterion_values)]
+        domain_to_refine = self.subdomains[torch.argmax(torch.tensor(criterion_values))]
         domain_to_refine.refine()
 
     def get_integral(self):
