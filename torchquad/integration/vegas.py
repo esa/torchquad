@@ -59,7 +59,7 @@ class VEGAS(BaseIntegrator):
             ValueError: If the integration_domain or backend argument is invalid
 
         Returns:
-            torch.Tensor: Integral value
+            backend-specific float: Integral value
         """
 
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
@@ -140,30 +140,26 @@ class VEGAS(BaseIntegrator):
 
             # Additional abort conditions depending on achieved errors
             if self.it % 5 == 0:
-                res = self._get_result()
+                res_abs = anp.abs(self._get_result())
                 err = self._get_error()
                 chi2 = self._get_chisq()
-                acc = err / res
-
-                if anp.isnan(acc):  # capture 0 error
-                    acc = anp.array(0.0, dtype=acc.dtype, like=acc)
 
                 # Abort if errors acceptable
                 logger.debug(f"Iteration {self.it},Chi2={chi2:.4e}")
-                if (acc < eps_rel or err < eps_abs) and chi2 / 5.0 < 1.0:
+                if (err < eps_rel * res_abs or err < eps_abs) and chi2 / 5.0 < 1.0:
                     break
 
                 # Adjust number of evals if Chi square indicates instability
                 # EQ 32
                 if chi2 / 5.0 < 1.0:
-                    self._starting_N = anp.minimum(
-                        anp.array(
+                    if res_abs == 0.0:
+                        self._starting_N += self._N_increment
+                    else:
+                        acc = err / res_abs
+                        self._starting_N = min(
                             self._starting_N + self._N_increment,
-                            dtype=acc.dtype,
-                            like=acc,
-                        ),
-                        self._starting_N * anp.sqrt(acc / (eps_rel + 1e-8)),
-                    )
+                            self._starting_N * anp.sqrt(acc / (eps_rel + 1e-8)),
+                        )
                     self.results = []  # reset sample results
                     self.sigma2 = []  # reset sample results
                     continue
@@ -220,13 +216,16 @@ class VEGAS(BaseIntegrator):
 
             ih = jf / N_samples  # integral in this step
             sig2 = jf2 / N_samples - pow(jf / N_samples, 2)  # estimated variance
+            # Sometimes rounding errors produce negative values very close to 0
+            sig2 = anp.abs(sig2)
             self.results[-1] += ih  # store results
             self.sigma2[-1] += sig2 / N_samples  # store results
             self.map.update_map()  # adapt the map
-            # TODO fix for integrals close to 0
-            acc = anp.sqrt(
-                self.sigma2[-1] / self.results[-1]
-            )  # compute estimated accuracy,
+            # Estimate an accuracy for the logging
+            if self.results[-1] == 0.0:
+                acc = anp.sqrt(self.sigma2[-1])
+            else:
+                acc = anp.sqrt(self.sigma2[-1] / anp.abs(self.results[-1]))
             logger.debug(
                 f"|\t{warmup_iter}|         {N_samples}|  {self.results[-1]:5e}  |  {self.sigma2[-1]:5e}  |  {acc:4e}%| {self._nr_of_fevals}"
             )
@@ -238,7 +237,7 @@ class VEGAS(BaseIntegrator):
         """Runs one iteration of VEGAS including stratification and updates the VEGAS map if use_grid_improve is set.
 
         Returns:
-            backend tensor float: Estimated accuracy.
+            backend-specific float: Estimated accuracy.
         """
         neval = self.strat.get_NH(self._starting_N)  # Evals per strat cube
         self.starting_N = anp.sum(neval) / self.strat.N_cubes  # update real neval
@@ -269,9 +268,13 @@ class VEGAS(BaseIntegrator):
         if self.use_grid_improve:  # if on, update adaptive map
             logger.debug("Running grid improvement")
             self.map.update_map()
-
         self.strat.update_DH()  # update stratification
-        acc = anp.sqrt(self.sigma2[-1] / (self.results[-1]))  # estimate accuracy
+
+        # Estimate an accuracy for the logging
+        if self.results[-1] == 0.0:
+            acc = anp.sqrt(self.sigma2[-1])
+        else:
+            acc = anp.sqrt(self.sigma2[-1] / anp.abs(self.results[-1]))
 
         return acc
 
@@ -280,43 +283,44 @@ class VEGAS(BaseIntegrator):
         """Computes mean of results to estimate integral, EQ 30.
 
         Returns:
-            backend tensor float: Estimated integral.
+            backend-specific float: Estimated integral.
         """
-        res_num = sum(res / sig2 for res, sig2 in zip(self.results, self.sigma2))
-        res_den = sum(1.0 / sig2 for sig2 in self.sigma2)
-
-        if self.backend == "numpy" and res_num.dtype != self.results[-1].dtype:
-            # Numpy automatically casts float32 to float64 in the res_num and
-            # res_den calculations
-            res_num = astype(res_num, self.results[-1].dtype)
-            res_den = astype(res_den, self.results[-1].dtype)
-
-        if anp.isnan(res_num / res_den):  # if variance is 0 just return mean result
-            return anp.mean(anp.array(self.results, dtype=res_num.dtype, like=res_num))
+        if any(sig2 == 0.0 for sig2 in self.sigma2):
+            # If at least one variance is 0, return the mean result
+            res = sum(self.results) / len(self.results)
         else:
-            return res_num / res_den
+            res_num = sum(res / sig2 for res, sig2 in zip(self.results, self.sigma2))
+            res_den = sum(1.0 / sig2 for sig2 in self.sigma2)
+            res = res_num / res_den
+        if self.backend == "numpy" and res.dtype != self.results[0].dtype:
+            # Numpy automatically casts float32 to float64 in the above
+            # calculations
+            res = astype(res, self.results[0].dtype)
+        return res
 
     def _get_error(self):
         """Estimates error from variance , EQ 31.
 
         Returns:
-            backend tensor float: Estimated error.
+            backend-specific float: Estimated error.
 
         """
-        res = 0
-        for sig in self.sigma2:
-            res += 1.0 / sig
-
-        return 1.0 / anp.sqrt(res)
+        # Skip variances which are zero and return a backend-specific float
+        res = sum(1.0 / sig2 for sig2 in self.sigma2 if sig2 != 0.0)
+        return self.sigma2[0] if res == 0 else 1.0 / anp.sqrt(res)
 
     def _get_chisq(self):
         """Computes chi square from estimated integral and variance, EQ 32.
 
         Returns:
-            backend tensor float: Chi squared.
+            backend-specific float: Chi squared.
         """
         I_final = self._get_result()
-        chi2 = 0
-        for idx, res in enumerate(self.results):
-            chi2 += pow(res - I_final, 2) / self.sigma2[idx]
-        return chi2
+        return sum(
+            (
+                (res - I_final) ** 2 / sig2
+                for res, sig2 in zip(self.results, self.sigma2)
+                if res != I_final
+            ),
+            start=self.results[0] * 0.0,
+        )

@@ -84,15 +84,13 @@ class VEGASStratification:
             V2 * self.JF2 / self.strat_counts
             - (self.V_cubes * self.JF / self.strat_counts) ** 2
         )
+        # Sometimes rounding errors produce negative values very close to 0
+        d_tmp[d_tmp < 0.0] = 0.0
 
         self.dh = d_tmp ** self.beta
 
-        # for very small d_tmp d_tmp ** self.beta becomes NaN
-        self.dh[anp.isnan(self.dh)] = 0
-
         # Normalize dampening
         d_sum = anp.sum(self.dh)
-
         if d_sum != 0:
             self.dh = self.dh / d_sum
 
