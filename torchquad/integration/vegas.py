@@ -13,7 +13,15 @@ class VEGAS(BaseIntegrator):
     """VEGAS Enhanced. Refer to https://arxiv.org/abs/2009.05112 .
     Implementation inspired by https://github.com/ycwu1030/CIGAR/ .
     EQ <n> refers to equation <n> in the above paper.
+    JAX and Tensorflow are unsupported.
+    For Tensorflow there exists a VEGAS+ implementation called VegasFlow: https://github.com/N3PDF/vegasflow
     """
+
+    # This VEGAS+ implementation uses many indexed assignments and methods
+    # which change member variables. To support JAX and Tensorflow with a
+    # reasonable performance, a lot of code would need to be rewritten to be
+    # trace-compilable, which may in turn deteriorate the performance and/or
+    # accuracy with PyTorch.
 
     def __init__(self):
         super().__init__()
@@ -45,10 +53,10 @@ class VEGAS(BaseIntegrator):
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
             max_iterations (int, optional): Maximum number of vegas iterations to perform. Defaults to 20.
             use_warmup (bool, optional): If a warmup should be used to initialize the map. Defaults to True.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to "torch".
+            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. "jax" and "tensorflow" are unsupported. Defaults to "torch".
 
         Raises:
-            ValueError: If len(integration_domain) != dim
+            ValueError: If the integration_domain or backend argument is invalid
 
         Returns:
             torch.Tensor: Integral value
@@ -78,6 +86,8 @@ class VEGAS(BaseIntegrator):
             dim, integration_domain, backend
         )
         self.backend = infer_backend(integration_domain)
+        if self.backend in ["jax", "tensorflow"]:
+            raise ValueError(f"Unsupported numerical backend: {self.backend}")
         self.dtype = integration_domain.dtype
         self.rng = RNG(backend=self.backend, seed=seed)
 
