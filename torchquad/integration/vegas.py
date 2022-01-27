@@ -242,12 +242,13 @@ class VEGAS(BaseIntegrator):
         """
         neval = self.strat.get_NH(self._starting_N)  # Evals per strat cube
         self.starting_N = anp.sum(neval) / self.strat.N_cubes  # update real neval
-        self._nr_of_fevals += neval.sum()  # Locally track function evals
 
         # Stratified sampling points y and transformed sample points x
         y = self.strat.get_Y(neval)
         x = self.map.get_X(y)  # transform, EQ 8+9
-        f_eval = self._eval(x).squeeze()  # eval integrand
+
+        # Evaluate the integrand and remember the number of evaluations
+        f_eval = self._eval(x).squeeze()
 
         jac = self.map.get_Jac(y)  # compute jacobian
         jf_vec = f_eval * jac  # precompute product once

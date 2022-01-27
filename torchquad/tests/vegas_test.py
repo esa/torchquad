@@ -100,7 +100,7 @@ def _run_vegas_accuracy_checks(backend, precision):
             integration_domain=integration_domain,
             seed=seed,
         )
-        assert anp.abs(integral - reference_integral) < 0.04
+        assert anp.abs(integral - reference_integral) < 0.03
 
     print("Integrating a function with peaks on the diagonal")
     peak_distance = 100.0
@@ -140,7 +140,7 @@ def _run_vegas_accuracy_checks(backend, precision):
             integration_domain=integration_domain,
             seed=seed,
         )
-        assert anp.abs(integral - reference_integral) < 0.06
+        assert anp.abs(integral - reference_integral) < 0.03
 
 
 def _run_vegas_special_case_checks(backend, precision):
