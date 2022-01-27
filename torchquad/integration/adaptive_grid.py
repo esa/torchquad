@@ -97,7 +97,6 @@ class Subdomain:
         # Look into reusing but only if enabled for this subdomain
         if not self.points is None and self.reuse_old_fvals:
             reuse_old_fvals = True
-            old_points = self.points
             old_fvals = self.fval
         else:
             reuse_old_fvals = False
@@ -123,11 +122,10 @@ class Subdomain:
 
         if reuse_old_fvals:
             logger.debug("Storing already computed values for reuse.")
-            idx_in_old_points = 0
-            for idx, point in enumerate(self.points):
-                if torch.all(point == old_points[idx_in_old_points]):
-                    self.fval[idx] = old_fvals[idx_in_old_points]
-                    idx_in_old_points += 1
+            self.fval = self.fval.reshape([self.N_per_dim] * self._dim)
+            idx = [slice(None, None, 2)] * (self.fval.ndim)
+            self.fval[idx] = old_fvals.reshape([(self.N_per_dim + 1) // 2] * self._dim)
+            self.fval = self.fval.reshape((self.N_per_dim ** self._dim))
 
         self.points_to_eval = torch.isnan(self.fval)
 
