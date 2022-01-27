@@ -13,21 +13,30 @@ class Subdomain:
     refinement_level = None  # Refinement level of the subdomain, 1 - initially, incremented on refinement
     points = None  # Points of the subdomain
     fval = None  # Function values at the points
+    points_to_eval = (
+        None  # This will store indices of points that are not yet evaluated
+    )
     N_per_dim = None  # Number of points in each dimension
     h = None  # Mesh width
     requires_integral_value = True
     integral_value = None  # Integral value in this domain, has to be set for refinement
 
-    def __init__(self, N, integration_domain):
+    def __init__(
+        self, N, integration_domain, reuse_old_fvals=True, complex_function=False
+    ):
         """Initialize a subdomain.
 
         Args:
             N (int): Number of points to use for this subdomain. (will take next lower root depending on dim)
             integration_domain (list): Domain to choose points in, e.g. [[-1,1],[0,1]].
+            reuse_old_fvals (bool): If True, will reuse already computed function values. Saves compute but costs memory writes.
+            complex_function (bool): Defaults to float32/64. Set to True if your function returns complex numbers.
         """
         self._dim = len(integration_domain)
         self.integration_domain = integration_domain
         self.refinement_level = 1
+        self.reuse_old_fvals = reuse_old_fvals
+        self.complex_function = complex_function
         self.N_per_dim = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
         if self.N_per_dim < 2:
             raise ValueError(
@@ -85,12 +94,42 @@ class Subdomain:
 
         logger.debug("Grid mesh width is " + str(self.h))
 
-        # Get grid points
-        points = torch.meshgrid(*grid_1d)
+        # Look into reusing but only if enabled for this subdomain
+        if not self.points is None and self.reuse_old_fvals:
+            reuse_old_fvals = True
+            old_points = self.points
+            old_fvals = self.fval
+        else:
+            reuse_old_fvals = False
 
-        # TODO We could already allocate larger tensors here to avoid later reallocations
+        # Compute (new) grid points
+        points = torch.meshgrid(*grid_1d)
         self.points = torch.stack(list(map(torch.ravel, points)), dim=1)
-        self.fval = torch.zeros_like(self.points)
+
+        # Init fval depending on datatype
+        dtype = torch.get_default_dtype()
+        if self.complex_function and dtype == torch.float64:
+            logger.trace("Init fval to dtype complex64.")
+            self.fval = torch.zeros(len(self.points), dtype=torch.complex64)
+        elif self.complex_function and dtype == torch.float32:
+            logger.trace("Init fval to dtype complex32.")
+            self.fval = torch.zeros(len(self.points), dtype=torch.complex32)
+        else:
+            logger.trace(f"Init fval to default dtype {dtype}")
+            self.fval = torch.zeros(len(self.points))
+
+        # We initialize values to NaN so that we can easily check if they are set
+        self.fval *= float("nan")
+
+        if reuse_old_fvals:
+            logger.debug("Storing already computed values for reuse.")
+            idx_in_old_points = 0
+            for idx, point in enumerate(self.points):
+                if torch.all(point == old_points[idx_in_old_points]):
+                    self.fval[idx] = old_fvals[idx_in_old_points]
+                    idx_in_old_points += 1
+
+        self.points_to_eval = torch.isnan(self.fval)
 
     def get_points_to_eval(self):
         """Get points to evaluate the function at.
@@ -98,15 +137,23 @@ class Subdomain:
         Returns:
             [torch.Tensor]: Points to evaluate the function at.
         """
-        # TODO Implement only giving the points that were not evaluated before
         logger.debug("Getting points to evaluate.")
-        return self.points
+        logger.trace(f"Currently {len(self.points)} points to evaluate.")
+        if self.points_to_eval is None:
+            return []
+
+        return self.points[self.points_to_eval]
 
     def set_fvals(self, vals):
         """Set the function values at the points."""
-        # TODO Set only new points, maybe add some sanity check here?
+        if len(vals) != self.points_to_eval.sum():
+            raise ValueError(
+                "Number of evaluated points does not match number of points to evaluate in this subdomain."
+            )
         logger.debug("Setting subdomain function values.")
-        self.fval = vals
+
+        self.fval[self.points_to_eval] = vals
+        self.points_to_eval = None
 
     def set_integral(self, val):
         """Set the integral value
@@ -126,7 +173,9 @@ class Subdomain:
             raise RuntimeError("Integral value has to be set for subdomain refinement.")
 
         # Double the number of grid points
-        self.N_per_dim *= 2
+        # -1 to end up with many matching points
+        # e.g. from 0, 0.5, 1.0 to 0, 0.25, 0.5, 0.75, 1.0
+        self.N_per_dim = self.N_per_dim * 2 - 1
         self.refinement_level += 1
         self.h = self.h / 2.0
 
@@ -148,7 +197,15 @@ class AdaptiveGrid:
     _subdomains_per_dim = None  # Number of subdomains in each dimension
     _max_refinement_level = None  # Maximum refinements called on a subdomain
 
-    def __init__(self, N, integration_domain, subdomains_per_dim, max_refinement_level):
+    def __init__(
+        self,
+        N,
+        integration_domain,
+        subdomains_per_dim,
+        max_refinement_level,
+        complex_function=False,
+        reuse_old_fvals=True,
+    ):
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
 
         Args:
@@ -156,12 +213,16 @@ class AdaptiveGrid:
             integration_domain (list): Domain to choose points in, e.g. [[-1,1],[0,1]].
             subdomains_per_dim (int): Number of subdomains in each dimension.
             max_refinement_level (int): Maximum refinement level for the subdomains.
+            complex_function (bool): Defaults to float32/64. Set to True if your function returns complex numbers.
+            reuse_old_fvals (bool): If True, will reuse already computed function values.
         """
         start = perf_counter()
         self._check_inputs(N, integration_domain)
         self._dim = len(integration_domain)
         self._subdomains_per_dim = subdomains_per_dim
         self.N_subdomains = self._subdomains_per_dim ** self._dim
+        self._complex_function = complex_function
+        self._reuse_old_fvals = reuse_old_fvals
         self._max_refinement_level = max_refinement_level
         self.integration_domain = integration_domain
 
@@ -251,7 +312,14 @@ class AdaptiveGrid:
             for d in range(self._dim):
                 index = permutations[i, d]
                 subdomain_bound.append(bounds[index])
-            self.subdomains.append(Subdomain(N_per_subdomain, subdomain_bound))
+            self.subdomains.append(
+                Subdomain(
+                    N_per_subdomain,
+                    subdomain_bound,
+                    reuse_old_fvals=self._reuse_old_fvals,
+                    complex_function=self._complex_function,
+                )
+            )
 
     def _compute_refinement_criterion(self, subdomain):
         """Computes the refinement criterion for each subdomain"""
@@ -278,12 +346,14 @@ class AdaptiveGrid:
     def get_next_eval_points(self):
         """Returns the next evaluation points for the adaptive grid."""
         all_points = []
-        chunks = []  # size of each chunk of points to eval
+        chunksizes = []  # size of each chunk of points to eval
         for subdomain in self.subdomains:
             points = subdomain.get_points_to_eval()
-            chunks.append(len(points))
+            print("points", points)
+            chunksizes.append(len(points))
             all_points += [points]
-        return torch.cat(all_points), chunks
+        print("all_points", all_points)
+        return torch.cat(all_points), chunksizes
 
     def set_fvals(self, fvals, chunksizes):
         """Sets the fvals in the matching subdomains"""

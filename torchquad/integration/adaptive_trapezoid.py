@@ -21,6 +21,8 @@ class AdaptiveTrapezoid(BaseIntegrator):
         subdomains_per_dim=2,
         max_refinement_level=4,
         integration_domain=None,
+        complex_function=False,
+        reuse_old_fvals=True,
     ):
         """Integrates the passed function on the passed domain using a trapezoid rule on an adaptively refined grid.
 
@@ -29,6 +31,8 @@ class AdaptiveTrapezoid(BaseIntegrator):
             dim (int): Dimensionality of the function to integrate.
             N (int, optional): Total number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
+            complex_function(bool, optional): Describes if the integrand is complex. Defaults to False.
+            reuse_old_fvals (bool): If True, will reuse already computed function values in refinement. Saves compute but costs memory writes.
 
         Returns:
             float: integral value
@@ -48,14 +52,16 @@ class AdaptiveTrapezoid(BaseIntegrator):
         self._fn = fn
 
         # TODO determine a smarter initial N
-        initial_N = N // 20
+        initial_N = N // 10
 
         # Initialize the adaptive grid
         self._grid = AdaptiveGrid(
-            initial_N,
-            self._integration_domain,
-            subdomains_per_dim,
-            max_refinement_level,
+            N=initial_N,
+            integration_domain=self._integration_domain,
+            subdomains_per_dim=subdomains_per_dim,
+            max_refinement_level=max_refinement_level,
+            complex_function=complex_function,
+            reuse_old_fvals=reuse_old_fvals,
         )
 
         hit_maximum_evals = False
@@ -63,6 +69,7 @@ class AdaptiveTrapezoid(BaseIntegrator):
             eval_points, chunksizes = self._grid.get_next_eval_points()
 
             logger.debug("Evaluating integrand on the grid.")
+            logger.trace(f"Points are {eval_points}")
             function_values = self._eval(eval_points)
 
             self._grid.set_fvals(function_values, chunksizes)
@@ -99,7 +106,7 @@ class AdaptiveTrapezoid(BaseIntegrator):
                 )
                 subdomain.set_integral(cur_dim_areas)
 
-            hit_maximum_evals = self._nr_of_fevals < N
+            hit_maximum_evals = self._nr_of_fevals >= N
 
             if not hit_maximum_evals:
                 # Refine the grid
