@@ -1,5 +1,6 @@
 from autoray import numpy as anp
 from autoray import astype, infer_backend, to_backend_dtype
+from loguru import logger
 
 from .utils import _add_at_indices
 
@@ -135,6 +136,11 @@ class VEGASMap:
         # Divide by d_sum to normalize (divide by the sum before smoothing)
         # EQ 18
         dim, N_intervals = weights.shape
+        weights_sums = anp.reshape(anp.sum(weights, axis=1), [dim, 1])
+        if anp.any(weights_sums == 0.0):
+            # The VEGASMap cannot be updated in dimensions where all weights
+            # are zero.
+            return None
         i_tmp = N_intervals - 2
         d_tmp = anp.concatenate(
             [
@@ -145,7 +151,7 @@ class VEGASMap:
             axis=1,
             like=weights,
         )
-        d_tmp = d_tmp / (8.0 * anp.reshape(anp.sum(weights, axis=1), [dim, 1]))
+        d_tmp = d_tmp / (8.0 * weights_sums)
 
         # Range compression
         # EQ 19
@@ -169,6 +175,13 @@ class VEGASMap:
     def update_map(self):
         """Update the adaptive map, Section II C."""
         smoothed_weights = self._smooth_map(self.weights, self.counts, self.alpha)
+        if smoothed_weights is None:
+            logger.warning(
+                "Cannot update the VEGASMap. This can happen with an integrand "
+                "which evaluates to zero everywhere."
+            )
+            self._reset_weight()
+            return
 
         # The amount of the sum of smoothed_weights for each interval of
         # the new 1D grid, for each dimension

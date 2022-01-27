@@ -20,20 +20,6 @@ def _run_example_integrations(backend, precision):
     print(f"Testing VEGAS+ with example functions with {backend}, {precision}")
     vegas = VEGAS()
 
-    test_zero_integral = False
-    if test_zero_integral:
-        # Test with integrand which is zero everywhere
-        # (not yet supported in VEGAS+)
-        integral = vegas.integrate(
-            lambda x: x[:, 0] * 0.0,
-            2,
-            N=10000,
-            integration_domain=[[0.0, 3.0]] * 2,
-            seed=0,
-            backend=backend,
-        )
-        assert anp.abs(integral) < 5e-3
-
     # 1D Tests
     N = 10000
     errors, _ = compute_integration_test_errors(
@@ -157,9 +143,27 @@ def _run_vegas_accuracy_checks(backend, precision):
         assert anp.abs(integral - reference_integral) < 0.06
 
 
+def _run_vegas_special_case_checks(backend, precision):
+    """Test VEGAS+ in special cases, for example an integrand which is zero everywhere"""
+    print(f"Testing VEGAS+ special cases with {backend}, {precision}")
+    integrator = VEGAS()
+
+    print("Testing VEGAS with an integrand which is zero everywhere")
+    integral = integrator.integrate(
+        lambda x: x[:, 0] * 0.0,
+        2,
+        N=10000,
+        integration_domain=[[0.0, 3.0]] * 2,
+        seed=0,
+        backend=backend,
+    )
+    assert anp.abs(integral) == 0.0
+
+
 def _run_vegas_tests(backend, precision):
     """Test if VEGAS+ works with example functions and is accurate as expected"""
     _run_vegas_accuracy_checks(backend, precision)
+    _run_vegas_special_case_checks(backend, precision)
     _run_example_integrations(backend, precision)
 
 
