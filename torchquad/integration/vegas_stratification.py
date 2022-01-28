@@ -164,8 +164,11 @@ class VEGASStratification:
         # Convert the positions to float, add random offsets to them and scale
         # the result so that each point is in [0, 1)^dim
         positions = astype(positions, self.dtype)
-        random_uni = (
-            self.rng.uniform(size=[positions.shape[0], self.dim], dtype=self.dtype)
-            * 0.999999
+        random_uni = self.rng.uniform(
+            size=[positions.shape[0], self.dim], dtype=self.dtype
         )
-        return (positions + random_uni) / self.N_strat
+        positions = (positions + random_uni) / self.N_strat
+        # Due to rounding errors points are sometimes 1.0; replace them with
+        # a value close to 1
+        positions[positions >= 1.0] = 0.999999
+        return positions
