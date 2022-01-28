@@ -7,8 +7,11 @@ from autoray import to_backend_dtype, astype
 import timeit
 import cProfile
 import pstats
+from unittest.mock import patch
 
 from integration.vegas import VEGAS
+from integration.utils import RNG
+
 from integration_test_utils import (
     compute_integration_test_errors,
     setup_test_for_backend,
@@ -143,6 +146,26 @@ def _run_vegas_accuracy_checks(backend, precision):
         assert anp.abs(integral - reference_integral) < 0.03
 
 
+class ModifiedRNG(RNG):
+    """A modified Random Number Generator which replaces some of the random numbers with 0.0 and 1.0"""
+
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
+        rng_uniform = self.uniform
+        self.uniform = lambda *args, **kargs: self.modify_numbers(
+            rng_uniform(*args, **kargs)
+        )
+
+    def modify_numbers(self, numbers):
+        """Change the randomly generated numbers"""
+        zeros = anp.zeros(numbers.shape, dtype=numbers.dtype, like=numbers)
+        ones = anp.ones(numbers.shape, dtype=numbers.dtype, like=numbers)
+        # Replace half of the random values randomly with 0.0 or 1.0
+        return anp.where(
+            numbers < 0.5, numbers * 2.0, anp.where(numbers < 0.75, zeros, ones)
+        )
+
+
 def _run_vegas_special_case_checks(backend, precision):
     """Test VEGAS+ in special cases, for example an integrand which is zero everywhere"""
     print(f"Testing VEGAS+ special cases with {backend}, {precision}")
@@ -158,6 +181,21 @@ def _run_vegas_special_case_checks(backend, precision):
         backend=backend,
     )
     assert anp.abs(integral) == 0.0
+
+    print("Testing VEGAS with random numbers which are 0.0 and 1.0")
+    # This test may be helpful to detect rounding and indexing errors which
+    # would happen with a low probability with the usual RNG
+    with patch("integration.vegas.RNG", ModifiedRNG):
+        integral = integrator.integrate(
+            lambda x: anp.sum(x, axis=1),
+            2,
+            N=10000,
+            integration_domain=[[0.0, 1.0]] * 2,
+            seed=0,
+            backend=backend,
+        )
+    assert isinstance(integrator.rng, ModifiedRNG)
+    assert anp.abs(integral - 1.0) < 0.1
 
 
 def _run_vegas_tests(backend, precision):
