@@ -191,9 +191,14 @@ class VEGASMap:
         for i in range(self.dim):  # Update per dim
             delta_d = delta_weights[i]
             # For each inner edge, determine how many delta_d fit into the
-            # accumulated smoothed weights
+            # accumulated smoothed weights.
+            # With torch, CUDA and a high number of points the cumsum operation
+            # with float32 precision is too inaccurate which leads to wrong
+            # indices, so cast to float64 here.
             delta_d_multiples = astype(
-                anp.cumsum(smoothed_weights[i, :-1], axis=0) / delta_d, "int64"
+                anp.cumsum(astype(smoothed_weights[i, :-1], "float64"), axis=0)
+                / delta_d,
+                "int64",
             )
             # For each number of delta_d multiples in {0, 1, …, N_intervals},
             # determine how many intervals belong to it (num_sw_per_dw)
@@ -230,6 +235,24 @@ class VEGASMap:
                 self.x_edges[i][indices]
                 + d_accu_i / smoothed_weights[i][indices] * self.dx_edges[i][indices]
             )
+            finite_edges = anp.isfinite(self.x_edges[i])
+            if not anp.all(finite_edges):
+                # With float64 precision the delta_d_multiples calculation
+                # usually doesn't have rounding errors.
+                # If it is nonetheless too inaccurate, few values in
+                # smoothed_weights[i][indices] can be zero, which leads to
+                # invalid edges.
+                num_edges = self.x_edges.shape[1]
+                logger.warning(
+                    f"{num_edges - anp.sum(finite_edges)} out of {num_edges} calculated VEGASMap edges were infinite"
+                )
+                # Replace inf edges with the average of their two neighbours
+                middle_edges = 0.5 * (self.x_edges[i][:-2] + self.x_edges[i][2:])
+                self.x_edges[i][1:-1] = anp.where(
+                    finite_edges[1:-1], self.x_edges[i][1:-1], middle_edges
+                )
+                if not anp.all(anp.isfinite(self.x_edges[i])):
+                    raise RuntimeError("Could not replace all infinite edges")
 
             self.dx_edges[i] = self.x_edges[i][1:] - self.x_edges[i][:-1]
 
