@@ -3,7 +3,7 @@ import os
 
 
 def _get_precision(backend):
-    """Get the configured default precision for Numpy or Tensorflow.
+    """Get the configured default precision for NumPy or Tensorflow.
 
     Args:
         backend ("numpy" or "tensorflow"): Numerical backend
@@ -17,7 +17,7 @@ def _get_precision(backend):
 def set_precision(data_type="float32", backend="torch"):
     """This function allows the user to set the default precision for floating point numbers for the given numerical backend.
     Call before declaring your variables.
-    Numpy and Tensorflow don't have global dtypes:
+    NumPy and Tensorflow don't have global dtypes:
     https://github.com/numpy/numpy/issues/6860
     https://github.com/tensorflow/tensorflow/issues/26033
     Therefore, torchquad sets the dtype argument for these two when initialising the integration domain.

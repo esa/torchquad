@@ -120,7 +120,7 @@ def _setup_integration_domain(dim, integration_domain, backend):
         ]
         dtype_arg = _get_precision(backend)
         if dtype_arg is not None:
-            # For Numpy and Tensorflow there is no global dtype, so set the
+            # For NumPy and Tensorflow there is no global dtype, so set the
             # configured default dtype here
             integration_domain = anp.array(
                 integration_domain, like=backend, dtype=dtype_arg
@@ -197,21 +197,23 @@ class RNG:
     A random number generator helper class for multiple numerical backends
 
     Notes:
-    * The seed argument may behave differently in different versions of a
-      numerical backend and when using GPU instead of CPU
-      * https://pytorch.org/docs/stable/notes/randomness.html
-      * https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator
-      * https://www.tensorflow.org/api_docs/python/tf/random/Generator
-        Only the Philox RNG guarantees consistent behaviour in Tensorflow.
-    * For torch, the RNG state is global, so if VEGAS integration uses this and
-      the integrand itself generates random numbers and changes the seed,
-      the calculated grid points may no longer be random.
-      Torch allows to fork the RNG, but this may be slow.
-    * Often uniform random numbers are generated in [0, 1) instead of [0, 1].
-      * numpy: random() is in [0, 1) and uniform() in [0, 1]
-      * JAX: uniform() is in [0, 1)
-      * torch: rand() is in [0, 1)
-      * tensorflow: uniform() is in [0, 1)
+        - The seed argument may behave differently in different versions of a
+          numerical backend and when using GPU instead of CPU
+
+            - https://pytorch.org/docs/stable/notes/randomness.html
+            - https://numpy.org/doc/stable/reference/random/generator.html#numpy.random.Generator
+            - https://www.tensorflow.org/api_docs/python/tf/random/Generator
+              Only the Philox RNG guarantees consistent behaviour in Tensorflow.
+        - For torch, the RNG state is global, so if VEGAS integration uses this and
+          the integrand itself generates random numbers and changes the seed,
+          the calculated grid points may no longer be random.
+          Torch allows to fork the RNG, but this may be slow.
+        - Often uniform random numbers are generated in [0, 1) instead of [0, 1].
+
+            - numpy: random() is in [0, 1) and uniform() in [0, 1]
+            - JAX: uniform() is in [0, 1)
+            - torch: rand() is in [0, 1)
+            - tensorflow: uniform() is in [0, 1)
     """
 
     def __init__(self, backend, seed=None):

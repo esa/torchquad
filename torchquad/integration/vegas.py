@@ -42,6 +42,8 @@ class VEGAS(BaseIntegrator):
     ):
         """Integrates the passed function on the passed domain using VEGAS.
 
+        If the integrand output is far away from zero, i.e. lies within [b, b+c] for a constant b with large absolute value and small constant c, VEGAS does not adapt well to the integrand. Shifting the integrand so that it is close to zero may improve the accuracy of the calculated integral in this case.
+
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the function to integrate.
@@ -326,7 +328,7 @@ class VEGAS(BaseIntegrator):
             res_den = sum(1.0 / sig2 for sig2 in self.sigma2)
             res = res_num / res_den
         if self.backend == "numpy" and res.dtype != self.results[0].dtype:
-            # Numpy automatically casts float32 to float64 in the above
+            # NumPy automatically casts float32 to float64 in the above
             # calculations
             res = astype(res, self.results[0].dtype)
         return res

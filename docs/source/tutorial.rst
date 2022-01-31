@@ -27,16 +27,26 @@ Minimal working example
     # dimension of x here)
     # Expected result here is ~3.2698
     def some_function(x):
-        return torch.sin(x[:,0]) + torch.exp(x[:,1])
+        return torch.sin(x[:, 0]) + torch.exp(x[:, 1])
 
-    # Declare an integrator, here we use the simple, stochastic Monte Carlo integration method
+    # Declare an integrator;
+    # here we use the simple, stochastic Monte Carlo integration method
     mc = MonteCarlo()
 
     # Compute the function integral by sampling 10000 points over domain
-    integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
+    integral_value = mc.integrate(
+        some_function,
+        dim=2,
+        N=10000,
+        integration_domain=[[0, 1], [-1, 1]],
+        backend="torch",
+    )
 
 To set the default logger verbosity, change the ``TORCHQUAD_LOG_LEVEL``
 environment variable; for example ``export TORCHQUAD_LOG_LEVEL=WARNING``.
+A :ref:`later section <tutorial_backend_selection>` in this tutorial shows how
+to choose a different numerical backend.
+
 
 Detailed Introduction
 ---------------------
@@ -84,9 +94,12 @@ Outline
 This notebook is a guide for new users to *torchquad* and is structured in
 the following way:
 
--  Example integration in one dimension (1-D)
--  Example integration in ten dimensions (10-D)
+-  Example integration in one dimension (1-D) with PyTorch
+-  Example integration in ten dimensions (10-D) with PyTorch
 -  Some accuracy / runtime comparisons with scipy
+-  Information on how to select a numerical backend
+-  Example gradient calculation with PyTorch
+-  Methods to speed up the integration
 
 Feel free to test the code on your own computer as we go along.
 
@@ -148,14 +161,14 @@ as well as remember the correct result.
 .. code:: ipython3
 
     def f(x):
-        return torch.exp(x) * torch.pow(x,2)
+        return torch.exp(x) * torch.pow(x, 2)
 
-    def print_error(result,solution):
-        print("Results:",result.item())
+    def print_error(result, solution):
+        print("Results:", result.item())
         print(f"Abs. Error: {(torch.abs(result - solution).item()):.8e}")
         print(f"Rel. Error: {(torch.abs((result - solution) / solution).item()):.8e}")
 
-    solution = 2*(torch.exp(torch.tensor([2.]))-1)
+    solution = 2 * (torch.exp(torch.tensor([2.0])) - 1)
 
 **Note that we are using the torch versions to ensure that all variables
 are and stay on the GPU.**
@@ -164,12 +177,11 @@ Let’s plot the function briefly.
 
 .. code:: ipython3
 
-    points = torch.linspace(0,2,100)
-    plt.plot(points.cpu(),f(points).cpu()) # Note that for plotting we have to move the values to the CPU first
-    plt.xlabel("$x$",fontsize=14)
-    plt.ylabel("f($x$)",fontsize=14)
-
-
+    points = torch.linspace(0, 2, 100)
+    # Note that for plotting we have to move the values to the CPU first
+    plt.plot(points.cpu(), f(points).cpu())
+    plt.xlabel("$x$", fontsize=14)
+    plt.ylabel("f($x$)", fontsize=14)
 
 .. image:: torchquad_tutorial_figure.png
 
@@ -178,15 +190,17 @@ Let’s define the integration domain now and initialize the integrator - let’
 
 .. code:: ipython3
 
-    integration_domain = [[0, 2]] # Integration domain is always a list of lists to allow arbitrary dimensionality.
-    tp = Trapezoid()  # Initialize a trapezoid solver
+    # Integration domain is a list of lists to allow arbitrary dimensionality.
+    integration_domain = [[0, 2]]
+    # Initialize a trapezoid solver
+    tp = Trapezoid()
 
 Now we are all set to compute the integral. Let’s try it with just 101 sample points for now.
 
 .. code:: ipython3
 
     result = tp.integrate(f, dim=1, N=101, integration_domain=integration_domain)
-    print_error(result,solution)
+    print_error(result, solution)
 
 
 .. parsed-literal::
@@ -203,7 +217,7 @@ Let’s see what type of value we get for different integrators.
 
     simp = Simpson()
     result = simp.integrate(f, dim=1, N=101, integration_domain=integration_domain)
-    print_error(result,solution)
+    print_error(result, solution)
 
 
 .. parsed-literal::
@@ -217,7 +231,7 @@ Let’s see what type of value we get for different integrators.
 
     mc = MonteCarlo()
     result = mc.integrate(f, dim=1, N=101, integration_domain=integration_domain)
-    print_error(result,solution)
+    print_error(result, solution)
 
 
 .. parsed-literal::
@@ -230,8 +244,8 @@ Let’s see what type of value we get for different integrators.
 .. code:: ipython3
 
     vegas = VEGAS()
-    result = vegas.integrate(f,dim=1,N=101,integration_domain=integration_domain)
-    print_error(result,solution)
+    result = vegas.integrate(f, dim=1, N=101, integration_domain=integration_domain)
+    print_error(result, solution)
 
 
 .. parsed-literal::
@@ -263,9 +277,9 @@ Plotting this is tricky, so let’s directly move to the integrals.
 .. code:: ipython3
 
     def f_2(x):
-        return torch.sum(torch.sin(x),dim=1)
+        return torch.sum(torch.sin(x), dim=1)
 
-    solution = 20*(torch.sin(torch.tensor([0.5]))*torch.sin(torch.tensor([0.5])))
+    solution = 20 * (torch.sin(torch.tensor([0.5])) * torch.sin(torch.tensor([0.5])))
 
 Let’s start with just 3 points per dimension, i.e., :math:`3^{10}=59,049` sample points.
 
@@ -274,14 +288,15 @@ We are working on giving the user more flexibility on this point.
 
 .. code:: ipython3
 
-    integration_domain = [[0, 1]]*10 # Integration domain always is a list of lists to allow arbitrary dimensionality
-    N = 3**10
+    # Integration domain is a list of lists to allow arbitrary dimensionality
+    integration_domain = [[0, 1]] * 10
+    N = 3 ** 10
 
 .. code:: ipython3
 
     tp = Trapezoid()  # Initialize a trapezoid solver
     result = tp.integrate(f_2, dim=10, N=N, integration_domain=integration_domain)
-    print_error(result,solution)
+    print_error(result, solution)
 
 
 .. parsed-literal::
@@ -295,7 +310,7 @@ We are working on giving the user more flexibility on this point.
 
     simp = Simpson()  # Initialize Simpson solver
     result = simp.integrate(f_2, dim=10, N=N, integration_domain=integration_domain)
-    print_error(result,solution)
+    print_error(result, solution)
 
 
 .. parsed-literal::
@@ -309,7 +324,7 @@ We are working on giving the user more flexibility on this point.
 
     mc = MonteCarlo()
     result = mc.integrate(f_2, dim=10, N=N, integration_domain=integration_domain, seed=42)
-    print_error(result,solution)
+    print_error(result, solution)
 
 
 .. parsed-literal::
@@ -322,8 +337,8 @@ We are working on giving the user more flexibility on this point.
 .. code:: ipython3
 
     vegas = VEGAS()
-    result = vegas.integrate(f_2,dim=10,N=N,integration_domain=integration_domain)
-    print_error(result,solution)
+    result = vegas.integrate(f_2, dim=10, N=N, integration_domain=integration_domain)
+    print_error(result, solution)
 
 
 .. parsed-literal::
@@ -350,17 +365,17 @@ Let’s explore how *torchquad*’s performance compares to scipy, the go-to
 tool for numerical integration. A more detailed exploration of this
 topic might be done as a side project at a later time. For simplicity,
 we will stick to a 5-D version of the :math:`\sin(x)` of the previous
-section. Let’s declare it with numpy and torch. Numpy arrays will
+section. Let’s declare it with numpy and torch. NumPy arrays will
 remain on the CPU and torch tensor on the GPU.
 
 .. code:: ipython3
 
     dimension = 5
-    integration_domain = [[0, 1]]*dimension
-    ground_truth = 2 * dimension * np.sin(0.5)*np.sin(0.5)
+    integration_domain = [[0, 1]] * dimension
+    ground_truth = 2 * dimension * np.sin(0.5) * np.sin(0.5)
 
     def f_3(x):
-        return torch.sum(torch.sin(x),dim=1)
+        return torch.sum(torch.sin(x), dim=1)
 
     def f_3_np(*x):
         return np.sum(np.sin(x))
@@ -370,13 +385,13 @@ Now let’s evaluate the integral using the scipy function ``nquad``.
 .. code:: ipython3
 
     start = time.time()
-    opts={"limit": 10, "epsabs" : 1, "epsrel" : 1}
-    result, _,details = nquad(f_3_np, integration_domain, opts=opts, full_output=True)
+    opts = {"limit": 10, "epsabs": 1, "epsrel": 1}
+    result, _, details = nquad(f_3_np, integration_domain, opts=opts, full_output=True)
     end = time.time()
-    print("Results:",result)
-    print("Abs. Error:",np.abs(result - ground_truth))
+    print("Results:", result)
+    print("Abs. Error:", np.abs(result - ground_truth))
     print(details)
-    print(f"Took {(end-start)* 1000.0:.3f} ms")
+    print(f"Took {(end - start) * 1000.0:.3f} ms")
 
 
 .. parsed-literal::
@@ -397,14 +412,14 @@ by utilizing the GPU.
 
 .. code:: ipython3
 
-    N = 37**dimension
+    N = 37 ** dimension
     simp = Simpson()  # Initialize Simpson solver
     start = time.time()
     result = simp.integrate(f_3, dim=dimension, N=N, integration_domain=integration_domain)
     end = time.time()
-    print_error(result,ground_truth)
-    print('neval=',N)
-    print(f"Took {(end-start)* 1000.0:.3f} ms")
+    print_error(result, ground_truth)
+    print("neval=", N)
+    print(f"Took {(end - start) * 1000.0:.3f} ms")
 
 
 If you tried this yourself and ran out of CUDA memory, simply decrease :math:`N`
@@ -435,55 +450,124 @@ already showcase the advantages of numerical integration on the GPU.
 Reasonably, one might prefer Monte Carlo integration methods for a 5-D
 problem. We might add this comparison to the tutorial in the future.
 
+
+.. _tutorial_backend_selection:
+
+Using different backends with torchquad
+---------------------------------------
+
+This section shows how to select a different numerical backend for the quadrature.
+Let's change the minimal working example so that it uses Tensorflow instead of PyTorch:
+
+.. code:: ipython3
+
+    import tensorflow as tf
+    from torchquad import MonteCarlo, set_up_backend
+
+    # Enable Tensorflow's NumPy behaviour and set the floating point precision
+    set_up_backend("tensorflow", data_type="float32")
+
+    # The integrand function rewritten for Tensorflow instead of PyTorch
+    def some_function(x):
+        return tf.sin(x[:, 0]) + tf.exp(x[:, 1])
+
+    mc = MonteCarlo()
+    # Set the backend argument to "tensorflow" instead of "torch"
+    integral_value = mc.integrate(
+        some_function,
+        dim=2,
+        N=10000,
+        integration_domain=[[0, 1], [-1, 1]],
+        backend="tensorflow",
+    )
+
+As the name suggests, the ``set_up_backend`` function configures a numerical
+backend so that it works with torchquad and it optionally sets the floating
+point precision.
+For Tensorflow this means in our code it enables
+`NumPy behaviour <https://www.tensorflow.org/guide/tf_numpy>`__
+and configures torchquad so that it uses float32 precision when initialising
+Tensors for Tensorflow.
+More details about :func:`torchquad.set_up_backend` can be found in its
+documentation.
+
+To calculate an integral with Tensorflow we changed the ``backend`` argument of
+the ``integrate`` method.
+An alternative way to select Tensorflow as backend is to set the
+``integration_domain`` argument to a ``tf.Tensor`` instead of a list.
+
+The other code changes we did, for example rewriting the integrand,
+are not directly related to torchquad.
+To use NumPy or JAX we would analogously need to change the two backend
+arguments to ``"numpy"`` resp. ``"jax"`` and rewrite the integrand function.
+
+
 Computing gradients with respect to the integration domain
 ----------------------------------------------------------
 
-*torchquad* allows fully automatic differentiation. In this tutorial, we will show how to extract the gradients with respect to the integration domain.
-We selected the Trapezoid rule and the Monte Carlo method to showcase that getting gradients is possible for both deterministic and stochastic methods.
+*torchquad* allows fully automatic differentiation. In this tutorial, we will show how to extract the gradients with respect to the integration domain with the PyTorch backend.
+We selected the composite Trapezoid rule and the Monte Carlo method to showcase that getting gradients is possible for both deterministic and stochastic methods.
 
 
 .. code:: ipython3
 
     import torch
-    from torchquad.integration.monte_carlo import MonteCarlo
-    from torchquad.integration.trapezoid import Trapezoid
-    from torchquad.utils.set_up_backend import set_up_backend
+    from torchquad import MonteCarlo, Trapezoid, set_up_backend
 
     def test_function(x):
         """V shaped test function."""
         return 2 * torch.abs(x)
 
     set_up_backend("torch", data_type="float64")
-    # Number of Function evaluations
-    N = 99997
-    torch.manual_seed(0)  # We have to seed torch to get reproducible results
-    integrators = [MonteCarlo(), Trapezoid()]   # Define integrators
+    # Number of function evaluations
+    N = 10000
 
-    for integrator in integrators:
+    # Calculate a gradient with the MonteCarlo integrator
+    # Define the integrator
+    integrator_mc = MonteCarlo()
+    # Integration domain
+    domain = torch.tensor([[-1.0, 1.0]])
+    # Enable the creation of a computational graph for gradient calculation.
+    domain.requires_grad = True
+    # Calculate the 1-D integral by using the previously defined test_function
+    # with MonteCarlo; set a RNG seed to get reproducible results
+    result_mc = integrator_mc.integrate(
+        test_function, dim=1, N=N, integration_domain=domain, seed=0
+    )
+    # Compute the gradient with a backward pass
+    result_mc.backward()
+    gradient_mc = domain.grad
 
-        domain = torch.tensor([[-1.0, 1.0]]) #Integration domains
-        domain.requires_grad = True # It enables the creation of a computational graph for gradient calculation.
-        result = integrator.integrate(
-            test_function, dim=1, N=N, integration_domain=domain
-        ) # We calculate the 1-D integral by using the previously defined test-fuction
+    # Calculate a gradient analogously with the composite Trapezoid integrator
+    integrator_tp = Trapezoid()
+    domain = torch.tensor([[-1.0, 1.0]])
+    domain.requires_grad = True
+    result_tp = integrator_tp.integrate(
+        test_function, dim=1, N=N, integration_domain=domain
+    )
+    result_tp.backward()
+    gradient_tp = domain.grad
 
-        result.backward() #Gradients computation
-
-        print("Method:", integrator, "Gradients:", domain.grad)
+    # Show the results
+    print(f"Gradient result for MonteCarlo: {gradient_mc}")
+    print(f"Gradient result for Trapezoid: {gradient_tp}")
 
 The code above calculates the integral for a 1-D test-function ``test_function()`` in the [-1,1] domain and prints the gradients with respect to the integration domain.
 The command ``domain.requires_grad = True`` enables the creation of a computational graph, and it shall be called before calling the ``integrate(...)`` method.
 Gradients computation is, then, performed calling ``result.backward()``.
-The output of the code is as follows:
+The output of the print statements is as follows:
 
 .. parsed-literal::
 
-    **Output:** Method: <torchquad.integration.monte_carlo.MonteCarlo object at 0x7f724735b6a0> Gradients: tensor([[-1.9872,  2.0150]])
-            Method: <torchquad.integration.trapezoid.Trapezoid object at 0x7f724735b6d0> Gradients: tensor([[-2.0000,  2.0000]])
+    Gradient result for MonteCarlo: tensor([[-1.9828,  2.0196]])
+    Gradient result for Trapezoid: tensor([[-2.0000,  2.0000]])
 
+
+Speedups for repeated quadrature
+--------------------------------
 
 Compiling the integrate method
-------------------------------
+``````````````````````````````
 
 To speed up the quadrature in situations where it is executed often with the
 same number of points ``N`` and dimensionality ``dim``,
@@ -555,3 +639,71 @@ but it works even if the integrand cannot be compiled and we can re-use it
 with other integrand functions.
 The compilations happen in the first iteration of the for loops and in the
 following iterations the previously compiled functions are re-used.
+
+With JAX and Tensorflow it is also possible to compile the integration.
+In comparison to compilation with PyTorch,
+we would need to use ``jax.jit`` or ``tf.function`` instead of
+``torch.jit.trace`` to compile the whole integrate method.
+``get_jit_compiled_integrate`` automatically uses the compilation function
+which fits to the numerical backend.
+There is a special case with JAX and MonteCarlo:
+If a function which executes the integrate method is compiled with ``jax.jit``,
+the random number generator's current PRNGKey value needs to be an input and
+output of this function so that MonteCarlo generates different random numbers
+in each integration.
+torchquad's RNG class has methods to set and get this PRNGKey value.
+
+The disadvantage of compilation is the additional time required to compile or
+re-compile the code,
+so if the integrate method is executed only a few times or certain arguments,
+e.g. ``N``, change often, the program may be slower overall.
+
+
+Reusing sample points
+`````````````````````
+
+With the MonteCarlo and composite Newton Cotes integrators it is possible to
+execute the methods for sample point calculation, integrand evaluation and
+result calculation separately.
+This can be helpful to obtain a speedup in situations where integration happens
+very often with the same ``integration_domain`` and ``N`` arguments.
+However, separate sample point calculation has some disadvantages:
+
+- The code is more complex.
+- The memory required for the grid points is not released after each integration.
+- With MonteCarlo the same sample points would be used for each integration, which corresponds to a fixed seed.
+
+Here is an example where we integrate two functions with Boole and use the same
+sample points for both functions:
+
+.. code:: ipython3
+
+    import torch
+    from torchquad import Boole
+
+    def integrand1(x):
+        return torch.sin(x[:, 0]) + torch.exp(x[:, 1])
+
+    def integrand2(x):
+        return torch.prod(torch.cos(x), dim=1)
+
+    # The integration domain, dimensionality and number of evaluations
+    # For the calculate_grid method we need a Tensor and not a list.
+    integration_domain = torch.Tensor([[0.0, 1.0], [-1.0, 1.0]])
+    dim = 2
+    N = 9409
+
+    # Initialize the integrator
+    integrator = Boole()
+    # Calculate sample points and grid information for the result calculation
+    grid_points, hs, n_per_dim = integrator.calculate_grid(N, integration_domain)
+
+    # Integrate the first integrand with the sample points
+    function_values, _ = integrator.evaluate_integrand(integrand1, grid_points)
+    integral1 = integrator.calculate_result(function_values, dim, n_per_dim, hs)
+
+    # Integrate the second integrand with the same sample points
+    function_values, _ = integrator.evaluate_integrand(integrand2, grid_points)
+    integral2 = integrator.calculate_result(function_values, dim, n_per_dim, hs)
+
+    print(f"Quadrature results: {integral1}, {integral2}")
