@@ -3,12 +3,12 @@
 *** Based on https://github.com/othneildrew/Best-README-Template
 -->
 
-![Read the Docs (version)](https://img.shields.io/readthedocs/torchquad/main?style=flat-square) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/main?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/esa/torchquad?style=flat-square) 
-![GitHub](https://img.shields.io/github/license/esa/torchquad?style=flat-square) ![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/torchquad?style=flat-square) ![PyPI](https://img.shields.io/pypi/v/torchquad?style=flat-square) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/torchquad?style=flat-square) 
+![Read the Docs (version)](https://img.shields.io/readthedocs/torchquad/main?style=flat-square) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/main?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/esa/torchquad?style=flat-square)
+![GitHub](https://img.shields.io/github/license/esa/torchquad?style=flat-square) ![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/torchquad?style=flat-square) ![PyPI](https://img.shields.io/pypi/v/torchquad?style=flat-square) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/torchquad?style=flat-square)
 
 ![GitHub contributors](https://img.shields.io/github/contributors/esa/torchquad?style=flat-square)
-![GitHub issues](https://img.shields.io/github/issues/esa/torchquad?style=flat-square) ![GitHub pull requests](https://img.shields.io/github/issues-pr/esa/torchquad?style=flat-square) 
-![Conda](https://img.shields.io/conda/dn/conda-forge/torchquad?style=flat-square) ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchquad?style=flat-square) 
+![GitHub issues](https://img.shields.io/github/issues/esa/torchquad?style=flat-square) ![GitHub pull requests](https://img.shields.io/github/issues-pr/esa/torchquad?style=flat-square)
+![Conda](https://img.shields.io/conda/dn/conda-forge/torchquad?style=flat-square) ![PyPI - Downloads](https://img.shields.io/pypi/dm/torchquad?style=flat-square)
 [![JOSS](https://joss.theoj.org/papers/d6f22f83f1a889ddf83b3c2e0cd0919c/status.svg)](https://joss.theoj.org/papers/d6f22f83f1a889ddf83b3c2e0cd0919c?style=flat-square)
 
 <!-- PROJECT LOGO -->
@@ -66,7 +66,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-The torchquad module allows utilizing GPUs for efficient numerical integration with [PyTorch](https://pytorch.org/). 
+The torchquad module allows utilizing GPUs for efficient numerical integration with [PyTorch](https://pytorch.org/).
 The software is free to use and is designed for the machine learning community and research groups focusing on topics requiring high-dimensional integration.
 
 ### Built With
@@ -82,7 +82,7 @@ This project is built with the following packages:
 
 * **Progressing science**:  Multidimensional integration is needed in many fields of physics (from particle physics to astrophysics), in applied finance, in medical statistics, and so on. With torchquad, we wish to reach research groups in such fields, as well as the general machine learning community.
 * **Withstanding the curse of dimensionality**: The [curse of dimensionality](https://en.wikipedia.org/wiki/Curse_of_dimensionality) makes deterministic methods in particular, but also stochastic ones, extremely slow when the dimensionality increases. This gives the researcher a choice between computationally heavy and time-consuming simulations on the one hand and inaccurate evaluations on the other. Luckily, many integration methods are [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel), which means they can strongly benefit from GPU parallelization. The curse of dimensionality still applies, but GPUs can handle the problem much better than CPUs can.
-* **Delivering a convenient and functional tool**: torchquad is built with [PyTorch](https://pytorch.org/), which means it is [fully differentiable](https://en.wikipedia.org/wiki/Differentiable_programming). Furthermore, the library of available and upcoming methods in torchquad offers high-effeciency integration for any need. 
+* **Delivering a convenient and functional tool**: torchquad is built with [PyTorch](https://pytorch.org/), which means it is [fully differentiable](https://en.wikipedia.org/wiki/Differentiable_programming). Furthermore, the library of available and upcoming methods in torchquad offers high-effeciency integration for any need.
 
 
 <!-- GETTING STARTED -->
@@ -99,28 +99,28 @@ For a detailed list of required packages, please refer to the [conda environment
 
 ### Installation
 
-The easiest way to install torchquad is simply to 
+The easiest way to install torchquad is simply to
 
    ```sh
    conda install torchquad -c conda-forge -c pytorch
    ```
 
-Note that since PyTorch is not yet on *conda-forge* for Windows, we have explicitly included it here using `-c pytorch`.  
+Note that since PyTorch is not yet on *conda-forge* for Windows, we have explicitly included it here using `-c pytorch`.
 
 Alternatively, it is also possible to use
    ```sh
    pip install torchquad
    ```
 
-NB Note that *pip* will **not** set up PyTorch with CUDA and GPU support. Therefore, we recommend to use *conda*. 
+NB Note that *pip* will **not** set up PyTorch with CUDA and GPU support. Therefore, we recommend to use *conda*.
 
-### Test 
+### Test
 
 After installing `torchquad` through `conda` or `pip`, users can test its correct installation with:
 
 ```py
 import torchquad
-torchquad._deployment_test() 
+torchquad._deployment_test()
 ```
 
 After cloning the repository, developers can check the functionality of `torchquad` by running the following command in the `torchquad/tests` directory:
@@ -131,7 +131,7 @@ pytest
 
 **GPU Utilization**
 
-With *conda* you can install the GPU version of PyTorch with `conda install pytorch cudatoolkit -c pytorch`. 
+With *conda* you can install the GPU version of PyTorch with `conda install pytorch cudatoolkit -c pytorch`.
 For alternative installation procedures please refer to the [PyTorch Documentation](https://pytorch.org/get-started/locally/).
 
 
@@ -143,7 +143,7 @@ This is a brief example how torchquad can be used to compute a simple integral. 
 The full documentation can be found on [readthedocs](https://torchquad.readthedocs.io/en/main/).
 
 ```python
-# To avoid copying things to GPU memory, 
+# To avoid copying things to GPU memory,
 # ideally allocate everything in torch on the GPU
 # and avoid non-torch function calls
 import torch
@@ -156,12 +156,12 @@ set_up_backend("torch", data_type="float32")
 # Note that the function needs to support multiple evaluations at once (first dimension of x here)
 # Expected result here is ~3.2698
 def some_function(x):
-    return torch.sin(x[:,0]) + torch.exp(x[:,1]) 
+    return torch.sin(x[:,0]) + torch.exp(x[:,1])
 
 # Declare an integrator, here we use the simple, stochastic Monte Carlo integration method
 mc = MonteCarlo()
 
-# Compute the function integral by sampling 10000 points over domain 
+# Compute the function integral by sampling 10000 points over domain
 integral_value = mc.integrate(some_function,dim=2,N=10000,integration_domain = [[0,1],[-1,1]])
 ```
 To change the logger verbosity, set the `TORCHQUAD_LOG_LEVEL` environment
@@ -191,9 +191,9 @@ Using GPUs torchquad scales particularly well with integration methods that offe
 
 The project is open to community contributions. Feel free to open an [issue](https://github.com/esa/torchquad/issues) or write us an email if you would like to discuss a problem or idea first.
 
-If you want to contribute, please 
+If you want to contribute, please
 
-1. Fork the project on [GitHub](https://github.com/esa/torchquad). 
+1. Fork the project on [GitHub](https://github.com/esa/torchquad).
 2. Get the most up-to-date code by following this quick guide for installing torchquad from source:
      1. Get [miniconda](https://docs.conda.io/en/latest/miniconda.html) or similar
      2. Clone the repo
@@ -219,7 +219,7 @@ Please note that PRs should be created from and into the `develop` branch. For e
 5. Push to the Branch (`git push origin feature/AmazingFeature`)
 6. Open a Pull Request on the `develop` branch, *not* `main` (NB: We autoformat every PR with black. Our GitHub actions may create additional commits on your PR for that reason.)
 
-and we will have a look at your contribution as soon as we can. 
+and we will have a look at your contribution as soon as we can.
 
 Furthermore, please make sure that your PR passes all automated tests. Review will only happen after that.
 Only PRs created on the `develop` branch with all tests passing will be considered. The only exception to this rule is if you want to update the documentation in relation to the current release on conda / pip. In that case you may ask to merge directly into `main`.
@@ -231,7 +231,7 @@ Distributed under the GPL-3.0 License. See [LICENSE](https://github.com/esa/torc
 
 
 <!-- FAQ -->
-## FAQ 
+## FAQ
 
   1. Q: `Error enabling CUDA. cuda.is_available() returned False. CPU will be used.`  <br/>A: This error indicates that no CUDA-compatible GPU could be found. Either you have no compatible GPU or the necessary CUDA requirements are missing. Using `conda`, you can install them with `conda install cudatoolkit`. For more detailed installation instructions, please refer to the [PyTorch documentation](https://pytorch.org/get-started/locally/).
 
@@ -239,7 +239,7 @@ Distributed under the GPL-3.0 License. See [LICENSE](https://github.com/esa/torc
 
 
 <!-- CONTACT -->
-## Contact 
+## Contact
 
 Created by ESA's [Advanced Concepts Team](https://www.esa.int/gsp/ACT/index.html)
 
@@ -251,6 +251,6 @@ Project Link: [https://github.com/esa/torchquad](https://github.com/esa/torchqua
 
 
 
-<!-- ACKNOWLEDGEMENTS 
+<!-- ACKNOWLEDGEMENTS
 This README was based on https://github.com/othneildrew/Best-README-Template
 -->
