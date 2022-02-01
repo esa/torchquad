@@ -27,7 +27,7 @@ class VEGASStratification:
         self.N_strat = int((N_increment / 4.0) ** (1.0 / dim))
         self.N_strat = 1000 if self.N_strat > 1000 else self.N_strat
         self.beta = beta  # variable controlling adaptiveness in stratification 0 to 1
-        self.N_cubes = self.N_strat ** self.dim  # total number of subdomains
+        self.N_cubes = self.N_strat**self.dim  # total number of subdomains
         self.V_cubes = (1.0 / self.N_strat) ** self.dim  # volume of hypercubes
 
         self.dtype = dtype
@@ -66,7 +66,7 @@ class VEGASStratification:
         self.JF = anp.zeros([self.N_cubes], dtype=self.dtype, like=self.backend)
         self.JF2 = anp.zeros([self.N_cubes], dtype=self.dtype, like=self.backend)
         _add_at_indices(self.JF, indices, weight_all_cubes, is_sorted=True)
-        _add_at_indices(self.JF2, indices, weight_all_cubes ** 2.0, is_sorted=True)
+        _add_at_indices(self.JF2, indices, weight_all_cubes**2.0, is_sorted=True)
 
         # Store counts
         self.strat_counts = astype(nevals, self.dtype)
@@ -87,7 +87,7 @@ class VEGASStratification:
         # Sometimes rounding errors produce negative values very close to 0
         d_tmp[d_tmp < 0.0] = 0.0
 
-        self.dh = d_tmp ** self.beta
+        self.dh = d_tmp**self.beta
 
         # Normalize dampening
         d_sum = anp.sum(self.dh)

@@ -39,7 +39,7 @@ def _run_simple_integrations(backend):
       constant function (almost) exactly.
     """
     integrators_all = [Trapezoid(), Simpson(), Boole(), MonteCarlo(), VEGAS()]
-    Ns_all = [13 ** 2, 13 ** 2, 13 ** 2, 20, 1000]
+    Ns_all = [13**2, 13**2, 13**2, 20, 1000]
 
     expected_dtype_name = None
 

@@ -73,13 +73,13 @@ def _run_vegas_map_checks(backend, precision):
 
     # Test get_Jac for a fresh VEGAS map
     jac = vegasmap.get_Jac(y)
-    assert jac.shape == (N_per_dim ** dim,)
+    assert jac.shape == (N_per_dim**dim,)
     assert jac.dtype == dtype_float
     assert anp.max(anp.abs(jac - 4.0)) < 1e-14
 
     # Test vegasmap.accumulate_weight for a fresh VEGAS map
     jf_vec = f_eval * jac
-    jf_vec2 = jf_vec ** 2
+    jf_vec2 = jf_vec**2
     vegasmap.accumulate_weight(y, jf_vec2)
     assert vegasmap.weights.dtype == dtype_float
     assert vegasmap.weights.shape == (dim, N_intervals)

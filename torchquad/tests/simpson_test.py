@@ -59,7 +59,7 @@ def _run_simpson_tests(backend, _precision):
         return
 
     # 10D Tests
-    N = 3 ** 10
+    N = 3**10
     errors, funcs = compute_integration_test_errors(
         simp.integrate, {"N": N, "dim": 10}, dim=10, use_complex=True, backend=backend
     )

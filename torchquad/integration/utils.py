@@ -245,7 +245,7 @@ class RNG:
                 # https://github.com/jcmgray/autoray/blob/35677037863d7d0d25ff025998d9fda75dce3b44/autoray/autoray.py#L737
                 from random import SystemRandom
 
-                seed = SystemRandom().randint(-(2 ** 63), 2 ** 63 - 1)
+                seed = SystemRandom().randint(-(2**63), 2**63 - 1)
             self._jax_key = PRNGKey(seed)
 
             def uniform_func(size, dtype):

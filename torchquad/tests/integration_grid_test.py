@@ -54,7 +54,7 @@ def _run_integration_grid_tests(backend, precision):
     # Test 1: N is float, 1-D
     # Test 2: N is int, 3-D
     # Test 3: N is float, 3-D
-    Ns = [10.0, 4 ** 3, 4.0 ** 3]
+    Ns = [10.0, 4**3, 4.0**3]
     domains = [
         [[0.0, 1.0]],
         [[0.0, 2.0], [-2.0, 1.0], [0.5, 1.0]],

@@ -49,7 +49,7 @@ def _run_vegas_stratification_checks(backend, precision):
     assert jf.shape == jf2.shape == (strat.N_cubes,)
     assert anp.min(jf2) >= 0.0, "Sums of squared values should be non-negative"
     assert (
-        anp.min(jf ** 2 - jf2) >= 0.0
+        anp.min(jf**2 - jf2) >= 0.0
     ), "Squared sums should be bigger than summed squares"
 
     # Test the dampened sample counts update

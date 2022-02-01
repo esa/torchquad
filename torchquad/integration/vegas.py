@@ -209,7 +209,7 @@ class VEGAS(BaseIntegrator):
             f_eval = self._eval(x).squeeze()
             jac = self.map.get_Jac(yrnd)
             jf_vec = f_eval * jac
-            jf_vec2 = jf_vec ** 2
+            jf_vec2 = jf_vec**2
             self.map.accumulate_weight(yrnd, jf_vec2)  # update map weights
             jf = jf_vec.sum()
             jf2 = jf_vec2.sum()
@@ -251,7 +251,7 @@ class VEGAS(BaseIntegrator):
 
         jac = self.map.get_Jac(y)  # compute jacobian
         jf_vec = f_eval * jac  # precompute product once
-        jf_vec2 = jf_vec ** 2
+        jf_vec2 = jf_vec**2
 
         if self.use_grid_improve:  # if adaptive map is used, acc weight
             self.map.accumulate_weight(y, jf_vec2)  # EQ 25
@@ -261,7 +261,7 @@ class VEGAS(BaseIntegrator):
         ih = jf * neval_inverse * self.strat.V_cubes  # Compute integral per cube
 
         # Collect results
-        sig2 = jf2 * neval_inverse * (self.strat.V_cubes ** 2) - pow(ih, 2)
+        sig2 = jf2 * neval_inverse * (self.strat.V_cubes**2) - pow(ih, 2)
         self.results[-1] = ih.sum()  # store results
         self.sigma2[-1] = (sig2 * neval_inverse).sum()
 
