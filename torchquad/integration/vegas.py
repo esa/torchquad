@@ -222,10 +222,9 @@ class VEGAS(BaseIntegrator):
             self.sigma2[-1] += sig2 / N_samples  # store results
             self.map.update_map()  # adapt the map
             # Estimate an accuracy for the logging
-            if self.results[-1] == 0.0:
-                acc = anp.sqrt(self.sigma2[-1])
-            else:
-                acc = anp.sqrt(self.sigma2[-1] / anp.abs(self.results[-1]))
+            acc = anp.sqrt(self.sigma2[-1])
+            if self.results[-1] != 0.0:
+                acc = acc / anp.abs(self.results[-1])
             logger.debug(
                 f"|\t{warmup_iter}|         {N_samples}|  {self.results[-1]:5e}  |  {self.sigma2[-1]:5e}  |  {acc:4e}%| {self._nr_of_fevals}"
             )
@@ -240,7 +239,6 @@ class VEGAS(BaseIntegrator):
             backend-specific float: Estimated accuracy.
         """
         neval = self.strat.get_NH(self._starting_N)  # Evals per strat cube
-        self.starting_N = anp.sum(neval) / self.strat.N_cubes  # update real neval
 
         # Stratified sampling points y and transformed sample points x
         y = self.strat.get_Y(neval)
@@ -271,10 +269,9 @@ class VEGAS(BaseIntegrator):
         self.strat.update_DH()  # update stratification
 
         # Estimate an accuracy for the logging
-        if self.results[-1] == 0.0:
-            acc = anp.sqrt(self.sigma2[-1])
-        else:
-            acc = anp.sqrt(self.sigma2[-1] / anp.abs(self.results[-1]))
+        acc = anp.sqrt(self.sigma2[-1])
+        if self.results[-1] != 0.0:
+            acc = acc / anp.abs(self.results[-1])
 
         return acc
 
