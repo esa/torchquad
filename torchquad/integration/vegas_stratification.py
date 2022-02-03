@@ -21,7 +21,7 @@ class VEGASStratification:
         self.N_strat = math.floor((N_increment / 2.0) ** (1.0 / dim))
         self.N_strat = 1000 if self.N_strat > 1000 else self.N_strat
         self.beta = beta  # variable controlling adaptiveness in stratification 0 to 1
-        self.N_cubes = self.N_strat ** self.dim  # total number of subdomains
+        self.N_cubes = self.N_strat**self.dim  # total number of subdomains
         self.V_cubes = (1.0 / self.N_strat) ** self.dim  # volume of hypercubes
         self.JF = torch.zeros(self.N_cubes)  # jacobian times f eval
         self.JF2 = torch.zeros(self.N_cubes)  # jacobian^2 times f
@@ -73,7 +73,7 @@ class VEGASStratification:
             - (self.V_cubes * self.JF / self.strat_counts) ** 2
         )
 
-        self.dh = d_tmp ** self.beta
+        self.dh = d_tmp**self.beta
 
         # for very small d_tmp d_tmp ** self.beta becomes NaN
         self.dh[torch.isnan(self.dh)] = 0

@@ -125,7 +125,7 @@ class Subdomain:
             self.fval = self.fval.reshape([self.N_per_dim] * self._dim)
             idx = [slice(None, None, 2)] * (self.fval.ndim)
             self.fval[idx] = old_fvals.reshape([(self.N_per_dim + 1) // 2] * self._dim)
-            self.fval = self.fval.reshape((self.N_per_dim ** self._dim))
+            self.fval = self.fval.reshape((self.N_per_dim**self._dim))
 
         self.points_to_eval = torch.isnan(self.fval)
 
@@ -224,7 +224,7 @@ class AdaptiveGrid:
         self._check_inputs(N, integration_domain)
         self._dim = len(integration_domain)
         self._subdomains_per_dim = subdomains_per_dim
-        self.N_subdomains = self._subdomains_per_dim ** self._dim
+        self.N_subdomains = self._subdomains_per_dim**self._dim
         self._complex_function = complex_function
         self._reuse_old_fvals = reuse_old_fvals
         self._max_refinement_level = max_refinement_level
@@ -296,7 +296,7 @@ class AdaptiveGrid:
 
             # Compute how often we need to repeat the values
             # and do it
-            values = list(np.repeat(values, self._subdomains_per_dim ** d))
+            values = list(np.repeat(values, self._subdomains_per_dim**d))
             repetitions = int(self.N_subdomains / len(values))
             indices = list(values) * repetitions
 

@@ -29,7 +29,7 @@ class Boole(BaseIntegrator):
 
         # If N is unspecified, set N to 5 points per dimension
         if N is None:
-            N = 5 ** dim
+            N = 5**dim
 
         self._integration_domain = _setup_integration_domain(dim, integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
@@ -100,7 +100,7 @@ class Boole(BaseIntegrator):
                 "N per dimension cannot be lower than 5. "
                 "N per dim will now be changed to 5."
             )
-            N = 5 ** dim
+            N = 5**dim
         elif (n_per_dim - 1) % 4 != 0:
             new_n_per_dim = n_per_dim - ((n_per_dim - 1) % 4)
             warnings.warn(
