@@ -128,8 +128,39 @@ class VEGASMap:
         """Smooth the weights in the map, EQ 18 - 22."""
         # Get the average values for J^2 f^2 (weights)
         # EQ 17
-        nnz_idx = counts != 0  # non zero count indices
-        weights[nnz_idx] = weights[nnz_idx] / counts[nnz_idx]
+        z_idx = counts == 0  # zero count indices
+        if infer_backend(weights) == "torch":
+            weights = weights.detach()
+        if anp.any(z_idx):
+            nnz_idx = anp.logical_not(z_idx)
+            weights[nnz_idx] /= counts[nnz_idx]
+            logger.opt(lazy=True).debug(
+                "The integrand was not evaluated in {z_idx_sum} of {num_weights} VEGASMap intervals. "
+                "Filling the weights for some of them with neighbouring values.",
+                z_idx_sum=lambda: anp.sum(z_idx),
+                num_weights=lambda: counts.shape[0] * counts.shape[1],
+            )
+            # Set the weights of the intervals with zero count to weights from
+            # their nearest neighbouring intervals
+            # (up to a distance of 10 indices).
+            for _ in range(10):
+                weights[:, :-1] = anp.where(
+                    z_idx[:, :-1], weights[:, 1:], weights[:, :-1]
+                )
+                # The asterisk corresponds to a logical And here
+                z_idx[:, :-1] = z_idx[:, :-1] * z_idx[:, 1:]
+                weights[:, 1:] = anp.where(
+                    z_idx[:, 1:], weights[:, :-1], weights[:, 1:]
+                )
+                z_idx[:, 1:] = z_idx[:, 1:] * z_idx[:, :-1]
+                logger.opt(lazy=True).debug(
+                    "  remaining intervals: {z_idx_sum}",
+                    z_idx_sum=lambda: anp.sum(z_idx),
+                )
+                if not anp.any(z_idx):
+                    break
+        else:
+            weights /= counts
 
         # Convolve with [1/8, 6/8, 1/8] in each dimension to smooth the
         # weights; boundary behaviour: repeat border values.

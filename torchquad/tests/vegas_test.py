@@ -182,6 +182,17 @@ def _run_vegas_special_case_checks(backend, precision):
     )
     assert anp.abs(integral) == 0.0
 
+    print("Testing VEGAS with a constant integrand")
+    integral = integrator.integrate(
+        lambda x: x[:, 0] * 0.0 + 10.0,
+        2,
+        N=10000,
+        integration_domain=[[0.0, 3.0]] * 2,
+        seed=0,
+        backend=backend,
+    )
+    assert anp.abs(integral - 90.0) < 1e-13
+
     print("Testing VEGAS with random numbers which are 0.0 and 1.0")
     # This test may be helpful to detect rounding and indexing errors which
     # would happen with a low probability with the usual RNG
