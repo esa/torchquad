@@ -51,7 +51,7 @@ def test_integrate():
         assert error < 5e-6
 
     # 10D Tests
-    N = 3 ** 10
+    N = 3**10
     errors = compute_test_errors(
         simp.integrate, {"N": N, "dim": 10}, dim=10, use_complex=True
     )

@@ -69,7 +69,7 @@ class AdaptiveSimpson(AdaptiveNewtonCotes):
     @staticmethod
     def _get_minimal_N(dim):
         """Get the minimal number of points N for the integrator rule"""
-        return 3 ** dim
+        return 3**dim
 
     @staticmethod
     def _adjust_N(dim, N):
@@ -90,7 +90,7 @@ class AdaptiveSimpson(AdaptiveNewtonCotes):
                 "N per dimension cannot be lower than 3. "
                 "N per dim will now be changed to 3."
             )
-            N = 3 ** dim
+            N = 3**dim
         elif n_per_dim % 2 != 1:
             logger.warning(
                 "N per dimension cannot be even due to necessary subdivisions. "

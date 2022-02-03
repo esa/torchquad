@@ -71,7 +71,7 @@ class AdaptiveBoole(AdaptiveNewtonCotes):
     @staticmethod
     def _get_minimal_N(dim):
         """Get the minimal number of points N for the integrator rule"""
-        return 5 ** dim
+        return 5**dim
 
     @staticmethod
     def _adjust_N(dim, N):
@@ -94,7 +94,7 @@ class AdaptiveBoole(AdaptiveNewtonCotes):
                 "N per dimension cannot be lower than 5. "
                 "N per dim will now be changed to 5."
             )
-            N = 5 ** dim
+            N = 5**dim
         elif (n_per_dim - 1) % 4 != 0:
             new_n_per_dim = n_per_dim - ((n_per_dim - 1) % 4)
             logger.warning(
