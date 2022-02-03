@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_grid(grid, dpi=100):
+def plot_adaptive_grid(grid, dpi=100):
     """Plots the adaptive grid and corresponding function value.
 
     Args:
