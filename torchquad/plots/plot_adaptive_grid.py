@@ -15,11 +15,11 @@ def plot_grid(grid, dpi=100):
     fvals = None
     for subdomain in grid.subdomains:
         if points is None:
-            points = subdomain.points
-            fvals = subdomain.fval
+            points = subdomain.points.cpu().numpy()
+            fvals = subdomain.fval.cpu().numpy()
         else:    
-            points = np.concatenate([points,subdomain.points])
-            fvals = np.concatenate([fvals,subdomain.fval])
+            points = np.concatenate([points,subdomain.points.cpu().numpy()])
+            fvals = np.concatenate([fvals,subdomain.fval.cpu().numpy()])
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_trisurf(points[:,0], points[:,1], fvals, color='white', edgecolors='grey', alpha=0.5)
     ax.scatter(points[:,0], points[:,1], fvals, c='red')
