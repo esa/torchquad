@@ -12,7 +12,7 @@ from utils.set_log_level import set_log_level
 
 def test_integrate():
     """Tests the integrate function in integration.Simpson."""
-    set_log_level("INFO")
+    set_log_level("WARNING")
     enable_cuda()
     set_precision("double")
 
@@ -51,7 +51,7 @@ def test_integrate():
         assert error < 5e-6
 
     # 10D Tests
-    N = 3**10
+    N = 3 ** 10
     errors = compute_test_errors(
         simp.integrate, {"N": N, "dim": 10}, dim=10, use_complex=True
     )
