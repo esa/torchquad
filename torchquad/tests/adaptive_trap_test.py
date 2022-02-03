@@ -22,7 +22,7 @@ def test_integrate():
     N = 100000
 
     # 1D Tests
-    errors = compute_test_errors(tp.integrate, {"N": N, "dim": 1}, use_complex=True)
+    errors = compute_test_errors(tp.integrate, {"N": N, "dim": 1}, use_complex=False)
     print("1D AdaptiveTrapezoid Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:
         assert error < 1e-3
@@ -30,7 +30,7 @@ def test_integrate():
     # 3D Tests
     N = 1000000
     errors = compute_test_errors(
-        tp.integrate, {"N": N, "dim": 3}, dim=3, use_complex=True
+        tp.integrate, {"N": N, "dim": 3}, dim=3, use_complex=False
     )
     print("3D AdaptiveTrapezoid Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors[:2]:
