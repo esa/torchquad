@@ -45,14 +45,14 @@ class VEGAS(BaseIntegrator):
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the function to integrate.
-            N (int, optional): Maximum number of function evals to use for the integration. Defaults to 10000.
+            N (int, optional): Approximate maximum number of function evaluations to use for the integration. This value can be exceeded if the vegas stratification distributes evaluations per hypercube very unevenly. Defaults to 10000.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
-            seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
-            use_grid_improve (bool, optional): If True will improve the grid after each iteration.
+            seed (int, optional): Random number generation seed for the sampling point creation; only set if provided. Defaults to None.
+            use_grid_improve (bool, optional): If True, improve the vegas map after each iteration. Defaults to True.
             eps_rel (float, optional): Relative error to abort at. Defaults to 0.
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
-            max_iterations (int, optional): Maximum number of vegas iterations to perform. Defaults to 20.
-            use_warmup (bool, optional): If a warmup should be used to initialize the map. Defaults to True.
+            max_iterations (int, optional): Maximum number of vegas iterations to perform. The number of performed iterations is usually lower than this value because the number of sample points per iteration increases every fifth iteration. Defaults to 20.
+            use_warmup (bool, optional): If True, execute a warmup to initialize the vegas map. Defaults to True.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. "jax" and "tensorflow" are unsupported. Defaults to "torch".
 
         Raises:
@@ -78,9 +78,10 @@ class VEGAS(BaseIntegrator):
         self._max_iterations = max_iterations
         self.use_grid_improve = use_grid_improve
         self.N = N
-        # try to do as many evals in as many iterations as requested
-        self._starting_N = N // self._max_iterations
-        self._N_increment = N // self._max_iterations
+        # Determine the number of evaluations per iteration
+        self._starting_N = N // (self._max_iterations + 5)
+        self._N_increment = N // (self._max_iterations + 5)
+        self._fn = fn
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)
         self.backend = infer_backend(integration_domain)
         if self.backend in ["jax", "tensorflow"]:
@@ -137,42 +138,45 @@ class VEGAS(BaseIntegrator):
                 f"Iteration {self.it}, Acc={acc:.4e}, Result={self.results[-1]:.4e},neval={self._nr_of_fevals}"
             )
 
-            # Abort conditions
-            if self.it > self._max_iterations:
+            if self.it % 5 > 0:
+                continue
+
+            # Abort conditions depending on achieved errors
+            res_abs = anp.abs(self._get_result())
+            err = self._get_error()
+            chi2 = self._get_chisq()
+            logger.debug(f"Iteration {self.it},Chi2={chi2:.4e}")
+            if (err <= eps_rel * res_abs or err <= eps_abs) and chi2 / 5.0 < 1.0:
                 break
-            if self._nr_of_fevals > self.N - self._starting_N:
-                break
 
-            # Additional abort conditions depending on achieved errors
-            if self.it % 5 == 0:
-                res_abs = anp.abs(self._get_result())
-                err = self._get_error()
-                chi2 = self._get_chisq()
-
-                # Abort if errors acceptable
-                logger.debug(f"Iteration {self.it},Chi2={chi2:.4e}")
-                if (err < eps_rel * res_abs or err < eps_abs) and chi2 / 5.0 < 1.0:
-                    break
-
-                # Adjust number of evals if Chi square indicates instability
-                # EQ 32
-                if chi2 / 5.0 < 1.0:
-                    if res_abs == 0.0:
-                        self._starting_N += self._N_increment
-                    else:
-                        acc = err / res_abs
-                        self._starting_N = min(
-                            self._starting_N + self._N_increment,
-                            self._starting_N * anp.sqrt(acc / (eps_rel + 1e-8)),
-                        )
-                    self.results = []  # reset sample results
-                    self.sigma2 = []  # reset sample results
-                    continue
-                elif chi2 / 5.0 > 1.0:
+            # Adjust number of evals if Chi square indicates instability
+            # EQ 32
+            if chi2 / 5.0 < 1.0:
+                # Use more points in the next iterations to reduce the
+                # relative error
+                if res_abs == 0.0:
                     self._starting_N += self._N_increment
-                    self.results = []  # reset sample results
-                    self.sigma2 = []  # reset sample results
-                    continue
+                else:
+                    acc = err / res_abs
+                    self._starting_N = min(
+                        self._starting_N + self._N_increment,
+                        self._starting_N * anp.sqrt(acc / (eps_rel + 1e-8)),
+                    )
+            elif chi2 / 5.0 > 1.0:
+                # Use more points in the next iterations because of instability
+                self._starting_N += self._N_increment
+
+            # Abort if the next 5 iterations would use too many function
+            # evaluations
+            if self._nr_of_fevals + self._starting_N * 5 > self.N:
+                break
+
+            # Abort if the maximum nuber of iterations is reached
+            if self.it + 5 > self._max_iterations:
+                break
+
+            self.results = []  # reset sample results
+            self.sigma2 = []  # reset sample results
 
         logger.info(
             f"Computed integral after {self._nr_of_fevals} evals was {self._get_result():.8e}."
