@@ -226,6 +226,8 @@ class VEGAS(BaseIntegrator):
 
             ih = jf / N_samples  # integral in this step
             sig2 = jf2 / N_samples - pow(jf / N_samples, 2)  # estimated variance
+            if self.backend == "torch":
+                sig2 = sig2.detach()
             # Sometimes rounding errors produce negative values very close to 0
             sig2 = anp.abs(sig2)
             self.results[-1] += ih  # store results
@@ -268,10 +270,12 @@ class VEGAS(BaseIntegrator):
         jf, jf2 = self.strat.accumulate_weight(neval, jf_vec)  # update strat
 
         neval_inverse = 1.0 / astype(neval, y.dtype)
-        ih = jf * neval_inverse * self.strat.V_cubes  # Compute integral per cube
+        ih = jf * (neval_inverse * self.strat.V_cubes)  # Compute integral per cube
 
         # Collect results
         sig2 = jf2 * neval_inverse * (self.strat.V_cubes**2) - pow(ih, 2)
+        if self.backend == "torch":
+            sig2 = sig2.detach()
         # Sometimes rounding errors produce negative values very close to 0
         sig2 = anp.abs(sig2)
         self.results[-1] = ih.sum()  # store results
