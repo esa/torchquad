@@ -20,6 +20,8 @@ class Subdomain:
     h = None  # Mesh width
     requires_integral_value = True
     integral_value = None  # Integral value in this domain, has to be set for refinement
+    old_integral_value = None  # Integral value before last refinement
+    abs_change_integral_value = None  # Change in integral value
 
     def __init__(
         self, N, integration_domain, reuse_old_fvals=True, complex_function=False
@@ -33,6 +35,7 @@ class Subdomain:
             complex_function (bool): Defaults to float32/64. Set to True if your function returns complex numbers.
         """
         self._dim = len(integration_domain)
+        self.abs_change_integral_value = 0.0
         self.integration_domain = integration_domain
         self.refinement_level = 1
         self.reuse_old_fvals = reuse_old_fvals
@@ -125,7 +128,7 @@ class Subdomain:
             self.fval = self.fval.reshape([self.N_per_dim] * self._dim)
             idx = [slice(None, None, 2)] * (self.fval.ndim)
             self.fval[idx] = old_fvals.reshape([(self.N_per_dim + 1) // 2] * self._dim)
-            self.fval = self.fval.reshape((self.N_per_dim**self._dim))
+            self.fval = self.fval.reshape((self.N_per_dim ** self._dim))
 
         self.points_to_eval = torch.isnan(self.fval)
 
@@ -166,7 +169,15 @@ class Subdomain:
             val (float): Integral value of the subdomain.
         """
         logger.debug("Setting integral value to " + str(val))
+        logger.trace("Old integral value: " + str(self.old_integral_value))
         self.integral_value = val
+        if self.old_integral_value is None:
+            self.abs_change_integral_value = abs(val)
+        else:
+            self.abs_change_integral_value = abs(val - self.old_integral_value)
+        logger.debug(
+            "Change in integral value is " + str(self.abs_change_integral_value)
+        )
         self.requires_integral_value = False
 
     def refine(self):
@@ -188,6 +199,7 @@ class Subdomain:
         self._create_grid()
 
         # After refinement, integral value is outdated
+        self.old_integral_value = self.integral_value
         self.integral_value = None
         self.requires_integral_value = True
 
@@ -226,7 +238,7 @@ class AdaptiveGrid:
         self._check_inputs(N, integration_domain)
         self._dim = len(integration_domain)
         self._subdomains_per_dim = subdomains_per_dim
-        self.N_subdomains = self._subdomains_per_dim**self._dim
+        self.N_subdomains = self._subdomains_per_dim ** self._dim
         self._complex_function = complex_function
         self._reuse_old_fvals = reuse_old_fvals
         self._max_refinement_level = max_refinement_level
@@ -300,7 +312,7 @@ class AdaptiveGrid:
 
             # Compute how often we need to repeat the values
             # and do it
-            values = list(np.repeat(values, self._subdomains_per_dim**d))
+            values = list(np.repeat(values, self._subdomains_per_dim ** d))
             repetitions = int(self.N_subdomains / len(values))
             indices = list(values) * repetitions
 
@@ -329,18 +341,34 @@ class AdaptiveGrid:
                 )
             )
 
-    def _compute_refinement_criterion(self, subdomain):
+    def _compute_refinement_criterion(self, subdomain, use_variance=False):
         """Computes the refinement criterion for each subdomain"""
-        val = subdomain.integral_value * torch.var(subdomain.fval) / len(subdomain.fval)
-        return val
+        if use_variance:
+            return (
+                torch.abs(subdomain.integral_value)
+                * torch.var(subdomain.fval)
+                / len(subdomain.fval) ** 2
+            )
+
+        else:
+            return subdomain.abs_change_integral_value  # / len(subdomain.fval)
 
     def refine(self):
         """Refines the grid by doubling the number of points in the subdomain with largest variance."""
         criterion_values = []
+        logger.debug("Computing refinement criterion for subdomains.")
         for subdomain in self.subdomains:
             criterion_values.append(self._compute_refinement_criterion(subdomain))
 
+        logger.trace("Criterion values were: " + str(criterion_values))
+
+        # Find the subdomain with largest critertion
         domain_to_refine = self.subdomains[torch.argmax(torch.tensor(criterion_values))]
+
+        logger.trace(
+            "Refining subdomain " + str(torch.argmax(torch.tensor(criterion_values)))
+        )
+
         domain_to_refine.refine()
 
     def get_integral(self):

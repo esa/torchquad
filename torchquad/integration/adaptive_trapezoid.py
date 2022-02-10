@@ -63,3 +63,8 @@ class AdaptiveTrapezoid(AdaptiveNewtonCotes):
     def _adjust_N(dim, N):
         # Nothing to do for Trapezoid
         return N
+
+    @staticmethod
+    def _get_minimal_N(dim):
+        """Get the minimal number of points N for the integrator rule"""
+        return 2 ** dim

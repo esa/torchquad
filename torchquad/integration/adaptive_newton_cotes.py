@@ -43,7 +43,7 @@ class AdaptiveNewtonCotes(BaseIntegrator):
         self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
 
         logger.debug(
-            "Using AdaptiveSimpson for integrating a fn with "
+            "Using AdaptiveNewton Cotes for integrating a fn with "
             + str(N)
             + " points over "
             + str(self._integration_domain)
@@ -53,8 +53,28 @@ class AdaptiveNewtonCotes(BaseIntegrator):
         self._dim = dim
         self._fn = fn
 
-        # TODO determine a smarter initial N
-        initial_N = N // 10
+        # Assuming we want to end up with N points, and one subdomain may be refined up to max level, that subdomain will have
+        # (initialN * 2**(max_refinement_level-1))**dim points. So we should start of with N / (2**(max_refinement_level-1))**dim
+        initial_N = int((N // 2 ** max_refinement_level) ** (1 / dim))
+
+        logger.debug("initial_N based on refinement and dim is " + str(initial_N))
+
+        # However we need a minimum number of points so each subdomain has at least enough
+        # points to compute the respective integration rule.
+        if initial_N < self._get_minimal_N(dim) * (subdomains_per_dim ** dim):
+            initial_N = self._get_minimal_N(dim) * (subdomains_per_dim ** dim)
+            minimum_number_of_total_points = (
+                2 ** max_refinement_level
+            ) ** dim + self._get_minimal_N(dim) * ((subdomains_per_dim ** dim) - 1)
+            logger.warning(
+                "The chosen N is too small for the desired refinement / subdomains (too few points).  Requires at least N="
+                + str(minimum_number_of_total_points)
+                + "."
+            )
+            logger.debug(
+                "After accounting for min points per subdomain became initial_N="
+                + str(initial_N)
+            )
 
         # Initialize the adaptive grid
         self._grid = AdaptiveGrid(
@@ -77,7 +97,7 @@ class AdaptiveNewtonCotes(BaseIntegrator):
 
             self._grid.set_fvals(function_values, chunksizes)
 
-            logger.debug("Computing simpson areas for subdomains.")
+            logger.debug("Computing areas for subdomains.")
             # Compute integral for each subdomain
             for subdomain in self._grid.subdomains:
 
@@ -105,5 +125,11 @@ class AdaptiveNewtonCotes(BaseIntegrator):
             if not hit_maximum_evals:
                 # Refine the grid
                 self._grid.refine()
+            else:
+                logger.debug(
+                    "Hit "
+                    + str(self._nr_of_fevals)
+                    + " evaluations. Exiting refinement loop."
+                )
 
         return self._grid.get_integral()
