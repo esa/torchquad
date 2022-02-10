@@ -81,23 +81,31 @@ class VEGAS(BaseIntegrator):
         # try to do as many evals in as many iterations as requested
         self._starting_N = N // self._max_iterations
         self._N_increment = N // self._max_iterations
-        self._fn = fn
-        self._integration_domain = integration_domain = _setup_integration_domain(
-            dim, integration_domain, backend
-        )
+        integration_domain = _setup_integration_domain(dim, integration_domain, backend)
         self.backend = infer_backend(integration_domain)
         if self.backend in ["jax", "tensorflow"]:
             raise ValueError(f"Unsupported numerical backend: {self.backend}")
         self.dtype = integration_domain.dtype
         self.rng = RNG(backend=self.backend, seed=seed)
 
+        # Transform the integrand into the [0,1]^dim domain
+        domain_starts = integration_domain[:, 0]
+        domain_sizes = integration_domain[:, 1] - domain_starts
+        domain_volume = anp.prod(domain_sizes)
+
+        def transformed_integrand(x):
+            return fn(x * domain_sizes + domain_starts) * domain_volume
+
+        self._fn = transformed_integrand
+
         # Initialize the adaptive VEGAS map,
         # Note that a larger number of intervals may lead to problems if only few evals are allowed
         # Paper section II B
         N_intervals = max(2, self._N_increment // 10)  # for small N intervals set 2
-        self.map = VEGASMap(
-            self._dim, self._integration_domain, N_intervals=N_intervals
+        unit_domain = anp.array(
+            [[0.0, 1.0]] * dim, dtype=integration_domain.dtype, like=integration_domain
         )
+        self.map = VEGASMap(self._dim, unit_domain, N_intervals=N_intervals)
 
         # Initialize VEGAS' stratification
         # Paper section III
