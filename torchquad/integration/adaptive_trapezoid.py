@@ -1,12 +1,9 @@
 import torch
-from loguru import logger
 
-from .base_integrator import BaseIntegrator
-from .adaptive_grid import AdaptiveGrid
-from .utils import _setup_integration_domain
+from .adaptive_newton_cotes import AdaptiveNewtonCotes
 
 
-class AdaptiveTrapezoid(BaseIntegrator):
+class AdaptiveTrapezoid(AdaptiveNewtonCotes):
     """Adaptive Trapezoidal rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas .
     This method adaptively redefines high-variance regions of the integrand"""
 
@@ -37,79 +34,32 @@ class AdaptiveTrapezoid(BaseIntegrator):
         Returns:
             float: integral value
         """
-        self._integration_domain = _setup_integration_domain(dim, integration_domain)
-        self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
-
-        logger.debug(
-            "Using AdaptiveTrapezoid for integrating a fn with "
-            + str(N)
-            + " points over "
-            + str(self._integration_domain)
-            + "."
+        return super().integrate(
+            fn,
+            dim,
+            N,
+            subdomains_per_dim,
+            max_refinement_level,
+            integration_domain,
+            complex_function,
+            reuse_old_fvals,
         )
 
-        self._dim = dim
-        self._fn = fn
+    # TODO replace this once we merge from https://github.com/FHof/torchquad
+    @staticmethod
+    def _apply_composite_rule(cur_dim_areas, dim, hs):
+        """Apply composite Trapezoid quadrature.
+        cur_dim_areas will contain the areas per dimension
+        """
+        # We collapse dimension by dimension
+        for cur_dim in range(dim):
+            cur_dim_areas = (
+                hs[cur_dim] / 2.0 * (cur_dim_areas[..., 0:-1] + cur_dim_areas[..., 1:])
+            )
+            cur_dim_areas = torch.sum(cur_dim_areas, axis=dim - cur_dim - 1)
+        return cur_dim_areas
 
-        # TODO determine a smarter initial N
-        initial_N = N // 10
-
-        # Initialize the adaptive grid
-        self._grid = AdaptiveGrid(
-            N=initial_N,
-            integration_domain=self._integration_domain,
-            subdomains_per_dim=subdomains_per_dim,
-            max_refinement_level=max_refinement_level,
-            complex_function=complex_function,
-            reuse_old_fvals=reuse_old_fvals,
-        )
-
-        hit_maximum_evals = False
-        while not hit_maximum_evals:
-            eval_points, chunksizes = self._grid.get_next_eval_points()
-
-            logger.debug("Evaluating integrand on the grid.")
-            logger.trace(f"Points are {eval_points}")
-            function_values = self._eval(eval_points)
-
-            self._grid.set_fvals(function_values, chunksizes)
-
-            logger.debug("Computing trapezoid areas for subdomains.")
-            # Compute integral for each subdomain
-            for subdomain in self._grid.subdomains:
-
-                # Skip up-to-date subdomains
-                if not subdomain.requires_integral_value:
-                    logger.trace("Skipping up-to-date subdomain.")
-                    continue
-
-                function_values = subdomain.fval
-
-                # Reshape the output to be [N,N,...] points
-                # instead of [dim*N] points
-                function_values = function_values.reshape([subdomain.N_per_dim] * dim)
-
-                # This will contain the trapezoid areas per dimension
-                cur_dim_areas = function_values
-
-                # We collapse dimension by dimension
-                for cur_dim in range(dim):
-                    cur_dim_areas = (
-                        subdomain.h[cur_dim]
-                        / 2.0
-                        * (cur_dim_areas[..., 0:-1] + cur_dim_areas[..., 1:])
-                    )
-                    cur_dim_areas = torch.sum(cur_dim_areas, dim=dim - cur_dim - 1)
-
-                logger.debug(
-                    "Computed subdomain integral was " + str(cur_dim_areas) + "."
-                )
-                subdomain.set_integral(cur_dim_areas)
-
-            hit_maximum_evals = self._nr_of_fevals >= N
-
-            if not hit_maximum_evals:
-                # Refine the grid
-                self._grid.refine()
-
-        return self._grid.get_integral()
+    @staticmethod
+    def _adjust_N(dim, N):
+        # Nothing to do for Trapezoid
+        return N

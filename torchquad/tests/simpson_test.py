@@ -12,7 +12,7 @@ from utils.set_log_level import set_log_level
 
 def test_integrate():
     """Tests the integrate function in integration.Simpson."""
-    set_log_level("INFO")
+    set_log_level("WARNING")
     enable_cuda()
     set_precision("double")
 

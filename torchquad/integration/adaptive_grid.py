@@ -209,6 +209,7 @@ class AdaptiveGrid:
         max_refinement_level,
         complex_function=False,
         reuse_old_fvals=True,
+        N_adjustment_function=lambda x: x,
     ):
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
 
@@ -219,6 +220,7 @@ class AdaptiveGrid:
             max_refinement_level (int): Maximum refinement level for the subdomains.
             complex_function (bool): Defaults to float32/64. Set to True if your function returns complex numbers.
             reuse_old_fvals (bool): If True, will reuse already computed function values.
+            N_adjustment_function (function): Function to adjust the number of points in the subdomain to comply with the integration rule. Defaults to no adjustment.
         """
         start = perf_counter()
         self._check_inputs(N, integration_domain)
@@ -236,8 +238,10 @@ class AdaptiveGrid:
         else:
             requires_grad = False
 
-        logger.debug("Initializing subdomains")
-        self._create_subdomains(requires_grad, N // self.N_subdomains)
+        logger.debug("Initializing subdomains for total N=" + str(N))
+        points_per_subdomain = N_adjustment_function(N // self.N_subdomains)
+        logger.debug("Using " + str(points_per_subdomain) + " points per subdomain.")
+        self._create_subdomains(requires_grad, points_per_subdomain)
 
         self._runtime += perf_counter() - start
 
