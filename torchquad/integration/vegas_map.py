@@ -129,8 +129,6 @@ class VEGASMap:
         # Get the average values for J^2 f^2 (weights)
         # EQ 17
         z_idx = counts == 0  # zero count indices
-        if infer_backend(weights) == "torch":
-            weights = weights.detach()
         if anp.any(z_idx):
             nnz_idx = anp.logical_not(z_idx)
             weights[nnz_idx] /= counts[nnz_idx]
@@ -257,9 +255,6 @@ class VEGASMap:
             # d_accu_i is used for the interpolation in the new inner edges
             # calculation when adding it to the old inner edges
             d_accu_i = anp.cumsum(delta_d - val_sw_per_dw[:-2], axis=0)
-
-            if self.backend == "torch":
-                d_accu_i = d_accu_i.detach()
 
             # EQ 22
             self.x_edges[i][1:-1] = (

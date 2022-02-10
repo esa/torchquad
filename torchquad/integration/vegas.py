@@ -210,6 +210,8 @@ class VEGAS(BaseIntegrator):
             jac = self.map.get_Jac(yrnd)
             jf_vec = f_eval * jac
             jf_vec2 = jf_vec**2
+            if self.backend == "torch":
+                jf_vec2 = jf_vec2.detach()
             self.map.accumulate_weight(yrnd, jf_vec2)  # update map weights
             jf = jf_vec.sum()
             jf2 = jf_vec2.sum()
@@ -250,6 +252,8 @@ class VEGAS(BaseIntegrator):
         jac = self.map.get_Jac(y)  # compute jacobian
         jf_vec = f_eval * jac  # precompute product once
         jf_vec2 = jf_vec**2
+        if self.backend == "torch":
+            jf_vec2 = jf_vec2.detach()
 
         if self.use_grid_improve:  # if adaptive map is used, acc weight
             self.map.accumulate_weight(y, jf_vec2)  # EQ 25
