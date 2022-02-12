@@ -26,12 +26,9 @@ def _run_vegas_map_checks(backend, precision):
     dtype_name = {"float": "float32", "double": "float64"}[precision]
     dtype_float = to_backend_dtype(dtype_name, like=backend)
     dtype_int = to_backend_dtype("int64", like=backend)
-    integration_domain = anp.array(
-        [[2.0, 3.0], [1.0, 5.0], [-4.0, -3.0]], dtype=dtype_float, like=backend
-    )
     dim = 3
     N_intervals = 20
-    vegasmap = VEGASMap(dim, integration_domain, N_intervals=N_intervals)
+    vegasmap = VEGASMap(N_intervals, dim, backend, dtype_float)
 
     y = anp.array(
         [[0.8121, 0.4319, 0.1612], [0.4746, 0.6501, 0.9241], [0.6143, 0.0724, 0.5818]],
@@ -56,26 +53,22 @@ def _run_vegas_map_checks(backend, precision):
     _check_tensor_similarity(off, off_expected, 6e-5, dtype_float)
 
     # Test get_X for the fresh VEGAS map
-    # Initially it should just translate and scale the points into the
-    # integration domain
-    integration_domain_sizes = integration_domain[:, 1] - integration_domain[:, 0]
-    x_expected = integration_domain[:, 0] + integration_domain_sizes * y
-    x = vegasmap.get_X(y)
-    _check_tensor_similarity(x, x_expected, 3e-7, dtype_float)
+    # Initially it should not change the points
+    _check_tensor_similarity(vegasmap.get_X(y), y, 3e-7, dtype_float)
 
     # Get example point and function values
     N_per_dim = 100
     y = anp.linspace(0.0, 0.99999, N_per_dim, dtype=dtype_float, like=backend)
     y = anp.meshgrid(*([y] * dim))
     y = anp.stack([mg.ravel() for mg in y], axis=1, like=backend)
-    # Independent of the integration domain, use exp to get a peak in a corner
+    # Use exp to get a peak in a corner
     f_eval = anp.prod(anp.exp(y), axis=1)
 
     # Test get_Jac for a fresh VEGAS map
     jac = vegasmap.get_Jac(y)
     assert jac.shape == (N_per_dim**dim,)
     assert jac.dtype == dtype_float
-    assert anp.max(anp.abs(jac - 4.0)) < 1e-14
+    assert anp.max(anp.abs(jac - 1.0)) < 1e-14
 
     # Test vegasmap.accumulate_weight for a fresh VEGAS map
     jf_vec = f_eval * jac
@@ -116,23 +109,20 @@ def _run_vegas_map_checks(backend, precision):
     # Test if vegasmap.update_map changes the edge locations and distances
     # correctly
     vegasmap.update_map()
-    # The outermost edge locations must match the integration domain
+    # The outermost edge locations must match the domain [0,1]^dim
+    unit_domain = anp.array([[0.0, 1.0]] * dim, dtype=dtype_float, like=backend)
     _check_tensor_similarity(
-        vegasmap.x_edges[:, [0, -1]], integration_domain, 0.0, dtype_float
+        vegasmap.x_edges[:, [0, -1]], unit_domain, 0.0, dtype_float
     )
     assert vegasmap.x_edges.shape == (dim, N_intervals + 1), "Invalid number of edges"
     assert vegasmap.dx_edges.shape == (
         dim,
         N_intervals,
     ), "Invalid number of edge distances"
-    # In each dimension the edge distances should sum up to the corresponding
-    # integration domain boundary distances
-    _check_tensor_similarity(
-        anp.sum(vegasmap.dx_edges, axis=1),
-        integration_domain_sizes,
-        3e-7,
-        dtype_float,
-    )
+    assert vegasmap.dx_edges.dtype == dtype_float
+    assert (
+        anp.max(anp.abs(anp.sum(vegasmap.dx_edges, axis=1) - 1.0)) < 3e-7
+    ), "In each dimension the edge distances should sum up to one."
     assert anp.min(vegasmap.dx_edges) > 0.0, "Non-positive edge distance"
     # The absolute value of the given integrand is monotonically increasing in
     # each dimension, so calculated interval sizes should monotonically decrease
@@ -144,9 +134,7 @@ def _run_vegas_map_checks(backend, precision):
     x = vegasmap.get_X(y)
     assert x.dtype == dtype_float
     assert x.shape == y.shape
-    assert (
-        anp.max(anp.abs(x[0] - integration_domain[:, 0])) == 0.0
-    ), "Boundary point was remapped"
+    assert anp.max(anp.abs(x[0])) == 0.0, "Boundary point was remapped"
 
 
 test_vegas_map_numpy_f32 = setup_test_for_backend(

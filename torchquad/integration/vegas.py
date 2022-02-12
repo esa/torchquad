@@ -102,10 +102,7 @@ class VEGAS(BaseIntegrator):
         # Note that a larger number of intervals may lead to problems if only few evals are allowed
         # Paper section II B
         N_intervals = max(2, self._N_increment // 10)  # for small N intervals set 2
-        unit_domain = anp.array(
-            [[0.0, 1.0]] * dim, dtype=integration_domain.dtype, like=integration_domain
-        )
-        self.map = VEGASMap(self._dim, unit_domain, N_intervals=N_intervals)
+        self.map = VEGASMap(N_intervals, self._dim, self.backend, self.dtype)
 
         # Initialize VEGAS' stratification
         # Paper section III

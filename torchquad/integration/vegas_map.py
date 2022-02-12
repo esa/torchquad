@@ -1,5 +1,5 @@
 from autoray import numpy as anp
-from autoray import astype, infer_backend, to_backend_dtype
+from autoray import astype, to_backend_dtype
 from loguru import logger
 
 from .utils import _add_at_indices
@@ -11,48 +11,38 @@ class VEGASMap:
     EQ <n> refers to equation <n> in the above paper.
     """
 
-    def __init__(self, dim, integration_domain, N_intervals=100, alpha=0.5) -> None:
+    def __init__(self, N_intervals, dim, backend, dtype, alpha=0.5) -> None:
         """Initializes VEGAS Enhanced's adaptive map
 
         Args:
+            N_intervals (int): Number of intervals per dimension to split the domain in.
             dim (int): Dimensionality of the integrand.
-            integration_domain (backend tensor): Integration domain.
-            N_intervals (int, optional): Number of intervals to split the domain in. Defaults to 100.
+            backend (string): Numerical backend
+            dtype (backend dtype): dtype used for the calculations
             alpha (float, optional): Alpha from the paper, EQ 19. Defaults to 0.5.
         """
         self.dim = dim
         self.N_intervals = N_intervals  # # of subdivisions
         N_edges = self.N_intervals + 1  # # of subdivsion boundaries
         self.alpha = alpha  # Weight smoothing
-        self.backend = infer_backend(integration_domain)
-        self.dtype = integration_domain.dtype
+        self.backend = backend
+        self.dtype = dtype
 
         # Boundary locations x_edges and subdomain stepsizes dx_edges
-        # Subdivide initial domain equally spaced in N-d, EQ 8
-        domain_starts = integration_domain[:, :1]
-        domain_ends = integration_domain[:, 1:]
-        domain_sizes = domain_ends - domain_starts
+        # Subdivide the domain [0,1]^dim equally spaced in N-d, EQ 8
         self.dx_edges = (
             anp.ones((self.dim, self.N_intervals), dtype=self.dtype, like=self.backend)
-            * domain_sizes
             / self.N_intervals
         )
-        self.x_edges = (
-            anp.linspace(0.0, 1.0, N_edges, dtype=self.dtype, like=self.backend)
-            * domain_sizes
-            + domain_starts
+        x_edges_per_dim = anp.linspace(
+            0.0, 1.0, N_edges, dtype=self.dtype, like=self.backend
+        )
+        self.x_edges = anp.repeat(
+            anp.reshape(x_edges_per_dim, [1, N_edges]), self.dim, axis=0
         )
 
-        # weights in each intervall
-        self.weights = anp.zeros(
-            (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
-        )
-        # numbers of random samples in specific interval
-        self.counts = anp.zeros(
-            (self.dim, self.N_intervals),
-            dtype=to_backend_dtype("int64", like=self.backend),
-            like=self.backend,
-        )
+        # Initialize self.weights and self.counts
+        self._reset_weight()
 
     def get_X(self, y):
         """Get mapped sampling points, EQ 9.
@@ -191,10 +181,12 @@ class VEGASMap:
         return d_tmp
 
     def _reset_weight(self):
-        """Resets weights."""
+        """Reset or initialize weights and counts."""
+        # weights in each intervall
         self.weights = anp.zeros(
             (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
         )
+        # numbers of random samples in specific interval
         self.counts = anp.zeros(
             (self.dim, self.N_intervals),
             dtype=to_backend_dtype("int64", like=self.backend),
