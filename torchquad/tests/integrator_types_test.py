@@ -68,8 +68,7 @@ def _run_simple_integrations(backend):
             continue
 
         # Set the global precision
-        precision = {"float64": "double", "float32": "float"}[dtype_global]
-        set_precision(precision, backend=backend)
+        set_precision(dtype_global, backend=backend)
 
         integration_domain = [[0.0, 1.0], [-2.0, 0.0]]
         if dtype_arg is not None:

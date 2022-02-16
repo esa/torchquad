@@ -11,10 +11,9 @@ from integration.vegas_stratification import VEGASStratification
 from helper_functions import setup_test_for_backend
 
 
-def _run_vegas_stratification_checks(backend, precision):
+def _run_vegas_stratification_checks(backend, dtype_name):
     """Test if the VEGASStratification methods work correctly"""
-    print(f"Testing VEGASStratification with {backend}, {precision}")
-    dtype_name = {"float": "float32", "double": "float64"}[precision]
+    print(f"Testing VEGASStratification with {backend}, {dtype_name}")
     dtype_float = to_backend_dtype(dtype_name, like=backend)
     dtype_int = to_backend_dtype("int64", like=backend)
     dim = 3
@@ -76,16 +75,16 @@ def _run_vegas_stratification_checks(backend, precision):
 
 
 test_vegas_stratification_numpy_f32 = setup_test_for_backend(
-    _run_vegas_stratification_checks, "numpy", "float"
+    _run_vegas_stratification_checks, "numpy", "float32"
 )
 test_vegas_stratification_numpy_f64 = setup_test_for_backend(
-    _run_vegas_stratification_checks, "numpy", "double"
+    _run_vegas_stratification_checks, "numpy", "float64"
 )
 test_vegas_stratification_torch_f32 = setup_test_for_backend(
-    _run_vegas_stratification_checks, "torch", "float"
+    _run_vegas_stratification_checks, "torch", "float32"
 )
 test_vegas_stratification_torch_f64 = setup_test_for_backend(
-    _run_vegas_stratification_checks, "torch", "double"
+    _run_vegas_stratification_checks, "torch", "float64"
 )
 
 

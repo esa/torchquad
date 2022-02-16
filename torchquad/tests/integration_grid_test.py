@@ -37,7 +37,7 @@ def _check_grid_validity(grid, integration_domain, N, eps):
         ), "Points are outside of the integration domain"
 
 
-def _run_integration_grid_tests(backend, precision):
+def _run_integration_grid_tests(backend, dtype_name):
     """
     Test IntegrationGrid in integration.integration_grid for illegal values with various input arguments
     """
@@ -48,7 +48,6 @@ def _run_integration_grid_tests(backend, precision):
 
     # Generate a grid in different dimensions with different N on different domains
     eps = 2e-8  # error bound
-    dtype_name = {"float": "float32", "double": "float64"}[precision]
     dtype = to_backend_dtype(dtype_name, like=backend)
 
     # Test 1: N is float, 1-D
@@ -67,16 +66,16 @@ def _run_integration_grid_tests(backend, precision):
 
 
 test_integration_grid_numpy = setup_test_for_backend(
-    _run_integration_grid_tests, "numpy", "double"
+    _run_integration_grid_tests, "numpy", "float64"
 )
 test_integration_grid_torch = setup_test_for_backend(
-    _run_integration_grid_tests, "torch", "double"
+    _run_integration_grid_tests, "torch", "float64"
 )
 test_integration_grid_jax = setup_test_for_backend(
-    _run_integration_grid_tests, "jax", "double"
+    _run_integration_grid_tests, "jax", "float64"
 )
 test_integration_grid_tensorflow = setup_test_for_backend(
-    _run_integration_grid_tests, "tensorflow", "double"
+    _run_integration_grid_tests, "tensorflow", "float64"
 )
 
 

@@ -68,11 +68,11 @@ def _run_simpson_tests(backend, _precision):
         assert error < 5e-9
 
 
-test_integrate_numpy = setup_test_for_backend(_run_simpson_tests, "numpy", "double")
-test_integrate_torch = setup_test_for_backend(_run_simpson_tests, "torch", "double")
-test_integrate_jax = setup_test_for_backend(_run_simpson_tests, "jax", "double")
+test_integrate_numpy = setup_test_for_backend(_run_simpson_tests, "numpy", "float64")
+test_integrate_torch = setup_test_for_backend(_run_simpson_tests, "torch", "float64")
+test_integrate_jax = setup_test_for_backend(_run_simpson_tests, "jax", "float64")
 test_integrate_tensorflow = setup_test_for_backend(
-    _run_simpson_tests, "tensorflow", "double"
+    _run_simpson_tests, "tensorflow", "float64"
 )
 
 

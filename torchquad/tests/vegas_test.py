@@ -18,9 +18,9 @@ from helper_functions import (
 )
 
 
-def _run_example_integrations(backend, precision):
+def _run_example_integrations(backend, dtype_name):
     """Test the integrate method in VEGAS for the given backend and example test functions using compute_integration_test_errors"""
-    print(f"Testing VEGAS+ with example functions with {backend}, {precision}")
+    print(f"Testing VEGAS+ with example functions with {backend}, {dtype_name}")
     vegas = VEGAS()
 
     # 1D Tests
@@ -69,10 +69,9 @@ def _run_example_integrations(backend, precision):
         assert error < 12.5
 
 
-def _run_vegas_accuracy_checks(backend, precision):
+def _run_vegas_accuracy_checks(backend, dtype_name):
     """Test VEGAS+ with special peak integrands where it should be significantly more accurate than MonteCarlo"""
-    print(f"Testing VEGAS+ accuracy with {backend}, {precision}")
-    dtype_name = {"float": "float32", "double": "float64"}[precision]
+    print(f"Testing VEGAS+ accuracy with {backend}, {dtype_name}")
     dtype = to_backend_dtype(dtype_name, like=backend)
     integrator = VEGAS()
 
@@ -166,9 +165,9 @@ class ModifiedRNG(RNG):
         )
 
 
-def _run_vegas_special_case_checks(backend, precision):
+def _run_vegas_special_case_checks(backend, dtype_name):
     """Test VEGAS+ in special cases, for example an integrand which is zero everywhere"""
-    print(f"Testing VEGAS+ special cases with {backend}, {precision}")
+    print(f"Testing VEGAS+ special cases with {backend}, {dtype_name}")
     integrator = VEGAS()
 
     print("Testing VEGAS with an integrand which is zero everywhere")
@@ -209,15 +208,15 @@ def _run_vegas_special_case_checks(backend, precision):
     assert anp.abs(integral - 1.0) < 0.1
 
 
-def _run_vegas_tests(backend, precision):
+def _run_vegas_tests(backend, dtype_name):
     """Test if VEGAS+ works with example functions and is accurate as expected"""
-    _run_vegas_accuracy_checks(backend, precision)
-    _run_vegas_special_case_checks(backend, precision)
-    _run_example_integrations(backend, precision)
+    _run_vegas_accuracy_checks(backend, dtype_name)
+    _run_vegas_special_case_checks(backend, dtype_name)
+    _run_example_integrations(backend, dtype_name)
 
 
-test_integrate_numpy = setup_test_for_backend(_run_vegas_tests, "numpy", "double")
-test_integrate_torch = setup_test_for_backend(_run_vegas_tests, "torch", "double")
+test_integrate_numpy = setup_test_for_backend(_run_vegas_tests, "numpy", "float64")
+test_integrate_torch = setup_test_for_backend(_run_vegas_tests, "torch", "float64")
 
 
 if __name__ == "__main__":

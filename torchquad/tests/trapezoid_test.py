@@ -67,11 +67,11 @@ def _run_trapezoid_tests(backend, _precision):
         assert error < 7000
 
 
-test_integrate_numpy = setup_test_for_backend(_run_trapezoid_tests, "numpy", "double")
-test_integrate_torch = setup_test_for_backend(_run_trapezoid_tests, "torch", "double")
-test_integrate_jax = setup_test_for_backend(_run_trapezoid_tests, "jax", "double")
+test_integrate_numpy = setup_test_for_backend(_run_trapezoid_tests, "numpy", "float64")
+test_integrate_torch = setup_test_for_backend(_run_trapezoid_tests, "torch", "float64")
+test_integrate_jax = setup_test_for_backend(_run_trapezoid_tests, "jax", "float64")
 test_integrate_tensorflow = setup_test_for_backend(
-    _run_trapezoid_tests, "tensorflow", "double"
+    _run_trapezoid_tests, "tensorflow", "float64"
 )
 
 

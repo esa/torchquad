@@ -164,12 +164,11 @@ def _calculate_gradient_over_param(
     )
 
 
-def _run_gradient_tests(backend, precision):
+def _run_gradient_tests(backend, dtype_name):
     """
     Test if the implemented integrators
     maintain gradients and if the gradients are consistent and correct
     """
-    dtype_name = {"float": "float32", "double": "float64"}[precision]
     # Define integrators and numbers of evaluation points
     integrators = [Trapezoid(), Simpson(), Boole(), MonteCarlo(), VEGAS()]
     Ns_1d = [149, 149, 149, 99997, 99997]
@@ -260,10 +259,10 @@ def _run_gradient_tests(backend, precision):
         assert np.abs(gradient - 4.0) < 0.1
 
 
-test_gradients_torch = setup_test_for_backend(_run_gradient_tests, "torch", "double")
-test_gradients_jax = setup_test_for_backend(_run_gradient_tests, "jax", "double")
+test_gradients_torch = setup_test_for_backend(_run_gradient_tests, "torch", "float64")
+test_gradients_jax = setup_test_for_backend(_run_gradient_tests, "jax", "float64")
 test_gradients_tensorflow = setup_test_for_backend(
-    _run_gradient_tests, "tensorflow", "double"
+    _run_gradient_tests, "tensorflow", "float64"
 )
 
 if __name__ == "__main__":

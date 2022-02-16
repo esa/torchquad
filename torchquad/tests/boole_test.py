@@ -51,11 +51,11 @@ def _run_boole_tests(backend, _precision):
     # assert error < 5e-9
 
 
-test_integrate_numpy = setup_test_for_backend(_run_boole_tests, "numpy", "double")
-test_integrate_torch = setup_test_for_backend(_run_boole_tests, "torch", "double")
-test_integrate_jax = setup_test_for_backend(_run_boole_tests, "jax", "double")
+test_integrate_numpy = setup_test_for_backend(_run_boole_tests, "numpy", "float64")
+test_integrate_torch = setup_test_for_backend(_run_boole_tests, "torch", "float64")
+test_integrate_jax = setup_test_for_backend(_run_boole_tests, "jax", "float64")
 test_integrate_tensorflow = setup_test_for_backend(
-    _run_boole_tests, "tensorflow", "double"
+    _run_boole_tests, "tensorflow", "float64"
 )
 
 

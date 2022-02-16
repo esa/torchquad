@@ -40,9 +40,8 @@ def _run_tests_with_all_backends(func, func_extra_args=[{}]):
             continue
         if backend == "torch":
             enable_cuda()
-        for precision in ["float", "double"]:
-            set_precision(precision, backend=backend)
-            dtype_name = {"double": "float64", "float": "float32"}[precision]
+        for dtype_name in ["float32", "float64"]:
+            set_precision(dtype_name, backend=backend)
             # Iterate over arguments in an inner loop here instead of an outer
             # loop so that there are less switches between backends
             for kwargs in func_extra_args:
