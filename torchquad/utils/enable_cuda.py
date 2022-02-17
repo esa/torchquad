@@ -1,4 +1,3 @@
-import torch
 from loguru import logger
 
 from .set_precision import set_precision
@@ -12,6 +11,8 @@ def enable_cuda(device=0, data_type="float"):
         device (int, optional): CUDA device to use. Defaults to 0.
         data_type (string, optional): Data type to use, either "float" or "double". Defaults to "float".
     """
+    import torch
+
     if torch.cuda.is_available():
         logger.info("PyTorch VERSION: " + str(torch.__version__))
         logger.info("CUDNN VERSION: " + str(torch.backends.cudnn.version()))

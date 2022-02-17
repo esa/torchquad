@@ -16,10 +16,15 @@ Minimal working example
     # ideally allocate everything in torch on the GPU
     # and avoid non-torch function calls
     import torch
-    from torchquad import MonteCarlo
+    from torchquad import MonteCarlo, set_up_backend
 
-    # The function we want to integrate, in this example f(x0,x1) = sin(x0) + e^x1 for x0=[0,1] and x1=[-1,1]
-    # Note that the function needs to support multiple evaluations at once (first dimension of x here)
+    # Enable GPU support if available and set the floating point precision
+    set_up_backend("torch", data_type="float32")
+
+    # The function we want to integrate, in this example
+    # f(x0,x1) = sin(x0) + e^x1 for x0=[0,1] and x1=[-1,1]
+    # Note that the function needs to support multiple evaluations at once (first
+    # dimension of x here)
     # Expected result here is ~3.2698
     def some_function(x):
         return torch.sin(x[:,0]) + torch.exp(x[:,1])
@@ -108,8 +113,15 @@ Now let’s get started! First, the general imports:
     import torch
     torch.set_printoptions(precision=10) # Set displayed output precision to 10 digits
 
+    from torchquad import set_up_backend  # Necessary to enable GPU support
     from torchquad import Trapezoid, Simpson, Boole, MonteCarlo, VEGAS # The available integrators
-    import torchquad  # Initialize torchquad with CUDA support if possible
+    import torchquad
+
+.. code:: ipython3
+
+    # Use this to enable GPU support and set the floating point precision
+    set_up_backend("torch", data_type="float32")
+
 
 
 One-dimensional integration
@@ -435,14 +447,15 @@ We selected the Trapezoid rule and the Monte Carlo method to showcase that getti
     import torch
     from torchquad.integration.monte_carlo import MonteCarlo
     from torchquad.integration.trapezoid import Trapezoid
-    from torchquad.utils.set_precision import set_precision
+    from torchquad.utils.set_up_backend import set_up_backend
 
     def test_function(x):
         """V shaped test function."""
         return 2 * torch.abs(x)
 
-    set_precision("double")
-    N = 99997 # Number of iterations
+    set_up_backend("torch", data_type="float64")
+    # Number of Function evaluations
+    N = 99997
     torch.manual_seed(0)  # We have to seed torch to get reproducible results
     integrators = [MonteCarlo(), Trapezoid()]   # Define integrators
 
@@ -480,14 +493,14 @@ we can JIT-compile the performance-relevant parts of the integrate method:
 
     import time
     import torch
-    from torchquad import Boole, set_precision
+    from torchquad import Boole, set_up_backend
 
 
     def example_integrand(x):
         return torch.sum(torch.sin(x), dim=1)
 
 
-    set_precision("float")
+    set_up_backend("torch", data_type="float32")
     N = 912673
     dim = 3
     integrator = Boole()

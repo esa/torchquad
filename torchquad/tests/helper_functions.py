@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 
 from integration_test_functions import Polynomial, Exponential, Sinusoid
-from utils.enable_cuda import enable_cuda
-from utils.set_precision import set_precision
+from utils.set_up_backend import set_up_backend
 from utils.set_log_level import set_log_level
 
 
@@ -215,15 +214,7 @@ def setup_test_for_backend(test_func, backend, dtype_name):
     def func():
         pytest.importorskip(backend)
         set_log_level("INFO")
-        if backend == "torch":
-            enable_cuda()
-        if dtype_name is not None:
-            set_precision(dtype_name, backend=backend)
-        if backend == "tensorflow":
-            from tensorflow.python.ops.numpy_ops import np_config
-
-            # The Tensorflow backend only works with numpy behaviour enabled.
-            np_config.enable_numpy_behavior()
+        set_up_backend(backend, dtype_name)
         if dtype_name is None:
             return test_func(backend)
         return test_func(backend, dtype_name)

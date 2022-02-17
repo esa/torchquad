@@ -146,8 +146,11 @@ The full documentation can be found on [readthedocs](https://torchquad.readthedo
 # To avoid copying things to GPU memory, 
 # ideally allocate everything in torch on the GPU
 # and avoid non-torch function calls
-import torch 
-from torchquad import MonteCarlo
+import torch
+from torchquad import MonteCarlo, set_up_backend
+
+# Enable GPU support if available and set the floating point precision
+set_up_backend("torch", data_type="float32")
 
 # The function we want to integrate, in this example f(x0,x1) = sin(x0) + e^x1 for x0=[0,1] and x1=[-1,1]
 # Note that the function needs to support multiple evaluations at once (first dimension of x here)

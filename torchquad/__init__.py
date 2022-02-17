@@ -18,6 +18,7 @@ from .plots.plot_runtime import plot_runtime
 from .utils.set_log_level import set_log_level
 from .utils.enable_cuda import enable_cuda
 from .utils.set_precision import set_precision
+from .utils.set_up_backend import set_up_backend
 from .utils.deployment_test import _deployment_test
 
 __all__ = [
@@ -33,9 +34,9 @@ __all__ = [
     "enable_cuda",
     "set_precision",
     "set_log_level",
+    "set_up_backend",
     "_deployment_test",
 ]
 
 set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "INFO"))
-enable_cuda()
 logger.info("Initializing torchquad.")

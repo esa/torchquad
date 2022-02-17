@@ -1,5 +1,3 @@
-import torch
-
 from torchquad import Boole, Trapezoid, Simpson, VEGAS, MonteCarlo
 
 # TODO test these in the future
@@ -19,6 +17,8 @@ def _deployment_test():
     """
     """[summary]
     """
+    import torch
+
     set_log_level("INFO")
     logger.info("####################################")
     logger.info("######## TESTING DEPLOYMENT ########")
