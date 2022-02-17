@@ -76,6 +76,8 @@ class VEGAS(BaseIntegrator):
         self._dim = dim
         self._nr_of_fevals = 0
         self._max_iterations = max_iterations
+        self._eps_rel = eps_rel
+        self._eps_abs = eps_abs
         self.use_grid_improve = use_grid_improve
         self.N = N
         # Determine the number of evaluations per iteration
@@ -138,50 +140,65 @@ class VEGAS(BaseIntegrator):
                 f"Iteration {self.it}, Acc={acc:.4e}, Result={self.results[-1]:.4e},neval={self._nr_of_fevals}"
             )
 
-            if self.it % 5 > 0:
-                continue
-
-            # Abort conditions depending on achieved errors
-            res_abs = anp.abs(self._get_result())
-            err = self._get_error()
-            chi2 = self._get_chisq()
-            logger.debug(f"Iteration {self.it},Chi2={chi2:.4e}")
-            if (err <= eps_rel * res_abs or err <= eps_abs) and chi2 / 5.0 < 1.0:
+            if self._check_abort_conditions():
                 break
-
-            # Adjust number of evals if Chi square indicates instability
-            # EQ 32
-            if chi2 / 5.0 < 1.0:
-                # Use more points in the next iterations to reduce the
-                # relative error
-                if res_abs == 0.0:
-                    self._starting_N += self._N_increment
-                else:
-                    acc = err / res_abs
-                    self._starting_N = min(
-                        self._starting_N + self._N_increment,
-                        self._starting_N * anp.sqrt(acc / (eps_rel + 1e-8)),
-                    )
-            elif chi2 / 5.0 > 1.0:
-                # Use more points in the next iterations because of instability
-                self._starting_N += self._N_increment
-
-            # Abort if the next 5 iterations would use too many function
-            # evaluations
-            if self._nr_of_fevals + self._starting_N * 5 > self.N:
-                break
-
-            # Abort if the maximum nuber of iterations is reached
-            if self.it + 5 > self._max_iterations:
-                break
-
-            self.results = []  # reset sample results
-            self.sigma2 = []  # reset sample results
 
         logger.info(
             f"Computed integral after {self._nr_of_fevals} evals was {self._get_result():.8e}."
         )
         return self._get_result()
+
+    def _check_abort_conditions(self):
+        """Test if VEGAS should execute more iterations or stop,
+        and every fifth iteration reset the sample integral results
+        and adjust the number of evaluations per iteration
+
+        Returns:
+            Bool: True iff VEGAS should abort
+        """
+        # Abort only every fifth iteration
+        if self.it % 5 > 0:
+            return False
+
+        # Abort conditions depending on achieved errors
+        res_abs = anp.abs(self._get_result())
+        err = self._get_error()
+        chi2 = self._get_chisq()
+        logger.debug(f"Iteration {self.it},Chi2={chi2:.4e}")
+        if (
+            err <= self._eps_rel * res_abs or err <= self._eps_abs
+        ) and chi2 / 5.0 < 1.0:
+            return True
+
+        # Adjust number of evals if Chi square indicates instability
+        # EQ 32
+        if chi2 / 5.0 < 1.0:
+            # Use more points in the next iterations to reduce the
+            # relative error
+            if res_abs == 0.0:
+                self._starting_N += self._N_increment
+            else:
+                acc = err / res_abs
+                self._starting_N = min(
+                    self._starting_N + self._N_increment,
+                    int(self._starting_N * anp.sqrt(acc / (self._eps_rel + 1e-8))),
+                )
+        elif chi2 / 5.0 > 1.0:
+            # Use more points in the next iterations because of instability
+            self._starting_N += self._N_increment
+
+        # Abort if the next 5 iterations would use too many function
+        # evaluations
+        if self._nr_of_fevals + self._starting_N * 5 > self.N:
+            return True
+
+        # Abort if the maximum nuber of iterations is reached
+        if self.it + 5 > self._max_iterations:
+            return True
+
+        self.results = []  # reset sample results
+        self.sigma2 = []  # reset sample results
+        return False
 
     def _warmup_grid(self, warmup_N_it=5, N_samples=1000):
         """This function warms up the adaptive map of VEGAS over some iterations and samples.
