@@ -18,7 +18,11 @@ def set_up_backend(backend, data_type=None, torch_enable_cuda=True):
     """
     if backend == "torch":
         if torch_enable_cuda:
-            enable_cuda()
+            if data_type is None:
+                enable_cuda()
+            else:
+                # Do not call set_precision twice.
+                enable_cuda(data_type=None)
     elif backend == "tensorflow":
         from tensorflow.python.ops.numpy_ops import np_config
 
