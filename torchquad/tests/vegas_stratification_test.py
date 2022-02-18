@@ -8,7 +8,7 @@ from autoray import to_backend_dtype
 from integration.utils import RNG
 from integration.vegas_stratification import VEGASStratification
 
-from integration_test_utils import setup_test_for_backend
+from helper_functions import setup_test_for_backend
 
 
 def _run_vegas_stratification_checks(backend, precision):

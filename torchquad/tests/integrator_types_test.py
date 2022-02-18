@@ -17,7 +17,7 @@ from integration.boole import Boole
 from integration.monte_carlo import MonteCarlo
 from integration.vegas import VEGAS
 from utils.set_precision import set_precision
-from integration_test_utils import setup_test_for_backend
+from helper_functions import setup_test_for_backend
 
 
 # Setup for tensorflow so that Newton Cotes works

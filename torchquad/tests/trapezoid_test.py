@@ -3,7 +3,7 @@ import sys
 sys.path.append("../")
 
 from integration.trapezoid import Trapezoid
-from integration_test_utils import (
+from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
 )
@@ -32,7 +32,7 @@ def _run_trapezoid_tests(backend, _precision):
     )
     print(f"1D Trapezoid Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     # All polynomials up to degree = 1 should be 0
-    # If this breaks check if test functions in integration_test_utils changed.
+    # If this breaks check if test functions in helper_functions changed.
     for err, test_function in zip(errors, funcs):
         assert test_function.get_order() > 1 or err < 1e-15
     for error in errors[:2]:

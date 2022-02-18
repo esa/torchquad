@@ -3,7 +3,7 @@ import sys
 sys.path.append("../")
 
 from integration.monte_carlo import MonteCarlo
-from integration_test_utils import (
+from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
 )
@@ -32,7 +32,7 @@ def _run_monte_carlo_tests(backend, _precision):
     for err, test_function in zip(errors, funcs):
         assert test_function.get_order() > 0 or err == 0.0
 
-    # If this breaks check if test functions in integration_test_utils changed.
+    # If this breaks check if test functions in helper_functions changed.
     for error in errors[:3]:
         assert error < 7e-3
 

@@ -12,7 +12,7 @@ from unittest.mock import patch
 from integration.vegas import VEGAS
 from integration.utils import RNG
 
-from integration_test_utils import (
+from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
 )

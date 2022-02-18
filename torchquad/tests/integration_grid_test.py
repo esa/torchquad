@@ -6,7 +6,7 @@ from autoray import numpy as anp
 from autoray import to_backend_dtype
 
 from integration.integration_grid import IntegrationGrid
-from integration_test_utils import setup_test_for_backend
+from helper_functions import setup_test_for_backend
 
 
 def _check_grid_validity(grid, integration_domain, N, eps):

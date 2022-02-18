@@ -5,7 +5,7 @@ sys.path.append("../")
 import warnings
 
 from integration.boole import Boole
-from integration_test_utils import (
+from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
 )

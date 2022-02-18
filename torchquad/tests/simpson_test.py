@@ -5,7 +5,7 @@ sys.path.append("../")
 import warnings
 
 from integration.simpson import Simpson
-from integration_test_utils import (
+from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
 )
@@ -35,7 +35,7 @@ def _run_simpson_tests(backend, _precision):
     )
     print(f"1D Simpson Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     # All polynomials up to degree = 3 should be 0
-    # If this breaks, check if test functions in integration_test_utils changed.
+    # If this breaks, check if test functions in helper_functions changed.
     for err, test_function in zip(errors, funcs):
         assert test_function.get_order() > 3 or err < 1e-15
 

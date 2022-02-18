@@ -7,7 +7,7 @@ from autoray import to_backend_dtype
 
 from integration.vegas_map import VEGASMap
 
-from integration_test_utils import setup_test_for_backend
+from helper_functions import setup_test_for_backend
 
 
 def _check_tensor_similarity(a, b, err_abs_max=0.0, expected_dtype=None):

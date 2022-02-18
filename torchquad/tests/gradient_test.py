@@ -12,7 +12,7 @@ from integration.trapezoid import Trapezoid
 from integration.simpson import Simpson
 from integration.boole import Boole
 
-from integration_test_utils import setup_test_for_backend
+from helper_functions import setup_test_for_backend
 
 
 def _v_function(x):
