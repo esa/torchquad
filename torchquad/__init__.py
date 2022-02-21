@@ -17,6 +17,7 @@ from .integration.adaptive_trapezoid import AdaptiveTrapezoid
 
 from .plots.plot_convergence import plot_convergence
 from .plots.plot_runtime import plot_runtime
+from .plots.plot_adaptive_grid import plot_adaptive_grid
 
 from .utils.set_log_level import set_log_level
 from .utils.enable_cuda import enable_cuda
@@ -33,6 +34,7 @@ __all__ = [
     "AdaptiveTrapezoid",
     "plot_convergence",
     "plot_runtime",
+    "plot_adaptive_grid",
     "enable_cuda",
     "set_precision",
     "set_log_level",
