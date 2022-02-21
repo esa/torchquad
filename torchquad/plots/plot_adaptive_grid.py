@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from matplotlib import cm
 import matplotlib.patches as mpatches
 import numpy as np
 
@@ -17,10 +16,14 @@ def plot_adaptive_grid(grid, dpi=100):
     fig = plt.figure(dpi=dpi,figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')  
 
-    #change /test colors
-    max_refinement_level=grid._max_refinement_level
+    #Initialize colormap and patches for legend
+    max_refinement_level = -1
+    for subdomain in grid.subdomains:
+        if subdomain.refinement_level > max_refinement_level:
+            max_refinement_level = subdomain.refinement_level
+    #max_refinement_level=grid._max_refinement_level
     cmap = plt.get_cmap('YlOrRd')
-    colors = cmap(np.linspace(0, 1, max_refinement_level))
+    colors = cmap(np.linspace(0, 1, max_refinement_level+1))
     patches = [mpatches.Patch(color=colors[rl], label=f'RL {rl+1}: not used') for rl in range(max_refinement_level)]
 
 
@@ -48,7 +51,7 @@ def plot_adaptive_grid(grid, dpi=100):
             points = np.concatenate([points_without_frame_downsampled,points[frame_index]],axis=0)
 
         #run trisurf on remaining points and populate the plot legend
-        ax.plot_trisurf(points[:,0], points[:,1], points[:,2], color=colors[subdomain.refinement_level-1], edgecolors='none', alpha=1,linewidth=0.1)
+        ax.plot_trisurf(points[:,0], points[:,1], points[:,2], color=colors[subdomain.refinement_level-1], edgecolors='none', alpha=1,linewidth=0,antialiased=False)
         patches[subdomain.refinement_level-1] = mpatches.Patch(color=colors[subdomain.refinement_level-1], label=f'RL {subdomain.refinement_level}: {int(point_density*2000)} points')
     
     ax.set_xlabel('X')
