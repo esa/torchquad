@@ -45,7 +45,7 @@ jobs:
     #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Install dependencies
       run: |
-        $CONDA/bin/conda env update --file environment.yml --name base
+        $CONDA/bin/conda env update --file environment_all_backends.yml --name base
     - name: Test with pytest
       run: |
         cd torchquad/tests

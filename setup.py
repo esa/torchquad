@@ -21,7 +21,7 @@ setup(
         "matplotlib>=3.3.3",
         "scipy>=1.6.0",
         "tqdm>=4.56.1",
-        "torch>=1.7.1",
+        "autoray>=0.2.5",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

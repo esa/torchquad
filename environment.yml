@@ -1,7 +1,6 @@
 name: torchquad
 channels:
 - conda-forge
-- pytorch
 dependencies:
 - autoray>=0.2.5
 - loguru>=0.5.3
@@ -12,12 +11,3 @@ dependencies:
 - sphinx>=3.4.3
 - sphinx_rtd_theme>=0.5.1
 - tqdm>=4.56.0
-# Numerical backend installations with CUDA support where possible:
-- numpy>=1.19.5
-- cudatoolkit>=11.1
-- pytorch>=1.9=*cuda*
-- tensorflow>=2.6.0=cuda*
-# jaxlib with CUDA support is not available for conda
-- pip:
-  - --find-links https://storage.googleapis.com/jax-releases/jax_releases.html
-  - jax[cuda]>=0.2.22
