@@ -22,7 +22,7 @@ class Trapezoid(BaseIntegrator):
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
 
         Returns:
-            float: integral value
+            torch.Tensor: integral value
         """
         self._integration_domain = _setup_integration_domain(dim, integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)

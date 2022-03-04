@@ -25,7 +25,7 @@ class MonteCarlo(BaseIntegrator):
             ValueError: If len(integration_domain) != dim
 
         Returns:
-            float: integral value
+            torch.Tensor: integral value
         """
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
         logger.debug(
