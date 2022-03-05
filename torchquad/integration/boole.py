@@ -24,7 +24,7 @@ class Boole(BaseIntegrator):
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
 
         Returns:
-            float: integral value
+            torch.Tensor: integral value
         """
 
         # If N is unspecified, set N to 5 points per dimension

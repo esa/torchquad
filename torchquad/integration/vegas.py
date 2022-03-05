@@ -48,7 +48,7 @@ class VEGAS(BaseIntegrator):
             ValueError: If len(integration_domain) != dim
 
         Returns:
-            float: Integral value
+            torch.Tensor: Integral value
         """
 
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
