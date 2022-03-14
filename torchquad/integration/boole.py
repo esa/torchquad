@@ -23,7 +23,7 @@ class Boole(NewtonCotes):
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to "torch".
 
         Returns:
-            torch.Tensor: integral value
+            backend-specific number: Integral value
         """
         return super().integrate(fn, dim, N, integration_domain, backend)
 
