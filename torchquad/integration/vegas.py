@@ -33,6 +33,7 @@ class VEGAS(BaseIntegrator):
         N=10000,
         integration_domain=None,
         seed=None,
+        rng=None,
         use_grid_improve=True,
         eps_rel=0,
         eps_abs=0,
@@ -50,6 +51,7 @@ class VEGAS(BaseIntegrator):
             N (int, optional): Approximate maximum number of function evaluations to use for the integration. This value can be exceeded if the vegas stratification distributes evaluations per hypercube very unevenly. Defaults to 10000.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
             seed (int, optional): Random number generation seed for the sampling point creation; only set if provided. Defaults to None.
+            rng (RNG, optional): An initialised RNG; this can be used as alternative to the seed argument and to avoid problems with integrand functions which reset PyTorch's RNG seed.
             use_grid_improve (bool, optional): If True, improve the vegas map after each iteration. Defaults to True.
             eps_rel (float, optional): Relative error to abort at. Defaults to 0.
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
@@ -91,7 +93,11 @@ class VEGAS(BaseIntegrator):
         if self.backend in ["jax", "tensorflow"]:
             raise ValueError(f"Unsupported numerical backend: {self.backend}")
         self.dtype = integration_domain.dtype
-        self.rng = RNG(backend=self.backend, seed=seed)
+        if rng is None:
+            rng = RNG(backend=self.backend, seed=seed)
+        elif seed is not None:
+            raise ValueError("seed and rng cannot both be passed")
+        self.rng = rng
 
         # Transform the integrand into the [0,1]^dim domain
         domain_starts = integration_domain[:, 0]
