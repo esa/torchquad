@@ -53,7 +53,7 @@ def _deployment_test():
     sp.integrate(some_test_function, dim=1, N=101)
     boole.integrate(some_test_function, dim=1, N=101)
     mc.integrate(some_test_function, dim=1, N=101)
-    vegas.integrate(some_test_function, dim=1, N=101)
+    vegas.integrate(some_test_function, dim=1, N=300)
     logger.info("Done.")
     logger.info("")
 
