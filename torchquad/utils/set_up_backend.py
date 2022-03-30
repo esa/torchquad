@@ -1,7 +1,14 @@
 from loguru import logger
+import os
 
 from .set_precision import set_precision
 from .enable_cuda import enable_cuda
+
+
+def _get_default_backend():
+    """Get the latest backend which was passed to set_up_backend.
+    If set_up_backend has never been executed, return "torch" for backwards compatibility"""
+    return os.environ.get("TORCHQUAD_DEFAULT_BACKEND", "torch")
 
 
 def set_up_backend(backend, data_type=None, torch_enable_cuda=True):
@@ -31,3 +38,5 @@ def set_up_backend(backend, data_type=None, torch_enable_cuda=True):
         np_config.enable_numpy_behavior()
     if data_type is not None:
         set_precision(data_type, backend=backend)
+    # Change the current globally default backend
+    os.environ["TORCHQUAD_DEFAULT_BACKEND"] = backend

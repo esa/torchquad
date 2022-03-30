@@ -16,6 +16,7 @@ from loguru import logger
 
 # from ..utils.set_precision import _get_precision
 from utils.set_precision import _get_precision
+from utils.set_up_backend import _get_default_backend
 
 
 def _linspace_with_grads(start, stop, N, requires_grad):
@@ -101,7 +102,7 @@ def _setup_integration_domain(dim, integration_domain, backend):
     Args:
         dim (int): Dimensionality of the integration domain.
         integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
-        backend (string): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain.
+        backend (string or None): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. If set to None, use the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
     Returns:
         backend tensor: Integration domain.
     """
@@ -118,6 +119,9 @@ def _setup_integration_domain(dim, integration_domain, backend):
         integration_domain = [
             [float(b) for b in bounds] for bounds in integration_domain
         ]
+        if backend is None:
+            # Get a globally default backend
+            backend = _get_default_backend()
         dtype_arg = _get_precision(backend)
         if dtype_arg is not None:
             # For NumPy and Tensorflow there is no global dtype, so set the

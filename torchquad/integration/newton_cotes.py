@@ -35,7 +35,7 @@ class NewtonCotes(BaseIntegrator):
         return self.calculate_result(function_values, dim, n_per_dim, hs)
 
     def get_jit_compiled_integrate(
-        self, dim, N=None, integration_domain=None, backend="torch"
+        self, dim, N=None, integration_domain=None, backend=None
     ):
         """Create an integrate function where the performance-relevant steps except the integrand evaluation are JIT compiled.
         Use this method only if the integrand cannot be compiled.
@@ -46,7 +46,7 @@ class NewtonCotes(BaseIntegrator):
             dim (int): Dimensionality of the integration domain.
             N (int, optional): Total number of sample points to use for the integration. See the integrate method documentation for more details.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to "torch".
+            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Returns:
             function(fn, integration_domain): JIT compiled integrate function where all parameters except the integrand and domain are fixed

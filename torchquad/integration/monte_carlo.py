@@ -20,7 +20,7 @@ class MonteCarlo(BaseIntegrator):
         integration_domain=None,
         seed=None,
         rng=None,
-        backend="torch",
+        backend=None,
     ):
         """Integrates the passed function on the passed domain using vanilla Monte Carlo Integration.
 
@@ -31,7 +31,7 @@ class MonteCarlo(BaseIntegrator):
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
             rng (RNG, optional): An initialised RNG; this can be used when compiling the function for Tensorflow
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to "torch".
+            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Raises:
             ValueError: If len(integration_domain) != dim
@@ -53,7 +53,7 @@ class MonteCarlo(BaseIntegrator):
         return self.calculate_result(function_values, integration_domain)
 
     def get_jit_compiled_integrate(
-        self, dim, N=1000, integration_domain=None, seed=None, backend="torch"
+        self, dim, N=1000, integration_domain=None, seed=None, backend=None
     ):
         """Create an integrate function where the performance-relevant steps except the integrand evaluation are JIT compiled.
         Use this method only if the integrand cannot be compiled.
@@ -65,7 +65,7 @@ class MonteCarlo(BaseIntegrator):
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
             seed (int, optional): Random number generation seed for the sequence of sampling point calculations, only set if provided. The returned integrate function calculates different points in each invocation with and without specified seed. Defaults to None.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to "torch".
+            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Returns:
             function(fn, integration_domain): JIT compiled integrate function where all parameters except the integrand and domain are fixed
