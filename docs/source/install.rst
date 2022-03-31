@@ -57,7 +57,7 @@ Here are installation instructions for other numerical backends:
    .. code-block:: bash
 
       conda install "tensorflow>=2.6.0=cuda*" -c conda-forge
-      pip install "jax[cuda]>=0.2.22" --find-links https://storage.googleapis.com/jax-releases/jax_releases.html
+      pip install "jax[cuda]>=0.2.22" --find-links https://storage.googleapis.com/jax-releases/jax_releases.html # linux only
       conda install "numpy>=1.19.5" -c conda-forge
 
 More installation instructions for numerical backends can be found in

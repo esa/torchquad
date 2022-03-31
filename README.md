@@ -98,7 +98,7 @@ Note that torchquad also works on the CPU; however, it is optimized for GPU usag
 
 For a detailed list of required packages and packages for numerical backends,
 please refer to the conda environment files [environment.yml](/environment.yml) and [environment_all_backends.yml](/environment_all_backends.yml).
-torchquad has been tested with JAX 0.2.25, NumPy 1.19.5, PyTorch 1.10.0 and Tensorflow 2.7.0; other versions of the backends should work as well.
+torchquad has been tested with JAX 0.2.25, NumPy 1.19.5, PyTorch 1.10.0 and Tensorflow 2.7.0 on Linux; other versions of the backends should work as well but some may require additional setup on other platforms such as Windows.
 
 
 ### Installation
@@ -124,7 +124,7 @@ Note also that installing PyTorch with *pip* may **not** set it up with CUDA sup
 Here are installation instructions for other numerical backends:
    ```sh
    conda install "tensorflow>=2.6.0=cuda*" -c conda-forge
-   pip install "jax[cuda]>=0.2.22" --find-links https://storage.googleapis.com/jax-releases/jax_releases.html
+   pip install "jax[cuda]>=0.2.22" --find-links https://storage.googleapis.com/jax-releases/jax_releases.html # linux only
    conda install "numpy>=1.19.5" -c conda-forge
    ```
 
