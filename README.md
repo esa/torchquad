@@ -192,7 +192,7 @@ integral_value = mc.integrate(
 )
 ```
 To change the logger verbosity, set the `TORCHQUAD_LOG_LEVEL` environment
-variable; for example `export TORCHQUAD_LOG_LEVEL=WARNING`.
+variable; for example `export TORCHQUAD_LOG_LEVEL=DEBUG`.
 
 You can find all available integrators [here](https://torchquad.readthedocs.io/en/main/integration_methods.html).
 

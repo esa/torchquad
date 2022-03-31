@@ -43,7 +43,7 @@ Minimal working example
     )
 
 To set the default logger verbosity, change the ``TORCHQUAD_LOG_LEVEL``
-environment variable; for example ``export TORCHQUAD_LOG_LEVEL=WARNING``.
+environment variable; for example ``export TORCHQUAD_LOG_LEVEL=DEBUG``.
 A :ref:`later section <tutorial_backend_selection>` in this tutorial shows how
 to choose a different numerical backend.
 

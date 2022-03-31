@@ -38,5 +38,5 @@ __all__ = [
     "_deployment_test",
 ]
 
-set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "INFO"))
+set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
 logger.info("Initializing torchquad.")
