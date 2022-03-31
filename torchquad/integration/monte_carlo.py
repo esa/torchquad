@@ -52,6 +52,61 @@ class MonteCarlo(BaseIntegrator):
         function_values, self._nr_of_fevals = self.evaluate_integrand(fn, sample_points)
         return self.calculate_result(function_values, integration_domain)
 
+    def calculate_result(self, function_values, integration_domain):
+        """Calculate an integral result from the function evaluations
+
+        Args:
+            function_values (backend tensor): Output of the integrand
+            integration_domain (backend tensor): Integration domain
+
+        Returns:
+            backend tensor: Quadrature result
+        """
+        logger.debug("Computing integration domain volume")
+        scales = integration_domain[:, 1] - integration_domain[:, 0]
+        volume = anp.prod(scales)
+
+        # Integral = V / N * sum(func values)
+        N = function_values.shape[0]
+        integral = volume * anp.sum(function_values) / N
+        # NumPy automatically casts to float64 when dividing by N
+        if (
+            infer_backend(integration_domain) == "numpy"
+            and function_values.dtype != integral.dtype
+        ):
+            integral = integral.astype(function_values.dtype)
+        logger.opt(lazy=True).info(
+            "Computed integral: {result}", result=lambda: str(integral)
+        )
+        return integral
+
+    def calculate_sample_points(self, N, integration_domain, seed=None, rng=None):
+        """Calculate random points for the integrand evaluation
+
+        Args:
+            N (int): Number of points
+            integration_domain (backend tensor): Integration domain
+            seed (int, optional): Random number generation seed for the sampling point creation, only set if provided. Defaults to None.
+            rng (RNG, optional): An initialised RNG; this can be used when compiling the function for Tensorflow
+
+        Returns:
+            backend tensor: Sample points
+        """
+        if rng is None:
+            rng = RNG(backend=infer_backend(integration_domain), seed=seed)
+        elif seed is not None:
+            raise ValueError("seed and rng cannot both be passed")
+
+        logger.debug("Picking random sampling points")
+        dim = integration_domain.shape[0]
+        domain_starts = integration_domain[:, 0]
+        domain_sizes = integration_domain[:, 1] - domain_starts
+        # Scale and translate random numbers via broadcasting
+        return (
+            rng.uniform(size=[N, dim], dtype=domain_sizes.dtype) * domain_sizes
+            + domain_starts
+        )
+
     def get_jit_compiled_integrate(
         self, dim, N=1000, integration_domain=None, seed=None, backend=None
     ):
@@ -183,58 +238,3 @@ class MonteCarlo(BaseIntegrator):
             return lazy_compiled_integrate
 
         raise ValueError(f"Compilation not implemented for backend {backend}")
-
-    def calculate_sample_points(self, N, integration_domain, seed=None, rng=None):
-        """Calculate random points for the integrand evaluation
-
-        Args:
-            N (int): Number of points
-            integration_domain (backend tensor): Integration domain
-            seed (int, optional): Random number generation seed for the sampling point creation, only set if provided. Defaults to None.
-            rng (RNG, optional): An initialised RNG; this can be used when compiling the function for Tensorflow
-
-        Returns:
-            backend tensor: Sample points
-        """
-        if rng is None:
-            rng = RNG(backend=infer_backend(integration_domain), seed=seed)
-        elif seed is not None:
-            raise ValueError("seed and rng cannot both be passed")
-
-        logger.debug("Picking random sampling points")
-        dim = integration_domain.shape[0]
-        domain_starts = integration_domain[:, 0]
-        domain_sizes = integration_domain[:, 1] - domain_starts
-        # Scale and translate random numbers via broadcasting
-        return (
-            rng.uniform(size=[N, dim], dtype=domain_sizes.dtype) * domain_sizes
-            + domain_starts
-        )
-
-    def calculate_result(self, function_values, integration_domain):
-        """Calculate an integral result from the function evaluations
-
-        Args:
-            function_values (backend tensor): Output of the integrand
-            integration_domain (backend tensor): Integration domain
-
-        Returns:
-            backend tensor: Quadrature result
-        """
-        logger.debug("Computing integration domain volume")
-        scales = integration_domain[:, 1] - integration_domain[:, 0]
-        volume = anp.prod(scales)
-
-        # Integral = V / N * sum(func values)
-        N = function_values.shape[0]
-        integral = volume * anp.sum(function_values) / N
-        # NumPy automatically casts to float64 when dividing by N
-        if (
-            infer_backend(integration_domain) == "numpy"
-            and function_values.dtype != integral.dtype
-        ):
-            integral = integral.astype(function_values.dtype)
-        logger.opt(lazy=True).info(
-            "Computed integral: {result}", result=lambda: str(integral)
-        )
-        return integral
