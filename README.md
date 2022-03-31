@@ -94,7 +94,7 @@ This is a brief guide for how to set up torchquad.
 
 We recommend using [conda](https://anaconda.org/conda-forge/torchquad), especially if you want to utilize the GPU.
 With PyTorch it will automatically set up CUDA and the cudatoolkit for you, for example.
-Note that torchquad also works on the CPU; however, it is optimized for GPU usage. Currently torchquad only supports NVIDIA cards with CUDA. We are investigating future support for AMD cards through [ROCm](https://pytorch.org/blog/pytorch-for-amd-rocm-platform-now-available-as-python-package/).
+Note that torchquad also works on the CPU; however, it is optimized for GPU usage. torchquad's GPU support is tested only on NVIDIA cards with CUDA. We are investigating future support for AMD cards through [ROCm](https://pytorch.org/blog/pytorch-for-amd-rocm-platform-now-available-as-python-package/).
 
 For a detailed list of required packages and packages for numerical backends,
 please refer to the conda environment files [environment.yml](/environment.yml) and [environment_all_backends.yml](/environment_all_backends.yml).
