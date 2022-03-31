@@ -10,7 +10,7 @@ from .integration.simpson import Simpson
 from .integration.boole import Boole
 from .integration.vegas import VEGAS
 
-from .integration.utils import RNG
+from .integration.rng import RNG
 
 from .plots.plot_convergence import plot_convergence
 from .plots.plot_runtime import plot_runtime

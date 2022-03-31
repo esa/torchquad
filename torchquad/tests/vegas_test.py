@@ -10,7 +10,7 @@ import pstats
 from unittest.mock import patch
 
 from integration.vegas import VEGAS
-from integration.utils import RNG
+from integration.rng import RNG
 
 from helper_functions import (
     compute_integration_test_errors,

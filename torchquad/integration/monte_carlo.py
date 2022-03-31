@@ -3,7 +3,8 @@ from autoray import infer_backend
 from loguru import logger
 
 from .base_integrator import BaseIntegrator
-from .utils import _setup_integration_domain, RNG
+from .utils import _setup_integration_domain
+from .rng import RNG
 
 
 class MonteCarlo(BaseIntegrator):
