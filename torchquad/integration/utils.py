@@ -66,7 +66,7 @@ def _add_at_indices(target, indices, source, is_sorted=False):
     backend = infer_backend(target)
     if backend == "torch":
         target.scatter_add_(dim=0, index=indices, src=source)
-    else:
+    elif backend == "numpy":
         # Use indicator matrices to reduce the Python interpreter overhead
         # Based on VegasFlow's consume_array_into_indices function
         # https://github.com/N3PDF/vegasflow/blob/21209c928d07c00ae4f789d03b83e518621f174a/src/vegasflow/utils.py#L16
@@ -95,6 +95,8 @@ def _add_at_indices(target, indices, source, is_sorted=False):
             # corresponding entry in target, sum these source values, and add
             # the resulting vector to target
             target[t1:t2] += anp.sum(anp.where(indicator, source[i1:i2], zero), axis=1)
+    else:
+        raise NotImplementedError(f"Unsupported numerical backend: {backend}")
 
 
 def _setup_integration_domain(dim, integration_domain, backend):
