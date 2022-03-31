@@ -20,12 +20,6 @@ from utils.set_precision import set_precision
 from helper_functions import setup_test_for_backend
 
 
-# Setup for tensorflow so that Newton Cotes works
-from tensorflow.python.ops.numpy_ops import np_config
-
-np_config.enable_numpy_behavior()
-
-
 def _run_simple_integrations(backend):
     """
     Integrate a simple 2D constant function to check the following:
