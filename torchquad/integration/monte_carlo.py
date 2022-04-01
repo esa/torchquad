@@ -129,13 +129,15 @@ class MonteCarlo(BaseIntegrator):
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)
         backend = infer_backend(integration_domain)
-        # autoray's autojit function does JIT compilation, too, but in its
-        # current version it does not abstract away the differences between
-        # backends enough for our purposes,
-        # e.g. with PyTorch the to-be-compiled function cannot have keyword
-        # arguments and all its positional arguments are considered
-        # to be variable inputs for the compiled function.
-        # https://github.com/jcmgray/autoray/blob/35677037863d7d0d25ff025998d9fda75dce3b44/autoray/compiler.py
+        # autoray's autojit function does JIT compilation, too.
+        # We don't use it here for the following reasons:
+        # * The way random number generators have to be included or excluded
+        #   from compilation differs between backends.
+        # * autojit is not yet included in the latest autoray release
+        #   (which is version 0.2.5).
+        # * It uses the deprecated experimental_compile argument with Tensorflow.
+        # * Additional detach() calls against warnings with PyTorch are not yet
+        #   included in autojit.
         if backend == "tensorflow":
             if not hasattr(self, "_tf_jit_calculate_sample_points"):
                 import tensorflow as tf
