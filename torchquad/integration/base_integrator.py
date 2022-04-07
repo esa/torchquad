@@ -78,16 +78,6 @@ class BaseIntegrator:
         if integration_domain is not None:
             for bounds in integration_domain:
                 if len(bounds) != 2:
-                    raise ValueError(
-                        bounds,
-                        " in ",
-                        integration_domain,
-                        " does not specify a valid integration bound.",
-                    )
+                    raise ValueError(f"{bounds} in {integration_domain} does not specify a valid integration bound.")
                 if bounds[0] > bounds[1]:
-                    raise ValueError(
-                        bounds,
-                        " in ",
-                        integration_domain,
-                        " does not specify a valid integration bound.",
-                    )
+                    raise ValueError(f"{bounds} in {integration_domain} does not specify a valid integration bound.")
