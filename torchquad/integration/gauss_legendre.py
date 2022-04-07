@@ -13,8 +13,11 @@ class GaussLegendre(BaseIntegrator):
         super().__init__()
         
     def _gauss_legendre(self,n):
-        '''returns Gauss-Legendre points and weights for degree n'''
-        return np.polynomial.legendre.leggauss(n)
+        '''returns Gauss-Legendre points and weights for degree n and dimension self._dim'''
+        x,w=np.polynomial.legendre.leggauss(n)
+        xi=np.repeat(x,self._dim).reshape((n,self._dim)).T
+        wi=np.repeat(w,self._dim).reshape((n,self._dim)).T
+        return xi,wy
 
     def integrate(self, fn, dim, start_npoints=4, eps_rel=None,
     eps_abs=None, max_npoints=12,integration_domain=None):
@@ -44,19 +47,21 @@ class GaussLegendre(BaseIntegrator):
 
         for ires in range(int(np.log2(start_npoints)), max_npoints + 1): #if starting at npoints=8
             npoints = 2 ** ires #is this standard?
-            if npoints > max_npoints:
-                raise ValueError(f"Integral did not satisfy the conditions eps_abs={eps_abs} or eps_rel={eps_rel} using the maximum number of points {max_npoints}") #or a different error?
+            if npoints > 2**max_npoints:
+                raise ValueError(f"Integral did not satisfy the conditions eps_abs={eps_abs} or eps_rel={eps_rel} using the maximum number of points {2**max_npoints}") #or a different error?
                 break
 
             # generate positions and weights
             xi, wi = self._gauss_legendre(npoints)
             #TO DO: need to scale from [-1,1] to [a,b]
+            
+            logger.debug("Evaluating integrand for {xi}.")
             if self._nr_of_fevals > 0:
                 lastsum = np.array(integral)
+                integral[i] = torch.sum(self._eval(xi)*wi,axis=1) #integral from -1 to 1 f(x) ≈ sum (w_i*f(x_i))
+            else:
+                integral = torch.sum(self._eval(xi)*wi,axis=1) #integral from -1 to 1 f(x) ≈ sum (w_i*f(x_i))
 
-            # Perform integration sum w_i * f(x_i)  i=1 to npoints
-            logger.debug("Evaluating integrand for {xi}.")
-            integral = torch.sum(self._eval(xi)*wi) #integral from -1 to 1 f(x) ≈ sum (w_i*f(x_i))
             print(npoints,integral)
             # Convergence criterion
             if self._nr_of_fevals//start_npoints > 1:
