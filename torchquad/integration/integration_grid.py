@@ -33,14 +33,7 @@ class IntegrationGrid:
 
         self.h = torch.zeros([self._dim])
 
-        logger.debug(
-            "Creating "
-            + str(self._dim)
-            + "-dimensional integration grid with "
-            + str(N)
-            + " points over"
-            + str(integration_domain),
-        )
+        logger.debug(f"Creating {self._dim}-dimensional integration grid with {N} points over {integration_domain}")
 
         # Check if domain requires gradient
         if hasattr(integration_domain, "requires_grad"):
@@ -61,7 +54,7 @@ class IntegrationGrid:
             )
             self.h[dim] = grid_1d[dim][1] - grid_1d[dim][0]
 
-        logger.debug("Grid mesh width is " + str(self.h))
+        logger.debug(f"Grid mesh width is {self.h}")
 
         # Get grid points
         points = torch.meshgrid(*grid_1d)
@@ -88,26 +81,10 @@ class IntegrationGrid:
             raise ValueError("N has to be > 1.")
 
         if N ** (1.0 / dim) < 2:
-            raise ValueError(
-                "Cannot create a ",
-                dim,
-                "-dimensional grid with ",
-                N,
-                " points. Too few points per dimension.",
-            )
+            raise ValueError(f"Cannot create a {dim}-dimensional grid with {N} points. Too few points per dimension.")
 
         for bounds in integration_domain:
             if len(bounds) != 2:
-                raise ValueError(
-                    bounds,
-                    " in ",
-                    integration_domain,
-                    " does not specify a valid integration bound.",
-                )
+                raise ValueError(f"{bounds} in {integration_domain} does not specify a valid integration bound.")
             if bounds[0] > bounds[1]:
-                raise ValueError(
-                    bounds,
-                    " in ",
-                    integration_domain,
-                    " does not specify a valid integration bound.",
-                )
+                raise ValueError(f"{bounds} in {integration_domain} does not specify a valid integration bound.")
