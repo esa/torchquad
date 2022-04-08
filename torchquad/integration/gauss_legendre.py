@@ -16,8 +16,8 @@ class GaussLegendre(BaseIntegrator):
         """returns Gauss-Legendre points and weights for degree n and dimension self._dim"""
         return np.polynomial.legendre.leggauss(n)
 
-    def integrate(self, fn, dim, args=None,N=2, eps_abs=None,
-    eps_rel=1e-3, max_N=12, base=2,integration_domain=None):
+
+    def integrate(self, fn, dim, args=None,N=2, eps_abs=None,eps_rel=1e-3, max_N=12, base=2,integration_domain=None):
         """Integrates the passed function on the passed domain using Gauss-Legendre quadrature.
 
         Args:
@@ -70,7 +70,7 @@ class GaussLegendre(BaseIntegrator):
             else:
                 integral = torch.sum(self._eval(xi,args=args)*wi,axis=1) #integral from a to b f(x) ≈ sum (w_i*f(x_i))
 
-            print(npoints,integral)
+            #print(npoints,integral)
             # Convergence criterion
             if self._nr_of_fevals//self._dim > 1:
                 l1 = np.abs(integral - lastsum)
