@@ -16,16 +16,17 @@ class GaussLegendre(BaseIntegrator):
         """returns Gauss-Legendre points and weights for degree n and dimension self._dim"""
         return np.polynomial.legendre.leggauss(n)
 
-    def integrate(self, fn, dim, N=2, eps_abs=None,
+    def integrate(self, fn, dim, args=None,N=2, eps_abs=None,
     eps_rel=1e-3, max_N=12, base=2,integration_domain=None):
         """Integrates the passed function on the passed domain using Gauss-Legendre quadrature.
 
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the function to integrate.
+            args (iterable object, optional): Additional arguments ``t0, ..., tn``, required by `fn`.
             N (int, optional): Total number of sample points to use for the integration. Defaults to 2.
-            eps_abs (float): Absolute error condition used to evaluate quadrature. Defaults to None
-            eps_rel (float): Relative error condition used to evaluate quadrature. Defaults to 1e-3
+            eps_abs (float, optional): Absolute error condition used to evaluate quadrature. Defaults to None
+            eps_rel (float, optional): Relative error condition used to evaluate quadrature. Defaults to 1e-3
             max_N (int, optional): Maximum number of sample points to use for the integration. Defaults to 12.
             base (int, optional): Base number to use for determining npoints. Defaults to 2. This means if N=2, the number of Gauss-Legendre points that the integral starts with will be base**N or 2**2=4. Likewise, the maximum number of points that the integral will evaluate will be base**max_N, or with the defaults 2**12=4096.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
@@ -65,9 +66,9 @@ class GaussLegendre(BaseIntegrator):
             logger.debug("Evaluating integrand for {xi}.")
             if self._nr_of_fevals > 0:
                 lastsum = np.array(integral)
-                integral[i] = torch.sum(self._eval(xi[i])*wi[i],axis=1)
+                integral[i] = torch.sum(self._eval(xi[i], args=args)*wi[i],axis=1)
             else:
-                integral = torch.sum(self._eval(xi)*wi,axis=1) #integral from a to b f(x) ≈ sum (w_i*f(x_i))
+                integral = torch.sum(self._eval(xi,args=args)*wi,axis=1) #integral from a to b f(x) ≈ sum (w_i*f(x_i))
 
             print(npoints,integral)
             # Convergence criterion

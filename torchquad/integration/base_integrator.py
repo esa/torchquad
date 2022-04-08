@@ -26,14 +26,16 @@ class BaseIntegrator:
             NotImplementedError("This is an abstract base class. Should not be called.")
         )
 
-    def _eval(self, points):
+    def _eval(self, points, args=None):
         """Evaluates the function at the passed points and updates nr_of_evals
 
         Args:
             points (torch.tensor): Integration points
         """
+        if args is None:
+            args = ()
         self._nr_of_fevals += len(points)
-        result = self._fn(points)
+        result = self._fn(points, *args)
         if type(result) != torch.Tensor:
             warnings.warn(
                 "The passed function did not return a torch.tensor. Will try to convert. Note that this may be slow as it results in memory transfers between CPU and GPU, if torchquad uses the GPU."
