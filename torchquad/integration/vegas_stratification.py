@@ -1,5 +1,7 @@
-import torch
-import math
+from autoray import numpy as anp
+from autoray import astype
+
+from .utils import _add_at_indices
 
 
 class VEGASStratification:
@@ -8,56 +10,66 @@ class VEGASStratification:
     EQ <n> refers to equation <n> in the above paper.
     """
 
-    def __init__(self, N_increment, dim=1, beta=0.75):
+    def __init__(self, N_increment, dim, rng, backend, dtype, beta=0.75):
         """Initialize the VEGAS stratification.
 
         Args:
-            N_increment (int, optional): Number of evaluations per iteration.
-            dim (int, optional): Dimensionality. Defaults to 1.
+            N_increment (int): Number of evaluations per iteration.
+            dim (int): Dimensionality
+            rng (RNG): Random number generator
+            backend (string): Numerical backend
+            dtype (backend dtype): dtype used for the calculations
             beta (float, optional): Beta parameter from VEGAS Enhanced. Defaults to 0.75.
         """
+        self.rng = rng
         self.dim = dim
-        # stratification steps per dim, EQ 33
-        self.N_strat = math.floor((N_increment / 2.0) ** (1.0 / dim))
+        # stratification steps per dim, EQ 41
+        self.N_strat = int((N_increment / 4.0) ** (1.0 / dim))
         self.N_strat = 1000 if self.N_strat > 1000 else self.N_strat
         self.beta = beta  # variable controlling adaptiveness in stratification 0 to 1
-        self.N_cubes = self.N_strat ** self.dim  # total number of subdomains
+        self.N_cubes = self.N_strat**self.dim  # total number of subdomains
         self.V_cubes = (1.0 / self.N_strat) ** self.dim  # volume of hypercubes
-        self.JF = torch.zeros(self.N_cubes)  # jacobian times f eval
-        self.JF2 = torch.zeros(self.N_cubes)  # jacobian^2 times f
-        self.dh = torch.ones(self.N_cubes) * 1.0 / self.N_cubes  # dampened counts
-        self.strat_counts = torch.zeros(self.N_cubes)  # current index counts
+
+        self.dtype = dtype
+        self.backend = backend
+
+        # jacobian times f eval and jacobian^2 times f
+        self.JF = anp.zeros([self.N_cubes], dtype=self.dtype, like=backend)
+        self.JF2 = anp.zeros([self.N_cubes], dtype=self.dtype, like=backend)
+
+        # dampened counts
+        self.dh = (
+            anp.ones([self.N_cubes], dtype=self.dtype, like=backend)
+            * 1.0
+            / self.N_cubes
+        )
+
+        # current index counts as floating point numbers
+        self.strat_counts = anp.zeros([self.N_cubes], dtype=self.dtype, like=backend)
 
     def accumulate_weight(self, nevals, weight_all_cubes):
         """Accumulate weights for the cubes.
 
         Args:
-            nevals (torch.tensor): Number of evals belonging to each cube (sorted).
-            weight_all_cubes (torch.tensor): Function values.
+            nevals (backend tensor): Number of evals belonging to each cube (sorted).
+            weight_all_cubes (backend tensor): Function values.
 
         Returns:
-            torch.tensor,torch.tensor: Computed JF and JF2
+            backend tensor, backend tensor: Computed JF and JF2
         """
-        # Build indices for weights
-        indices = torch.cumsum(nevals, dim=0)
+        # indices maps each index of weight_all_cubes to the corresponding
+        # hypercube index.
+        N_cubes_arange = anp.arange(self.N_cubes, dtype=nevals.dtype, like=self.backend)
+        indices = anp.repeat(N_cubes_arange, nevals)
+        # Reset JF and JF2, and accumulate the weights and squared weights
+        # into them.
+        self.JF = anp.zeros([self.N_cubes], dtype=self.dtype, like=self.backend)
+        self.JF2 = anp.zeros([self.N_cubes], dtype=self.dtype, like=self.backend)
+        _add_at_indices(self.JF, indices, weight_all_cubes, is_sorted=True)
+        _add_at_indices(self.JF2, indices, weight_all_cubes**2.0, is_sorted=True)
 
-        # Compute squares of all weights ahead
-        square_weights = torch.pow(weight_all_cubes, 2.0)
-
-        # Used to store previous indexstarting point
-        prev = 0
-        for idx in range(len(nevals)):
-            # Get the values for the idx-th cubes
-            cur_weights = weight_all_cubes[prev : indices[idx]]
-            cur_square_weights = square_weights[prev : indices[idx]]
-
-            # Compute jacobians
-            self.JF2[idx] = cur_square_weights.sum()
-            self.JF[idx] = cur_weights.sum()
-
-            # Store counts
-            self.strat_counts[idx] += len(cur_weights)
-            prev = indices[idx]
+        # Store counts
+        self.strat_counts = astype(nevals, self.dtype)
 
         return self.JF, self.JF2
 
@@ -72,15 +84,13 @@ class VEGASStratification:
             V2 * self.JF2 / self.strat_counts
             - (self.V_cubes * self.JF / self.strat_counts) ** 2
         )
+        # Sometimes rounding errors produce negative values very close to 0
+        d_tmp[d_tmp < 0.0] = 0.0
 
-        self.dh = d_tmp ** self.beta
-
-        # for very small d_tmp d_tmp ** self.beta becomes NaN
-        self.dh[torch.isnan(self.dh)] = 0
+        self.dh = d_tmp**self.beta
 
         # Normalize dampening
-        d_sum = sum(self.dh)
-
+        d_sum = anp.sum(self.dh)
         if d_sum != 0:
             self.dh = self.dh / d_sum
 
@@ -91,60 +101,72 @@ class VEGASStratification:
             nevals_exp (int): Expected number of evaluations.
 
         Returns:
-            torch.tensor: Stratified sample counts per cube.
+            backend tensor: Stratified sample counts per cube.
         """
-        nh = torch.multiply(self.dh, nevals_exp)
-        nh = torch.floor(nh)
-        nh = torch.clip(nh, 2, None).int()
-        return nh
+        nh = anp.floor(self.dh * nevals_exp)
+        nh = anp.clip(nh, 2, None)
+        return astype(nh, "int64")
 
     def _get_indices(self, idx):
         """Maps point to stratified point.
 
         Args:
-            idx (int): Target points index.
+            idx (int backend tensor): Target points indices.
 
         Returns:
-            torch.tensor: Mapped point.
+            int backend tensor: Mapped points.
         """
-        res = torch.zeros([len(idx), self.dim])
-        tmp = idx
-        for i in range(self.dim):
-            q = tmp // self.N_strat
-            r = tmp - q * self.N_strat
-            res[:, i] = r
-            tmp = q
-        return res
+        # A commented-out alternative way for mapped points calculation if
+        # idx is anp.arange(len(nevals), like=nevals).
+        # torch.meshgrid's indexing argument was added in version 1.10.1,
+        # so don't use it yet.
+        """
+        grid_1d = anp.arange(self.N_strat, like=self.backend)
+        points = anp.meshgrid(*([grid_1d] * self.dim), indexing="xy", like=self.backend)
+        points = anp.stack(
+            [mg.ravel() for mg in points], axis=1, like=self.backend
+        )
+        return points
+        """
+        # Repeat idx via broadcasting and divide it by self.N_strat ** d
+        # for all dimensions d
+        points = anp.reshape(idx, [idx.shape[0], 1])
+        strides = self.N_strat ** anp.arange(self.dim, like=points)
+        if self.backend == "torch":
+            # Torch shows a compatibility warning with //, so use torch.div
+            # instead
+            points = anp.div(points, strides, rounding_mode="floor")
+        else:
+            points = points // strides
+        # Calculate the component-wise remainder: points mod self.N_strat
+        points[:, :-1] = points[:, :-1] - self.N_strat * points[:, 1:]
+        return points
 
     def get_Y(self, nevals):
         """Compute randomly sampled points.
 
         Args:
-            nevals (torch.tensor): Number of samples to draw per stratification cube.
+            nevals (int backend tensor): Number of samples to draw per stratification cube.
 
         Returns:
-            torch.tensor: Sampled points.
+            backend tensor: Sampled points.
         """
-        dy = 1.0 / self.N_strat
-        res_in_all_cubes = []
+        # Get integer positions for each hypercube
+        nevals_arange = anp.arange(len(nevals), dtype=nevals.dtype, like=nevals)
+        positions = self._get_indices(nevals_arange)
 
-        # Get indices
-        indices = torch.arange(len(nevals))
-        indices = self._get_indices(indices)
+        # For each hypercube i, repeat its position nevals[i] times
+        position_indices = anp.repeat(nevals_arange, nevals)
+        positions = positions[position_indices, :]
 
-        # Get random numbers (we get a few more just to vectorize properly)
-        # This might increase the memory requirements slightly but is probably
-        # worth it.
-        random_uni = torch.rand(size=[len(nevals), nevals.max(), self.dim]) * 0.999999
-
-        # Sum the random numbers onto the index locations and scale with dy
-        # Note that the resulting tensor is still slightly too large
-        # that gets remedied in the for-loop after
-        # Also, indices needs the unsqueeye to fill the missing dimension
-        res = (random_uni + indices.unsqueeze(1)) * dy
-
-        # Note this loop is tricky to vectorize as cubes have different N
-        for idx, N in enumerate(nevals):
-            res_in_all_cubes.append(res[idx, 0:N, :])
-
-        return torch.cat(res_in_all_cubes, dim=0)
+        # Convert the positions to float, add random offsets to them and scale
+        # the result so that each point is in [0, 1)^dim
+        positions = astype(positions, self.dtype)
+        random_uni = self.rng.uniform(
+            size=[positions.shape[0], self.dim], dtype=self.dtype
+        )
+        positions = (positions + random_uni) / self.N_strat
+        # Due to rounding errors points are sometimes 1.0; replace them with
+        # a value close to 1
+        positions[positions >= 1.0] = 0.999999
+        return positions
