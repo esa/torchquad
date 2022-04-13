@@ -2,7 +2,6 @@ import torch
 from loguru import logger
 
 from .base_integrator import BaseIntegrator
-#from .integration_grid import GaussLegendre#IntegrationGrid
 from .utils import _setup_integration_domain
 
 
@@ -16,8 +15,7 @@ class GaussLegendre(BaseIntegrator):
         """returns Gauss-Legendre points and weights for degree n and dimension self._dim"""
         return np.polynomial.legendre.leggauss(n)
 
-
-    def integrate(self, fn, dim, args=None,N=2, eps_abs=None,eps_rel=1e-3, max_N=12, base=2,integration_domain=None):
+    def integrate(self, fn, dim, args=None, N=2, eps_abs=None, eps_rel=1e-3, max_N=12, base=2, integration_domain=None, fixed=False):
         """Integrates the passed function on the passed domain using Gauss-Legendre quadrature.
 
         Args:
@@ -56,7 +54,7 @@ class GaussLegendre(BaseIntegrator):
 
             # generate positions and weights
             xi, wi = self._gauss_legendre(npoints)  #(dim,n)
-            #scale from [-1,1] to [a,b]
+            #scale from [-1,1] to [a,b] e.g. https://en.wikipedia.org/wiki/Gaussian_quadrature#Change_of_interval
             a,b=self._integration_domain.T
             xm=0.5*(b+a)
             xl=0.5*(b-a)
@@ -69,6 +67,8 @@ class GaussLegendre(BaseIntegrator):
                 integral[i] = torch.sum(self._eval(xi[i], args=args)*wi[i],axis=1)
             else:
                 integral = torch.sum(self._eval(xi,args=args)*wi,axis=1) #integral from a to b f(x) ≈ sum (w_i*f(x_i))
+                if fixed:
+                    break #no error evaluation if fixed-point quadrature desired
 
             #print(npoints,integral)
             # Convergence criterion
