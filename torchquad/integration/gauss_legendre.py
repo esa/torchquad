@@ -1,6 +1,6 @@
 import torch
 from loguru import logger
-import numpy as np
+from autoray import numpy as anp
 
 from .base_integrator import BaseIntegrator
 from .utils import _setup_integration_domain
@@ -59,13 +59,13 @@ class GaussLegendre(BaseIntegrator):
             a,b=self._integration_domain.T
             xm=0.5*(b+a)
             xl=0.5*(b-a)
-            xi=np.repeat(xm,npoints).reshape(self._dim,npoints)+np.outer(xl,xi)
-            wi=np.outer(wi,xl).T
+            xi=anp.repeat(xm,npoints).reshape(self._dim,npoints)+anp.outer(xl,xi)
+            wi=anp.outer(wi,xl).T
             
             logger.debug("Evaluating integrand for {xi}.")
             if self._nr_of_fevals > 0:
-                lastsum = np.array(integral)
-                integral[i] = torch.sum(self._eval(xi[i], args=args)*wi[i],axis=1)
+                lastsum = anp.array(integral)
+                integral[i] = anp.sum(self._eval(xi[i], args=args)*wi[i],axis=1)
             else:
                 integral = torch.sum(self._eval(xi,args=args)*wi,axis=1) #integral from a to b f(x) ≈ sum (w_i*f(x_i))
                 if fixed:
