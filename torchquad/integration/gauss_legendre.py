@@ -1,5 +1,6 @@
 import torch
 from loguru import logger
+import numpy as np
 
 from .base_integrator import BaseIntegrator
 from .utils import _setup_integration_domain
