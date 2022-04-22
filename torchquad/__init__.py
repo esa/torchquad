@@ -13,7 +13,7 @@ from .integration.trapezoid import Trapezoid
 from .integration.simpson import Simpson
 from .integration.boole import Boole
 from .integration.vegas import VEGAS
-from .integration.gauss_legendre import GaussLegendre, GaussJacobi, GaussLaguerre, GaussHermite
+from .integration.gaussian import GaussLegendre, GaussJacobi, GaussLaguerre, GaussHermite
 
 from .plots.plot_convergence import plot_convergence
 from .plots.plot_runtime import plot_runtime
