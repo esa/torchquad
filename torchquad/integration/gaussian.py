@@ -137,7 +137,7 @@ class GaussLaguerre(Gaussian):
         super().__init__()
         self.name="Gauss-Laguerre"
         self.root_fn=scipy.special.roots_laguerre
-        self.default_integration_domain=[[0,anp.inf]]
+        self.default_integration_domain=[[0,numpy.inf]]
         
         
 class GaussHermite(Gaussian):
@@ -156,7 +156,7 @@ class GaussHermite(Gaussian):
         super().__init__()
         self.name="Gauss-Hermite"
         self.root_fn=scipy.special.roots_hermite
-        self.default_integration_domain=[[-1*anp.inf,anp.inf]]
+        self.default_integration_domain=[[-1*numpy.inf,numpy.inf]]
                 
                 
 #class GaussLobatto(Gaussian):
