@@ -9,7 +9,7 @@ from .base_integrator import BaseIntegrator
 from .utils import _setup_integration_domain
 
 class Gaussian(BaseIntegrator):
-    """Gaussian quadrature methods inherit from this. Default behaviour is Gauss-Legendre quadrature."""
+    """Gaussian quadrature methods inherit from this. Default behaviour is Gauss-Legendre quadrature on [-1,1]."""
 
     def __init__(self):
         super().__init__()
@@ -18,42 +18,29 @@ class Gaussian(BaseIntegrator):
         self.root_args=()
         self.default_integration_domain=[[-1,1]]
         self.transform_interval=True
-        self.wrapper_func=None
         
     def _points_and_weights(self,root_fn,root_args,wrapper_func=None):
         """Returns points and weights for integration.
-        Adjusts from interval [-1,1] to integration limits [a,b]
         
         Args:
             root_fn (func): function to use for computing sample points and weights via the roots of appropriate polynomials
             root_args (tuple): arguments required for root-finding function, most commonly the degree N
-            wrapper_func (func,optional): function that performs any additional calculations required to get the proper points and weights, eg. for use in Gauss-Lobatto quadrature. Default is None.
+            wrapper_func (func,optional): function that performs any additional calculations required to get the proper points and weights, eg. for use in Gauss-Lobatto quadrature, or for transformation of interval in Gauss-Legendre quadrature. Default is None.
         
         Returns:
             tuple(points, weights)
             """
-        a,b=self._integration_domain.T
         xi, wi = root_fn(*root_args) #can autoray work with scipy functions?
+        if isinstance(self._integration_domain,torch.Tensor):
+            xi=torch.from_numpy(xi)
+            wi=torch.from_numpy(wi)
         if wrapper_func is not None:
             xi,wi=wrapper_func(xi,wi)
-        
-        if self.transform_interval: #scale from [-1,1] to [a,b] e.g. https://en.wikipedia.org/wiki/Gaussian_quadrature#Change_of_interval
-            ## doesn't work correctly yet for Gauss-Jacobi!! why?
-            n=xi.shape[0]
-            xm=0.5*(b+a)
-            xl=0.5*(b-a)
-            if isinstance(xm,torch.Tensor):
-                #for now... figure out a better solution later
-                aa=torch.zeros(n)
-                xi=aa.new(xi)
-                wi=aa.new(wi)
-
-            if xm.device !='cpu': #xi and xm need to be on same device
-                xi=do("repeat",xm,n,like="numpy").reshape(self._dim,n)+anp.outer(xl,xi)
-            else:
-                xi=do("repeat",xm.cpu(),n,like="numpy").reshape(self._dim,n).to(torch.cuda.current_device())+anp.outer(xl,xi) #what if backend isn't torch?
-            wi=anp.outer(wi,xl).T
-        
+        if xi.shape[0] !=self._dim:
+            xi=do("repeat",xi,self._dim,like="numpy").reshape(self._dim,xi.shape[0])
+        if wi.shape[0] !=self._dim:
+            wi=do("repeat",wi,self._dim,like="numpy").reshape(self._dim,xi.shape[1])
+                
         return xi,wi
     
     def integrate(self, fn, dim, args=None, N=8, integration_domain=None):
@@ -74,19 +61,21 @@ class Gaussian(BaseIntegrator):
             integration_domain=self.default_integration_domain*dim
             if self.name in ["Gauss-Laguerre","Gauss-Hermite"]:
                 logger.info(f"{self.name} integration only allowed over the interval {self.default_integration_domain[0]}!")
-                self.transform_interval=False
+                
         self._integration_domain = _setup_integration_domain(dim, integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
-
+            
         logger.debug(f"Using {self.name} for integrating a fn with {N} points over {self._integration_domain}")
 
         self._dim = dim
         self._fn = fn
+        const=self._get_constant_multiplier()
         
         root_args=(N,)+self.root_args
         
         xi, wi = self._points_and_weights(self.root_fn,root_args,wrapper_func=self.wrapper_func)
-        integral= anp.sum(self._eval(xi,args=args,weights=wi)) #what if there is a sum in the function? then wi*self._eval() will have dimension mismatch
+
+        integral= anp.sum(const*anp.sum(self._eval(xi,args=args,weights=wi),axis=1)) #what if there is a sum in the function? then wi*self._eval() will have dimension mismatch
         logger.info(f"Computed integral was {integral}.")
 
         return integral
@@ -104,6 +93,18 @@ class GaussLegendre(Gaussian):
     def __init__(self):
         super().__init__()
         
+    def wrapper_func(self,xi,wi):  #scale from [-1,1] to [a,b]
+        a,b=self._integration_domain.T
+        x0 = 0.5 * (1.0 - xi) #self.points)
+        x1 = 0.5 * (1.0 + xi)#self.points)
+        xi = anp.outer(a, x0) + anp.outer(b, x1)
+        wi=do("repeat",wi,xi.shape[0],like="numpy").reshape(self._dim,xi.shape[1])
+        return xi,wi
+        
+    def _get_constant_multiplier(self): #do this somewhere else? with points and weights maybe?
+        diff = self._integration_domain.T[1] - self._integration_domain.T[0]
+        return 0.5*diff
+        
         
 class GaussJacobi(Gaussian):
     """Gauss-Jacobi quadrature rule in torch, for integrals of the form :math:`\int_{a}^{b} f(x) (1-x)^{\alpha} (1+x)^{\beta} dx`. See https://en.wikipedia.org/wiki/Gauss%E2%80%93Jacobi_quadrature.
@@ -112,7 +113,7 @@ class GaussJacobi(Gaussian):
     --------
     >>> gj=torchquad.GaussJacobi(2,3)
     >>> integral = gj.integrate(lambda x:x, dim=1, N=101, integration_domain=[[0,5]]) #integral from 0 to 5 of x * (1-x)**2 * (1+x)**3
-    |TQ-INFO| Computed integral was 0.7163378000259399 #analytic result = 1346/105
+    |TQ-INFO| Computed integral was 7.61904761904762 #analytic result = 1346/105 #wrong?
     """
 
     def __init__(self, alpha,beta):
@@ -120,6 +121,17 @@ class GaussJacobi(Gaussian):
         self.name="Gauss-Jacobi"
         self.root_fn=scipy.special.roots_jacobi
         self.root_args=(alpha,beta)
+        
+    def wrapper_func(self,xi,wi):  #scale from [-1,1] to [a,b]
+        a,b=self._integration_domain.T
+        x0 = 0.5 * (1.0 - xi) #self.points)
+        x1 = 0.5 * (1.0 + xi)#self.points)
+        xi = anp.outer(a, x0) + anp.outer(b, x1)
+        return xi,wi
+        
+    def _get_constant_multiplier(self): #do this somewhere else? with points and weights maybe?
+        diff = self._integration_domain.T[1] - self._integration_domain.T[0]
+        return 0.5*diff
         
         
 class GaussLaguerre(Gaussian):
@@ -138,6 +150,10 @@ class GaussLaguerre(Gaussian):
         self.name="Gauss-Laguerre"
         self.root_fn=scipy.special.roots_laguerre
         self.default_integration_domain=[[0,numpy.inf]]
+        self.wrapper_func=None
+        
+    def _get_constant_multiplier(self):
+        return 1.0
         
         
 class GaussHermite(Gaussian):
@@ -157,6 +173,10 @@ class GaussHermite(Gaussian):
         self.name="Gauss-Hermite"
         self.root_fn=scipy.special.roots_hermite
         self.default_integration_domain=[[-1*numpy.inf,numpy.inf]]
+        self.wrapper_func=None
+    
+    def _get_constant_multiplier(self):
+        return 1.0
                 
                 
 #class GaussLobatto(Gaussian):
