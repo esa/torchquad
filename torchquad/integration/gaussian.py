@@ -47,9 +47,9 @@ class Gaussian(BaseIntegrator):
     def _expand_dimension(self,x):
         '''expand dimensions of 1D array or tensor'''
         try:
-            x=do("repeat",x,self._dim,like="numpy").reshape(self._dim,xi.shape[0])
+            x=do("repeat",x,self._dim,like="numpy").reshape(self._dim,x.shape[0])
         except TypeError: #need tensor to be on cpu, then assign it back to GPU
-            x=do("repeat",x.cpu().detach(),self._dim,like="numpy").reshape(self._dim,xi.shape[0]).to(x.device)
+            x=do("repeat",x.cpu().detach(),self._dim,like="numpy").reshape(self._dim,x.shape[0]).to(x.device)
     
     def integrate(self, fn, dim, args=None, N=8, integration_domain=None):
         """Integrates the passed function on the passed domain using fixed-point Gaussian quadrature.
