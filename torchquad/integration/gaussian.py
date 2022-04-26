@@ -32,8 +32,8 @@ class Gaussian(BaseIntegrator):
             """
         xi, wi = root_fn(*root_args) #can autoray work with scipy functions?
         if isinstance(self._integration_domain,torch.Tensor):
-            xi=torch.from_numpy(xi)
-            wi=torch.from_numpy(wi)
+            xi=torch.from_numpy(xi).to(torch.cuda.current_device())
+            wi=torch.from_numpy(wi).to(torch.cuda.current_device())
         if wrapper_func is not None:
             xi,wi=wrapper_func(xi,wi)
         if xi.shape[0] !=self._dim:
