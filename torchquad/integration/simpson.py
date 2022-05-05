@@ -29,7 +29,7 @@ class Simpson(BaseIntegrator):
 
         # If N is unspecified, set N to 3 points per dimension
         if N is None:
-            N = 3 ** dim
+            N = 3**dim
 
         self._integration_domain = _setup_integration_domain(dim, integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
@@ -96,7 +96,7 @@ class Simpson(BaseIntegrator):
                 "N per dimension cannot be lower than 3. "
                 "N per dim will now be changed to 3."
             )
-            N = 3 ** dim
+            N = 3**dim
         elif n_per_dim % 2 != 1:
             warnings.warn(
                 "N per dimension cannot be even due to necessary subdivisions. "
