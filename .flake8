@@ -1,0 +1,11 @@
+[flake8]
+extend-ignore =
+	# Allow whitespace before ':' because in some cases this whitespace
+	# avoids confusing the operator precedence,
+	# e.g. "arr[1 : k + p]" instead of "arr[1:k + p]"
+	E203,
+	# Allow module imports not at top of file so that numerical backends
+	# can be imported only if needed
+	E402,
+	# Allow very long lines
+	E501

@@ -5,40 +5,40 @@ sys.path.append("../")
 import warnings
 
 from integration.boole import Boole
-from utils.enable_cuda import enable_cuda
-from utils.set_precision import set_precision
-from utils.set_log_level import set_log_level
+from helper_functions import (
+    compute_integration_test_errors,
+    setup_test_for_backend,
+)
 
 
-def test_integrate():
-    """Tests the integrate function in integration.Boole.
+def _run_boole_tests(backend, _precision):
+    """Test the integrate function in integration.Boole for the given backend.
     Note: For now the 10-D test is diabled due to lack of GPU memory on some computers."""
-    set_log_level("INFO")
-    enable_cuda()
-    set_precision("double")
-
-    # Needs to happen after precision / device settings to avoid having some tensors intialized on cpu and some on GPU
-    from tests.integration_test_utils import compute_test_errors
 
     bl = Boole()
     # 1D Tests
     N = 401
 
-    errors = compute_test_errors(bl.integrate, {"N": N, "dim": 1}, use_complex=True)
-    print("1D Boole Test: Passed N =", N, "\n", "Errors: ", errors)
+    errors, funcs = compute_integration_test_errors(
+        bl.integrate, {"N": N, "dim": 1}, dim=1, use_complex=True, backend=backend
+    )
+    print(f"1D Boole Test passed. N: {N}, backend: {backend}, Errors: {errors}")
+    # Polynomials up to degree 5 can be integrated almost exactly with Boole.
+    for err, test_function in zip(errors, funcs):
+        assert test_function.get_order() > 5 or err < 6.33e-11
     for error in errors:
-        assert error < 1e-11
+        assert error < 6.33e-11
 
     # 3D Tests
     N = 1076890  # N = 102.5 per dim (will change to 101 if all works)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        errors = compute_test_errors(
-            bl.integrate, {"N": N, "dim": 3}, dim=3, use_complex=True
+        errors, funcs = compute_integration_test_errors(
+            bl.integrate, {"N": N, "dim": 3}, dim=3, use_complex=True, backend=backend
         )
-    print("3D Boole Test: Passed N =", N, "\n", "Errors: ", errors)
-    for error in errors[:3]:
-        assert error < 2e-13
+    print(f"3D Boole Test passed. N: {N}, backend: {backend}, Errors: {errors}")
+    for err, test_function in zip(errors, funcs):
+        assert test_function.get_order() > 5 or err < 2e-13
     for error in errors:
         assert error < 5e-6
 
@@ -51,6 +51,17 @@ def test_integrate():
     # assert error < 5e-9
 
 
+test_integrate_numpy = setup_test_for_backend(_run_boole_tests, "numpy", "float64")
+test_integrate_torch = setup_test_for_backend(_run_boole_tests, "torch", "float64")
+test_integrate_jax = setup_test_for_backend(_run_boole_tests, "jax", "float64")
+test_integrate_tensorflow = setup_test_for_backend(
+    _run_boole_tests, "tensorflow", "float64"
+)
+
+
 if __name__ == "__main__":
     # used to run this test individually
-    test_integrate()
+    test_integrate_numpy()
+    test_integrate_torch()
+    test_integrate_jax()
+    test_integrate_tensorflow()
