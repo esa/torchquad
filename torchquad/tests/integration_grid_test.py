@@ -33,7 +33,7 @@ def test_integration_grid():
     # print("1-D (float) test: N =", N, ", grid_N =", grid._N, ", error:", torch.abs(grid.h[dim] - 1 / (N - 1)))
 
     # Test 2: N is int, 3-D
-    N = 4 ** 3
+    N = 4**3
     integration_domain = [[0, 2], [-2, 1], [0.5, 1]]
     grid = IntegrationGrid(N, integration_domain)
 
@@ -50,7 +50,7 @@ def test_integration_grid():
     # print("3-D (int) test: N =", N, ", grid_N = N^(1/3) =", grid._N, ", error:", torch.abs(grid.h[dim] - domain_width / (grid._N - 1)))
 
     # Test 3: N is float, 3-D
-    N = 4.0 ** 3
+    N = 4.0**3
     integration_domain = [[0, 2], [-2, 1], [0.5, 1]]
     grid = IntegrationGrid(N, integration_domain)
 
