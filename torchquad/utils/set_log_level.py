@@ -3,7 +3,9 @@ import sys
 
 
 def set_log_level(log_level: str):
-    """Set the log level for the logger
+    """Set the log level for the logger.
+    The preset log level when initialising Torchquad is the value of the TORCHQUAD_LOG_LEVEL environment variable, or 'WARNING' if the environment variable is unset.
+
     Args:
         log_level (str): The log level to set. Options are 'TRACE','DEBUG', 'INFO', 'SUCCESS', 'WARNING', 'ERROR', 'CRITICAL'
     """

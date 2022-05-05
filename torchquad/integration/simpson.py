@@ -1,69 +1,41 @@
-import torch
+from autoray import numpy as anp
 from loguru import logger
 import warnings
 
-from .base_integrator import BaseIntegrator
-from .integration_grid import IntegrationGrid
-from .utils import _setup_integration_domain
+from .newton_cotes import NewtonCotes
 
 
-class Simpson(BaseIntegrator):
+class Simpson(NewtonCotes):
 
-    """Simpson's rule in torch. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
+    """Simpson's rule. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
 
     def __init__(self):
         super().__init__()
 
-    def integrate(self, fn, dim, N=None, integration_domain=None):
+    def integrate(self, fn, dim, N=None, integration_domain=None, backend=None):
         """Integrates the passed function on the passed domain using Simpson's rule.
 
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
             N (int, optional): Total number of sample points to use for the integration. Should be odd. Defaults to 3 points per dimension if None is given.
-            integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
+            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
+            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Returns:
-            float: integral value
+            backend-specific number: Integral value
         """
+        return super().integrate(fn, dim, N, integration_domain, backend)
 
-        # If N is unspecified, set N to 3 points per dimension
-        if N is None:
-            N = 3 ** dim
-
-        self._integration_domain = _setup_integration_domain(dim, integration_domain)
-        self._check_inputs(dim=dim, N=N, integration_domain=self._integration_domain)
-        N = self._adjust_N(dim=dim, N=N)
-
-        self._dim = dim
-        self._fn = fn
-
-        logger.debug(
-            "Using Simpson for integrating a fn with a total of "
-            + str(N)
-            + " points over "
-            + str(self._integration_domain)
-            + "."
-        )
-
-        # Create grid and assemble evaluation points
-        self._grid = IntegrationGrid(N, self._integration_domain)
-
-        logger.debug("Evaluating integrand on the grid.")
-        function_values = self._eval(self._grid.points)
-
-        # Reshape the output to be [N,N,...] points instead of [dim*N] points
-        function_values = function_values.reshape([self._grid._N] * dim)
-
-        logger.debug("Computing areas.")
-
-        # This will contain the Simpson's areas per dimension
-        cur_dim_areas = function_values
-
+    @staticmethod
+    def _apply_composite_rule(cur_dim_areas, dim, hs):
+        """Apply composite Simpson quadrature.
+        cur_dim_areas will contain the areas per dimension
+        """
         # We collapse dimension by dimension
         for cur_dim in range(dim):
             cur_dim_areas = (
-                self._grid.h[cur_dim]
+                hs[cur_dim]
                 / 3.0
                 * (
                     cur_dim_areas[..., 0:-2][..., ::2]
@@ -71,12 +43,16 @@ class Simpson(BaseIntegrator):
                     + cur_dim_areas[..., 2:][..., ::2]
                 )
             )
-            cur_dim_areas = torch.sum(cur_dim_areas, dim=dim - cur_dim - 1)
-        logger.info("Computed integral was " + str(cur_dim_areas) + ".")
-
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
         return cur_dim_areas
 
-    def _adjust_N(self, dim, N):
+    @staticmethod
+    def _get_minimal_N(dim):
+        """Get the minimal number of points N for the integrator rule"""
+        return 3**dim
+
+    @staticmethod
+    def _adjust_N(dim, N):
         """Adjusts the current N to an odd integer >=3, if N is not that already.
 
         Args:
@@ -96,7 +72,7 @@ class Simpson(BaseIntegrator):
                 "N per dimension cannot be lower than 3. "
                 "N per dim will now be changed to 3."
             )
-            N = 3 ** dim
+            N = 3**dim
         elif n_per_dim % 2 != 1:
             warnings.warn(
                 "N per dimension cannot be even due to necessary subdivisions. "

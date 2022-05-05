@@ -11,7 +11,7 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  build:
+  lint_flake8:
 
     runs-on: ubuntu-latest
 
@@ -24,15 +24,31 @@ jobs:
     - name: Lint with flake8
       run: |
         pip install flake8
+        flake8 . --count --show-source --statistics
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Search for severe code errors with flake8
+      run: |
         # stop the build if there are Python syntax errors or undefined names
+        pip install flake8
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
     #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Install dependencies
       run: |
-        $CONDA/bin/conda env update --file environment.yml --name base
+        $CONDA/bin/conda env update --file environment_all_backends.yml --name base
     - name: Test with pytest
       run: |
         cd torchquad/tests
         conda install pytest
-        $CONDA/bin/pytest
+        $CONDA/bin/pip3 install pytest-error-for-skips
+        $CONDA/bin/pytest -ra --error-for-skips

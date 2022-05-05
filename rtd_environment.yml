@@ -1,12 +1,13 @@
-name: torchquad
+name: rtd_torchquad
 channels:
 - conda-forge
 dependencies:
-- autoray>=0.2.5
+- ipython
 - loguru>=0.5.3
 - matplotlib>=3.3.3
 - pytest>=6.2.1
 - python>=3.8
+- autoray>=0.2.5
 - scipy>=1.6.0
 - sphinx>=3.4.3
 - sphinx_rtd_theme>=0.5.1
