@@ -5,11 +5,11 @@ https://github.com/pypa/sampleproject
 """
 
 # Always prefer setuptools over distutils
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name="torchquad",
-    version="0.2.3",
+    version="0.3.0",
     description="Package providing torch-based numerical integration methods.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -21,7 +21,7 @@ setup(
         "matplotlib>=3.3.3",
         "scipy>=1.6.0",
         "tqdm>=4.56.1",
-        "torch>=1.7.1",
+        "autoray>=0.2.5",
     ],
     classifiers=[
         "Development Status :: 3 - Alpha",

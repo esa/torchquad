@@ -1,0 +1,24 @@
+# A conda environment file to install all supported numerical backends
+name: torchquad
+channels:
+- conda-forge
+- pytorch
+dependencies:
+- autoray>=0.2.5
+- loguru>=0.5.3
+- matplotlib>=3.3.3
+- pytest>=6.2.1
+- python>=3.8
+- scipy>=1.6.0
+- sphinx>=3.4.3
+- sphinx_rtd_theme>=0.5.1
+- tqdm>=4.56.0
+# Numerical backend installations with CUDA support where possible:
+- numpy>=1.19.5
+- cudatoolkit>=11.1
+- pytorch>=1.9=*cuda*
+- tensorflow-gpu>=2.6.0
+# jaxlib with CUDA support is not available for conda
+- pip:
+  - --find-links https://storage.googleapis.com/jax-releases/jax_releases.html
+  - jax[cuda]>=0.2.22 # this will only work on linux. for win see e.g. https://github.com/cloudhan/jax-windows-builder
