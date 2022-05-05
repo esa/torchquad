@@ -188,8 +188,6 @@ Let’s plot the function briefly.
     plt.xlabel("$x$", fontsize=14)
     plt.ylabel("f($x$)", fontsize=14)
 
-.. image:: torchquad_tutorial_figure.png
-
 
 Let’s define the integration domain, set the precision to double, and initialize the integrator - let’s start with the trapezoid rule.
 
