@@ -1,7 +1,6 @@
 name: rtd_torchquad
 channels:
 - conda-forge
-
 dependencies:
 - ipython
 - loguru>=0.5.3
