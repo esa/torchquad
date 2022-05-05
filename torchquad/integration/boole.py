@@ -27,7 +27,6 @@ class Boole(NewtonCotes):
         """
         return super().integrate(fn, dim, N, integration_domain, backend)
 
-
     @staticmethod
     def _apply_composite_rule(cur_dim_areas, dim, hs):
         """Apply composite Boole quadrature.

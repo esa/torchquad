@@ -248,7 +248,7 @@ class VEGAS(BaseIntegrator):
 
             if self.backend == "torch":
                 jf_vec2 = jf_vec2.detach()
-                
+
             self.map.accumulate_weight(yrnd, jf_vec2)  # update map weights
             jf = jf_vec.sum()
             jf2 = jf_vec2.sum()
@@ -309,7 +309,7 @@ class VEGAS(BaseIntegrator):
             sig2 = sig2.detach()
         # Sometimes rounding errors produce negative values very close to 0
         sig2 = anp.abs(sig2)
-        
+
         self.results[-1] = ih.sum()  # store results
         self.sigma2[-1] = (sig2 * neval_inverse).sum()
 
