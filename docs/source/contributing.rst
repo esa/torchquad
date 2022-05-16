@@ -18,7 +18,9 @@ b. Clone the repo
 
       git clone https://github.com/esa/torchquad.git
 
-c. Setup the environment. This will create a conda environment called ``torchquad``
+c. With the default configuration, all numerical backends with CUDA support are installed. If this should not happen, comment out unwanted packages in ``environment.yml``.
+
+d. Set up the environment. This creates a conda environment called ``torchquad`` and installs the required dependencies.
 
    .. code-block:: bash
 

@@ -1,6 +1,9 @@
 import warnings
-import torch
+from autoray import numpy as anp
+from autoray import infer_backend
 from loguru import logger
+
+from .utils import _check_integration_domain
 
 
 class BaseIntegrator:
@@ -27,43 +30,64 @@ class BaseIntegrator:
         )
 
     def _eval(self, points, weights=None, args=None):
-        """Evaluates the function at the passed points and updates nr_of_evals
+        """Call evaluate_integrand to evaluate self._fn function at the passed points and update self._nr_of_evals
 
         Args:
-            points (torch.tensor): Integration points
-            weights (torch.tensor, optional): Integration weights. Defaults to None.
+            points (backend tensor): Integration points
+            weights (backend tensor, optional): Integration weights. Defaults to None.
             args (list or tuple, optional): Any arguments required by the function. Defaults to None.
         """
+        result, num_points = self.evaluate_integrand(self._fn, points,weights=weights,args=args)
+        self._nr_of_fevals += num_points
+        return result
+
+    @staticmethod
+    def evaluate_integrand(fn, points, weights=None,args=None):
+        """Evaluate the integrand function at the passed points
+
+        Args:
+            fn (function): Integrand function
+            points (backend tensor): Integration points
+            weights (backend tensor, optional): Integration weights. Defaults to None.
+            args (list or tuple, optional): Any arguments required by the function. Defaults to None.
+
+        Returns:
+            backend tensor: Integrand function output
+            int: Number of evaluated points
+        """
+        num_points = points.shape[0]
+        
         if args is None:
             args = ()
-        if weights is None:
-            result = self._fn(points, *args)
-        else:
-            result = weights*self._fn(points, *args)
-        self._nr_of_fevals += len(points)
-        if type(result) != torch.Tensor:
+        
+        result = fn(points, *args)
+        
+        if infer_backend(result) != infer_backend(points):
             warnings.warn(
-                "The passed function did not return a torch.tensor. Will try to convert. Note that this may be slow as it results in memory transfers between CPU and GPU, if torchquad uses the GPU."
+                "The passed function's return value has a different numerical backend than the passed points. Will try to convert. Note that this may be slow as it results in memory transfers between CPU and GPU, if torchquad uses the GPU."
             )
-            result = torch.tensor(result)
+            result = anp.array(result, like=points)
 
-        if len(result) != len(points):
+        num_results = result.shape[0]
+        if num_results != num_points:
             raise ValueError(
-                f"The passed function was given {len(points)} points but only returned {len(result)} value(s)."
+                f"The passed function was given {num_points} points but only returned {num_results} value(s)."
                 f"Please ensure that your function is vectorized, i.e. can be called with multiple evaluation points at once. It should return a tensor "
                 f"where first dimension matches length of passed elements. "
             )
 
-        return result
+        if weights is not None:
+            result *= weights
+            
+        return result, num_points
 
-    def _check_inputs(self, dim=None, N=None, integration_domain=None):
+    @staticmethod
+    def _check_inputs(dim=None, N=None, integration_domain=None):
         """Used to check input validity
-
         Args:
             dim (int, optional): Dimensionality of function to integrate. Defaults to None.
             N (int, optional): Total number of integration points. Defaults to None.
-            integration_domain (list, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
-
+            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
         Raises:
             ValueError: if inputs are not compatible with each other.
         """
@@ -72,19 +96,12 @@ class BaseIntegrator:
             if dim < 1:
                 raise ValueError("Dimension needs to be 1 or larger.")
 
-            if integration_domain is not None:
-                if dim != len(integration_domain):
-                    raise ValueError(
-                        "Dimension of integration_domain needs to match the passed function dimensionality dim."
-                    )
-
         if N is not None:
             if N < 1 or type(N) is not int:
                 raise ValueError("N has to be a positive integer.")
 
         if integration_domain is not None:
-            for bounds in integration_domain:
-                if len(bounds) != 2:
-                    raise ValueError(f"{bounds} in {integration_domain} does not specify a valid integration bound.")
-                if bounds[0] > bounds[1]:
-                    raise ValueError(f"{bounds} in {integration_domain} does not specify a valid integration bound.")
+            dim_domain = _check_integration_domain(integration_domain)
+            if dim is not None and dim != dim_domain:
+                raise ValueError(
+                    "The dimension of the integration domain must match the passed function dimensionality dim."

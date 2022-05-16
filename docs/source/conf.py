@@ -10,7 +10,8 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-import sys, os
+import sys
+import os
 
 sys.path.insert(0, os.path.abspath("../../"))
 
@@ -21,7 +22,7 @@ copyright = "2021, Gabriele Meoni, Håvard Hem Toftevaag, Pablo Gómez  ."
 author = "ESA Advanced Concepts Team"
 
 # The full version, including alpha/beta/rc tags
-release = "0.2.3"
+release = "0.3.0"
 
 
 # -- General configuration ---------------------------------------------------
