@@ -12,15 +12,14 @@ from helper_functions import (
 def _run_gaussian_tests(backend, _precision):
     """Test the integrate function in integration.gaussian for the given backend."""
 
-    integrators = [GaussLegendre(),GaussJacobi(),GaussLaguerre(),GaussHermite()]
+    integrators = [GaussLegendre(), GaussJacobi(), GaussLaguerre(), GaussHermite()]
 
     # 1D Tests
     N = 100000
-    
+
     for integrator in integrators:
-        ii=integrator
-        errors, funcs = compute_integration_test_errors(
-        ii.integrate, {"N": N, "dim": 1}, dim=1, use_complex=True, backend=backend)
+        ii = integrator
+        errors, funcs = compute_integration_test_errors(ii.integrate, {"N": N, "dim": 1}, dim=1, use_complex=True, backend=backend)
         print(f"1D {integrator} Test passed. N: {N}, backend: {backend}, Errors: {errors}")
         # Polynomials up to degree 1 can be integrated almost exactly with gaussian.
         for err, test_function in zip(errors, funcs):
@@ -30,9 +29,8 @@ def _run_gaussian_tests(backend, _precision):
 
     N = 2  # integration points, here 2 for order check (2 points should lead to almost 0 err for low order polynomials)
     for integrator in integrators:
-        ii=integrator
-        errors, funcs = compute_integration_test_errors(
-        ii.integrate, {"N": N, "dim": 1}, dim=1, use_complex=True, backend=backend)
+        ii = integrator
+        errors, funcs = compute_integration_test_errors(ii.integrate, {"N": N, "dim": 1}, dim=1, use_complex=True, backend=backend)
         print(f"1D {integrator} Test passed. N: {N}, backend: {backend}, Errors: {errors}")
         # All polynomials up to degree = 1 should be 0
         # If this breaks check if test functions in helper_functions changed.
@@ -44,9 +42,8 @@ def _run_gaussian_tests(backend, _precision):
     # 3D Tests
     N = 1000000
     for integrator in integrators:
-        ii=integrator
-        errors, funcs = compute_integration_test_errors(
-        ii.integrate, {"N": N, "dim": 3}, dim=3, use_complex=True, backend=backend)
+        ii = integrator
+        errors, funcs = compute_integration_test_errors(ii.integrate, {"N": N, "dim": 3}, dim=3, use_complex=True, backend=backend)
         print(f"3D {integrator} Test passed. N: {N}, backend: {backend}, Errors: {errors}")
         for err, test_function in zip(errors, funcs):
             assert test_function.get_order() > 1 or err < 1e-12
@@ -62,9 +59,8 @@ def _run_gaussian_tests(backend, _precision):
     # 10D Tests
     N = 10000
     for integrator in integrators:
-        ii=integrator
-        errors, funcs = compute_integration_test_errors(
-        ii.integrate, {"N": N, "dim": 10}, dim=10, use_complex=True, backend=backend)
+        ii = integrator
+        errors, funcs = compute_integration_test_errors(ii.integrate, {"N": N, "dim": 10}, dim=10, use_complex=True, backend=backend)
         print(f"10D {integrator} Test passed. N: {N}, backend: {backend}, Errors: {errors}")
         for err, test_function in zip(errors, funcs):
             assert test_function.get_order() > 1 or err < 1e-11

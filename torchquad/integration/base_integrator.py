@@ -103,5 +103,4 @@ class BaseIntegrator:
         if integration_domain is not None:
             dim_domain = _check_integration_domain(integration_domain)
             if dim is not None and dim != dim_domain:
-                raise ValueError(
-                    "The dimension of the integration domain must match the passed function dimensionality dim."
+                raise ValueError("The dimension of the integration domain must match the passed function dimensionality dim.")
