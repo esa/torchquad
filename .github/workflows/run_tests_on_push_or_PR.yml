@@ -1,0 +1,49 @@
+name: Run pytest on pull request or push
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'master'
+      - 'develop'
+
+jobs:
+  run_tests:
+    runs-on: ubuntu-latest
+    name: Check coverage
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3
+
+      - name: Install dependencies
+        run: |
+          $CONDA/bin/conda env update --file environment_all_backends.yml --name base
+
+      - name: Install pytest and pytest-cov
+        run: |
+          conda install pytest pytest-cov -y
+
+      - name: Launch tests & generate report
+        working-directory: ./torchquad/tests
+        run: pytest
+
+      - name: Coverage comment
+        id: coverage_comment
+        uses: ewjoachim/python-coverage-comment-action@v2
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          VERBOSE: true
+
+      - name: Store Pull Request comment to be posted
+        uses: actions/upload-artifact@v2
+        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          # If you use a different name, update COMMENT_ARTIFACT_NAME accordingly
+          name: python-coverage-comment-action
+          # If you use a different name, update COMMENT_FILENAME accordingly
+          path: python-coverage-comment-action.txt
