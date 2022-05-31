@@ -34,8 +34,8 @@ jobs:
 
       - name: Coverage comment
         id: coverage_comment
-        working-directory: ./torchquad/tests
         uses: ewjoachim/python-coverage-comment-action@v2
+        working-directory: ./torchquad/tests
         with:
           GITHUB_TOKEN: ${{ github.token }}
           VERBOSE: true
