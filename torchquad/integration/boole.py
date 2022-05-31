@@ -30,7 +30,6 @@ class Boole(NewtonCotes):
     @staticmethod
     def _apply_composite_rule(cur_dim_areas, dim, hs):
         """Apply composite Boole quadrature.
-
         cur_dim_areas will contain the areas per dimension
         """
         # We collapse dimension by dimension
