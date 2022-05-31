@@ -1,4 +1,4 @@
-name: Run pytest on pull request or push
+name: Generate test coverage report
 
 on:
   pull_request:
@@ -30,7 +30,7 @@ jobs:
 
       - name: Launch tests & generate report
         working-directory: ./torchquad/tests
-        run: pytest
+        run: $CONDA/bin/pytest
 
       - name: Coverage comment
         id: coverage_comment
