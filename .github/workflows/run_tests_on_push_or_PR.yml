@@ -30,12 +30,11 @@ jobs:
 
       - name: Launch tests & generate report
         working-directory: ./torchquad/tests
-        run: $CONDA/bin/pytest
+        run: $CONDA/bin/pytest --cov=../integration
 
       - name: Coverage comment
         id: coverage_comment
         uses: ewjoachim/python-coverage-comment-action@v2
-        working-directory: ./torchquad/tests
         with:
           GITHUB_TOKEN: ${{ github.token }}
           VERBOSE: true
