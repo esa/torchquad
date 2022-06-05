@@ -24,17 +24,18 @@ jobs:
         run: |
           $CONDA/bin/conda env update --file environment_all_backends.yml --name base
 
+        # have to run tests in top dir so python-coverage-comment can get report
+      - name: Install conda develop and add source dir
+        run: |
+          conda install conda-develop -y
+          conda develop ./torchquad/
+
       - name: Install pytest and pytest-cov
         run: |
           conda install pytest pytest-cov -y
 
       - name: Launch tests & generate report
-        working-directory: ./torchquad/tests
-        run: $CONDA/bin/pytest --cov=../integration --cov-config=.coveragerc
-
-        # This step is so python-coverage-comment can find the report
-      - name: Move report to top directory
-        run: mv ./torchquad/tests/.coverage .
+        run: $CONDA/bin/pytest
 
       - name: Coverage comment
         id: coverage_comment
