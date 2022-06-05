@@ -22,11 +22,11 @@ jobs:
 
       - name: Install mamba for quicker env updates 
         run: |
-          conda install mamba -y
+          conda install -c conda-forge mamba -y
 
       - name: Install dependencies
         run: |
-          conda env update --file environment_all_backends.yml --name base
+          mamba env update --file environment_all_backends.yml --name base
 
         # have to run tests in top dir so python-coverage-comment can get report
       - name: Install conda develop and add source dir
