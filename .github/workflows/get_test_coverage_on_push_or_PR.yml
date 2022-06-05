@@ -20,14 +20,18 @@ jobs:
         with:
           python-version: 3
 
+      - name: Install mamba for quicker env updates 
+        run: |
+          conda install mamba -y
+
       - name: Install dependencies
         run: |
-          $CONDA/bin/conda env update --file environment_all_backends.yml --name base
+          conda env update --file environment_all_backends.yml --name base
 
         # have to run tests in top dir so python-coverage-comment can get report
       - name: Install conda develop and add source dir
         run: |
-          conda install conda-develop -y
+          conda install conda-build -y
           conda develop ./torchquad/
 
       - name: Install pytest and pytest-cov
