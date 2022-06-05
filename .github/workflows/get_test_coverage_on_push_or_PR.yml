@@ -26,13 +26,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          mamba env update --file environment_all_backends.yml --name base
+          $CONDA/bin/mamba env update --file environment_all_backends.yml --name base
 
         # have to run tests in top dir so python-coverage-comment can get report
       - name: Install conda develop and add source dir
         run: |
-          conda install conda-build -y
-          conda develop ./torchquad/
+          $CONDA/bin/mamba install conda-build -y
+          $CONDA/bin/mamba develop ./torchquad/
 
       - name: Install pytest and pytest-cov
         run: |
