@@ -30,7 +30,7 @@ jobs:
 
       - name: Launch tests & generate report
         working-directory: ./torchquad/tests
-        run: $CONDA/bin/pytest --cov=../integration
+        run: $CONDA/bin/pytest --cov=../integration --cov-config=.coveragerc
 
         # This step is so python-coverage-comment can find the report
       - name: Move report to top directory
