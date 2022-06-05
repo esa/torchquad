@@ -34,7 +34,6 @@ jobs:
 
         # This step is so python-coverage-comment can find the report
       - name: Move report to top directory
-        working-directory: ./torchquad/tests
         run: mv ./torchquad/tests/.coverage .
 
       - name: Coverage comment
