@@ -129,6 +129,10 @@ def _run_setup_integration_domain_tests(dtype_name, backend):
     """
     Test _setup_integration_domain with the given dtype and numerical backend
     """
+    print(
+        f"Testing _setup_integration_domain; backend: {backend}, precision: {dtype_name}"
+    )
+
     # Domain given as List with Python floats
     domain = _setup_integration_domain(2, [[0.0, 1.0], [1.0, 2.0]], backend)
     assert infer_backend(domain) == backend
@@ -155,15 +159,36 @@ def _run_setup_integration_domain_tests(dtype_name, backend):
     custom_domain = anp.array(
         [[0.0, 1.0], [1.0, 2.0]], like=backend, dtype=dtype_backend
     )
-    domain = _setup_integration_domain(2, custom_domain, "unused")
+    domain = _setup_integration_domain(2, custom_domain, None)
     assert domain.shape == custom_domain.shape
     assert domain.dtype == custom_domain.dtype
+
+    # Backend specified with both backend and integration_domain parameters
+    custom_np_domain = anp.array(
+        [[0.0, 1.0], [1.0, 2.0]], like="numpy", dtype="float16"
+    )
+    domain = _setup_integration_domain(2, custom_np_domain, backend)
+    assert (
+        infer_backend(domain) == backend
+    ), "A specified backend argument should take precedence over the integration_domain argument's backend"
+    if backend == "numpy":
+        assert (
+            get_dtype_name(domain) == "float16"
+        ), "With a specified backend argument set to integration_domain's backend, the integration_domain's dtype should be used"
+    else:
+        assert (
+            get_dtype_name(domain) == dtype_name
+        ), "With a specified backend argument different from integration_domain's backend, the integration_domain's dtype should be ignored"
+    domain = _setup_integration_domain(2, custom_domain, "numpy")
+    assert (
+        infer_backend(domain) == "numpy"
+    ), 'If backend is explicitly set to "numpy", a numpy array should be produced'
 
     # Tests for invalid arguments
     with pytest.raises(ValueError, match=r".*domain.*"):
         _setup_integration_domain(3, [[0, 1.0], [1, 2.0]], backend)
     with pytest.raises(ValueError, match=r".*domain.*"):
-        _setup_integration_domain(3, custom_domain, "unused")
+        _setup_integration_domain(3, custom_domain, None)
 
 
 def test_setup_integration_domain():
