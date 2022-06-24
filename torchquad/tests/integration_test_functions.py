@@ -22,16 +22,16 @@ class IntegrationTestFunction:
     is_complex = False  # If the test function contains complex numbers
 
     def __init__(
-        self, expected_result, dim=1, domain=None, is_complex=False, backend="torch"
+        self, expected_result, dim=1, domain=None, is_complex=False, backend=None
     ):
         """Initializes domain and stores variables.
 
         Args:
             expected_result (float): Expected integration result.
             dim (int, optional): Dimensionality of investigated function. Defaults to 1.
-            domain (list, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
+            domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            backend (string, optional): Numerical backend passed to _setup_integration_domain.
         """
         self.dim = dim
         self.expected_result = expected_result
@@ -91,7 +91,7 @@ class Polynomial(IntegrationTestFunction):
         dim=1,
         domain=None,
         is_complex=False,
-        backend="torch",
+        backend=None,
     ):
         """Creates an n-dimensional, degree-K poylnomial test function.
 
@@ -99,9 +99,9 @@ class Polynomial(IntegrationTestFunction):
             expected_result (backend tensor): Expected result. Required to compute errors.
             coeffs (list, optional): Polynomial coefficients. Are the same for each dim. Defaults to [2].
             dim (int, optional): Polynomial dimensionality. Defaults to 1.
-            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^dim.
+            domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            backend (string, optional): Numerical backend.
         """
         super().__init__(expected_result, dim, domain, is_complex, backend)
         if backend == "tensorflow":
@@ -155,16 +155,16 @@ class Exponential(IntegrationTestFunction):
         dim=1,
         domain=None,
         is_complex=False,
-        backend="torch",
+        backend=None,
     ):
         """Creates an n-dimensional exponential test function.
 
         Args:
             expected_result (backend tensor): Expected result. Required to compute errors.
             dim (int, optional): Input dimension. Defaults to 1.
-            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^dim.
+            domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            backend (string, optional): Numerical backend passed to _setup_integration_domain.
         """
         super().__init__(expected_result, dim, domain, is_complex, backend)
         self.f = self._exp
@@ -181,16 +181,16 @@ class Sinusoid(IntegrationTestFunction):
         dim=1,
         domain=None,
         is_complex=False,
-        backend="torch",
+        backend=None,
     ):
         """Creates an n-dimensional sinusoidal test function.
 
         Args:
             expected_result (backend tensor): Expected result. Required to compute errors.
             dim (int, optional): Input dimension. Defaults to 1.
-            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^dim.
+            domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            backend (string, optional): Numerical backend passed to _setup_integration_domain.
         """
         super().__init__(expected_result, dim, domain, is_complex, backend)
         self.f = self._sinusoid

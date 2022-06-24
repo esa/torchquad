@@ -20,5 +20,5 @@ dependencies:
 - tensorflow-gpu>=2.6.0
 # jaxlib with CUDA support is not available for conda
 - pip:
-  - --find-links https://storage.googleapis.com/jax-releases/jax_releases.html
+  - --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
   - jax[cuda]>=0.2.22 # this will only work on linux. for win see e.g. https://github.com/cloudhan/jax-windows-builder
