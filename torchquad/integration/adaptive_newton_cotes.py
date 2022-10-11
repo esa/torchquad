@@ -14,6 +14,9 @@ class AdaptiveNewtonCotes(BaseIntegrator):
     def __init__(self):
         super().__init__()
 
+    def get_grid(self):
+        return self._grid
+
     def integrate(
         self,
         fn,
