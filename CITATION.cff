@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+title: >-
+  torchquad: Numerical Integration in Arbitrary
+  Dimensions with PyTorch
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Pablo
+    family-names: Gómez
+    email: pablo.gomez@esa.int
+    affiliation: >-
+      Advanced Concepts Team, European Space Agency,
+      Noordwijk, The Netherlands
+    orcid: "https://orcid.org/0000-0002-5631-8240"
+  - given-names: Håvard
+    family-names: Hem Toftevaag
+    affiliation: >-
+      Advanced Concepts Team, European Space Agency,
+      Noordwijk, The Netherlands
+    orcid: "http://orcid.org/0000-0003-4692-5722"
+  - given-names: Gabriele
+    family-names: Meoni
+    affiliation: >-
+      Advanced Concepts Team, European Space Agency,
+      Noordwijk, The Netherlands
+    orcid: "http://orcid.org/0000-0001-9311-6392"
+identifiers:
+  - type: doi
+    value: 10.21105/joss.03439
+repository-code: "https://github.com/esa/torchquad/"
+url: "https://www.esa.int/gsp/ACT/open_source/torchquad/"
+repository-artifact: "https://anaconda.org/conda-forge/torchquad"
+license: GPL-3.0
