@@ -5,9 +5,14 @@ title: >-
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
-type: software
-authors:
-  - given-names: Pablo
+repository-code: "https://github.com/esa/torchquad/"
+url: "https://www.esa.int/gsp/ACT/open_source/torchquad/"
+repository-artifact: "https://anaconda.org/conda-forge/torchquad"
+license: GPL-3.0
+preferred-citation:
+  type: article
+  authors:
+   - given-names: Pablo
     family-names: Gómez
     email: pablo.gomez@esa.int
     affiliation: >-
@@ -26,10 +31,10 @@ authors:
       Advanced Concepts Team, European Space Agency,
       Noordwijk, The Netherlands
     orcid: "http://orcid.org/0000-0001-9311-6392"
-identifiers:
-  - type: doi
-    value: 10.21105/joss.03439
-repository-code: "https://github.com/esa/torchquad/"
-url: "https://www.esa.int/gsp/ACT/open_source/torchquad/"
-repository-artifact: "https://anaconda.org/conda-forge/torchquad"
-license: GPL-3.0
+  doi: "10.21105/joss.03439"
+  journal: "Journal of Open Source Software"
+  title: "torchquad: Numerical Integration in Arbitrary
+  Dimensions with PyTorch"
+  issue: 6
+  volume: 64
+  year: 2021
