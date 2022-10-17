@@ -3,7 +3,7 @@ message: "If you use this software, please cite it as below."
 title: "torchquad: Numerical Integration in Arbitrary
   Dimensions with PyTorch, TensorFlow & JAX"
 authors:
-   - given-names: Pablo
+  - given-names: Pablo
     family-names: Gómez
     email: pablo.gomez@esa.int
     affiliation: >-
@@ -29,7 +29,7 @@ license: GPL-3.0
 preferred-citation:
   type: article
   authors:
-   - given-names: Pablo
+  - given-names: Pablo
     family-names: Gómez
     email: pablo.gomez@esa.int
     affiliation: >-
