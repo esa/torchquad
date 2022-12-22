@@ -218,7 +218,6 @@ class NewtonCotes(BaseIntegrator):
         raise ValueError(f"Compilation not implemented for backend {backend}")
 
     def sum_cur_dim_areas(self, cur_dim_areas, dim, cur_dim):
-        print(self.integrand_shape)
         if len(self.integrand_shape) == 0: # i.e it is 1
                return anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
         return anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
