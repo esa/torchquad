@@ -1,5 +1,6 @@
 from loguru import logger
 from autoray import infer_backend
+from autoray import numpy as anp
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
@@ -47,8 +48,15 @@ class NewtonCotes(BaseIntegrator):
             backend tensor: Quadrature result
         """
         # Reshape the output to be [N,N,...] points instead of [dim*N] points
-        function_values = function_values.reshape([n_per_dim] * dim)
-
+        integrand_shape = function_values.shape[1:]
+        if len(integrand_shape) == 0 or (len(integrand_shape) == 1 and integrand_shape[0] == 1):
+            function_values = function_values.reshape([n_per_dim] * dim)
+        else:
+            dim_shape = [n_per_dim] * dim
+            new_shape = [*integrand_shape, *dim_shape]
+            function_values = anp.einsum(f'ijk->jki', function_values)
+            function_values = function_values.reshape(new_shape)
+            assert new_shape == list(function_values.shape)
         logger.debug("Computing areas.")
 
         result = self._apply_composite_rule(function_values, dim, hs)
