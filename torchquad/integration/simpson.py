@@ -33,6 +33,7 @@ class Simpson(NewtonCotes):
         cur_dim_areas will contain the areas per dimension
         """
         # We collapse dimension by dimension
+        integrand_dim = cur_dim_areas.shape[0: len(cur_dim_areas.shape) - dim]
         for cur_dim in range(dim):
             cur_dim_areas = (
                 hs[cur_dim]
@@ -43,7 +44,10 @@ class Simpson(NewtonCotes):
                     + cur_dim_areas[..., 2:][..., ::2]
                 )
             )
-            cur_dim_areas = anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
+            if len(integrand_dim) == 0: # i.e it is 1
+                cur_dim_areas = anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
+            else:
+                cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
     @staticmethod
