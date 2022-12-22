@@ -27,13 +27,11 @@ class Simpson(NewtonCotes):
         """
         return super().integrate(fn, dim, N, integration_domain, backend)
 
-    @staticmethod
-    def _apply_composite_rule(cur_dim_areas, dim, hs):
+    def _apply_composite_rule(self, cur_dim_areas, dim, hs):
         """Apply composite Simpson quadrature.
         cur_dim_areas will contain the areas per dimension
         """
         # We collapse dimension by dimension
-        integrand_dim = cur_dim_areas.shape[0: len(cur_dim_areas.shape) - dim]
         for cur_dim in range(dim):
             cur_dim_areas = (
                 hs[cur_dim]
@@ -44,10 +42,7 @@ class Simpson(NewtonCotes):
                     + cur_dim_areas[..., 2:][..., ::2]
                 )
             )
-            if len(integrand_dim) == 0: # i.e it is 1
-                cur_dim_areas = anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
-            else:
-                cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
+            cur_dim_areas = self.sum_cur_dim_areas(cur_dim_areas, dim, cur_dim)
         return cur_dim_areas
 
     @staticmethod

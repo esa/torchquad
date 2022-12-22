@@ -48,12 +48,12 @@ class NewtonCotes(BaseIntegrator):
             backend tensor: Quadrature result
         """
         # Reshape the output to be [N,N,...] points instead of [dim*N] points
-        integrand_shape = function_values.shape[1:]
-        if len(integrand_shape) == 0 or (len(integrand_shape) == 1 and integrand_shape[0] == 1):
+        self.integrand_shape = function_values.shape[1:]
+        if len(self.integrand_shape) == 0 or (len(self.integrand_shape) == 1 and self.integrand_shape[0] == 1):
             function_values = function_values.reshape([n_per_dim] * dim)
         else:
             dim_shape = [n_per_dim] * dim
-            new_shape = [*integrand_shape, *dim_shape]
+            new_shape = [*self.integrand_shape, *dim_shape]
             function_values = anp.einsum(f'ijk->jki', function_values)
             function_values = function_values.reshape(new_shape)
             assert new_shape == list(function_values.shape)
@@ -216,3 +216,9 @@ class NewtonCotes(BaseIntegrator):
             return lazy_compiled_integrate
 
         raise ValueError(f"Compilation not implemented for backend {backend}")
+
+    def sum_cur_dim_areas(self, cur_dim_areas, dim, cur_dim):
+        print(self.integrand_shape)
+        if len(self.integrand_shape) == 0: # i.e it is 1
+               return anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
+        return anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
