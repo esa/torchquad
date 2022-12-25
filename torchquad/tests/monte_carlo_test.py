@@ -20,7 +20,7 @@ def _run_monte_carlo_tests(backend, _precision):
     errors, funcs = compute_integration_test_errors(
         mc.integrate,
         {"N": N, "dim": 1, "seed": 0},
-        dim=1,
+        integration_dim=1,
         use_complex=True,
         backend=backend,
     )
@@ -50,7 +50,7 @@ def _run_monte_carlo_tests(backend, _precision):
     errors, funcs = compute_integration_test_errors(
         mc.integrate,
         {"N": N, "dim": 3, "seed": 0},
-        dim=3,
+        integration_dim=3,
         use_complex=True,
         backend=backend,
     )
@@ -67,7 +67,7 @@ def _run_monte_carlo_tests(backend, _precision):
     errors, funcs = compute_integration_test_errors(
         mc.integrate,
         {"N": N, "dim": 10, "seed": 0},
-        dim=10,
+        integration_dim=10,
         use_complex=True,
         backend=backend,
     )

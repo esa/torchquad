@@ -28,7 +28,7 @@ def _run_example_integrations(backend, dtype_name):
     errors, _ = compute_integration_test_errors(
         vegas.integrate,
         {"N": N, "dim": 1, "seed": 0},
-        dim=1,
+        integration_dim=1,
         use_complex=False,
         backend=backend,
     )
@@ -47,7 +47,7 @@ def _run_example_integrations(backend, dtype_name):
     errors, _ = compute_integration_test_errors(
         vegas.integrate,
         {"N": N, "dim": 3, "seed": 0},
-        dim=3,
+        integration_dim=3,
         use_complex=False,
         backend=backend,
     )
@@ -60,7 +60,7 @@ def _run_example_integrations(backend, dtype_name):
     errors, _ = compute_integration_test_errors(
         vegas.integrate,
         {"N": N, "dim": 10, "seed": 0},
-        dim=10,
+        integration_dim=10,
         use_complex=False,
         backend=backend,
     )

@@ -14,7 +14,7 @@ class IntegrationTestFunction:
     """Wrapper class for test functions."""
 
     domain = None  # Domain that is integrated over
-    dim = None  # Expected input dimension of the function
+    integration_dim = None  # Expected input dimension of the function
     expected_result = None  # What the true integral solution is
     # Order of the function if applicable, can be used to infer expected convergence order
     order = None
@@ -22,26 +22,26 @@ class IntegrationTestFunction:
     is_complex = False  # If the test function contains complex numbers
 
     def __init__(
-        self, expected_result, dim=1, domain=None, is_complex=False, backend="torch"
+        self, expected_result, integration_dim=1, domain=None, is_complex=False, backend="torch"
     ):
         """Initializes domain and stores variables.
 
         Args:
             expected_result (float): Expected integration result.
-            dim (int, optional): Dimensionality of investigated function. Defaults to 1.
+            integration_dim (int, optional): Dimensionality of investigated function. Defaults to 1.
             domain (list, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
         """
-        self.dim = dim
+        self.integration_dim = integration_dim
         self.expected_result = expected_result
 
         self.is_complex = is_complex
-        self.domain = _setup_integration_domain(dim, domain, backend)
+        self.domain = _setup_integration_domain(integration_dim, domain, backend)
         logger.debug("Initialized Test function with ")
         logger.debug(
-            "dim="
-            + str(self.dim)
+            "integration_dim="
+            + str(self.integration_dim)
             + "| domain="
             + str(self.domain)
             + "| expected_result="
@@ -88,7 +88,7 @@ class Polynomial(IntegrationTestFunction):
         self,
         expected_result=None,
         coeffs=[2],
-        dim=1,
+        integration_dim=1,
         domain=None,
         is_complex=False,
         backend="torch",
@@ -97,13 +97,13 @@ class Polynomial(IntegrationTestFunction):
 
         Args:
             expected_result (backend tensor): Expected result. Required to compute errors.
-            coeffs (list, optional): Polynomial coefficients. Are the same for each dim. Defaults to [2].
-            dim (int, optional): Polynomial dimensionality. Defaults to 1.
-            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^dim.
+            coeffs (list, optional): Polynomial coefficients. Are the same for each integration_dim. Defaults to [2].
+            integration_dim (int, optional): Polynomial dimensionality. Defaults to 1.
+            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^integration_dim.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
         """
-        super().__init__(expected_result, dim, domain, is_complex, backend)
+        super().__init__(expected_result, integration_dim, domain, is_complex, backend)
         if backend == "tensorflow":
             # Ensure than all coefficients are either Python3 float or Python3
             # complex since tensorflow requires this.
@@ -120,7 +120,7 @@ class Polynomial(IntegrationTestFunction):
 
     def _poly(self, x):
         # Compute all relevant x^k
-        # The shape of exponentials is (dim, N, order+1)
+        # The shape of exponentials is (integration_dim, N, order+1)
         if infer_backend(x) != "tensorflow":
             exponentials = x.reshape(x.shape + (1,)) ** anp.linspace(
                 0, self.order, self.order + 1, like=x, dtype=x.dtype
@@ -144,7 +144,7 @@ class Polynomial(IntegrationTestFunction):
         # Collapse dimensions
         exponentials = anp.sum(exponentials, axis=2)
 
-        # sum all values for each dim
+        # sum all values for each integration_dim
         return anp.sum(exponentials, axis=1)
 
 
@@ -152,7 +152,7 @@ class Exponential(IntegrationTestFunction):
     def __init__(
         self,
         expected_result=None,
-        dim=1,
+        integration_dim=1,
         domain=None,
         is_complex=False,
         backend="torch",
@@ -161,12 +161,12 @@ class Exponential(IntegrationTestFunction):
 
         Args:
             expected_result (backend tensor): Expected result. Required to compute errors.
-            dim (int, optional): Input dimension. Defaults to 1.
-            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^dim.
+            integration_dim (int, optional): Input dimension. Defaults to 1.
+            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^integration_dim.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
         """
-        super().__init__(expected_result, dim, domain, is_complex, backend)
+        super().__init__(expected_result, integration_dim, domain, is_complex, backend)
         self.f = self._exp
 
     def _exp(self, x):
@@ -178,7 +178,7 @@ class Sinusoid(IntegrationTestFunction):
     def __init__(
         self,
         expected_result=None,
-        dim=1,
+        integration_dim=1,
         domain=None,
         is_complex=False,
         backend="torch",
@@ -187,12 +187,12 @@ class Sinusoid(IntegrationTestFunction):
 
         Args:
             expected_result (backend tensor): Expected result. Required to compute errors.
-            dim (int, optional): Input dimension. Defaults to 1.
-            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^dim.
+            integration_dim (int, optional): Input dimension. Defaults to 1.
+            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^integration_dim.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
         """
-        super().__init__(expected_result, dim, domain, is_complex, backend)
+        super().__init__(expected_result, integration_dim, domain, is_complex, backend)
         self.f = self._sinusoid
 
     def _sinusoid(self, x):

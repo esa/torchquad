@@ -6,14 +6,14 @@ from utils.set_up_backend import set_up_backend
 from utils.set_log_level import set_log_level
 
 
-def get_test_functions(dim, backend):
+def get_test_functions(integration_dim, backend):
     """Here we define a bunch of functions that will be used for testing.
 
     Args:
-        dim (int): Dimensionality of test functions to use.
+        integration_dim (int): Dimensionality of test functions to use.
         backend (string): Numerical backend used for the integration
     """
-    if dim == 1:
+    if integration_dim == 1:
         return [
             # Real numbers
             Polynomial(4.0, [2.0], is_complex=False, backend=backend),  # y = 2
@@ -76,28 +76,28 @@ def get_test_functions(dim, backend):
                 backend=backend,
             ),
         ]
-    elif dim == 3:
+    elif integration_dim == 3:
         return [
             # Real numbers
             Polynomial(
-                48.0, [2.0], dim=3, is_complex=False, backend=backend
+                48.0, [2.0], integration_dim=3, is_complex=False, backend=backend
             ),  # f(x,y,z) = 2
             Polynomial(
-                0, [0, 1], dim=3, is_complex=False, backend=backend
+                0, [0, 1], integration_dim=3, is_complex=False, backend=backend
             ),  # f(x,y,z) = x + y + z
             # f(x,y,z) = x^2+y^2+z^2
-            Polynomial(8.0, coeffs=[0, 0, 1], dim=3, is_complex=False, backend=backend),
+            Polynomial(8.0, coeffs=[0, 0, 1], integration_dim=3, is_complex=False, backend=backend),
             # e^x+e^y+e^z
             Exponential(
                 27 * (np.exp(3) - 1) / np.exp(2),
-                dim=3,
+                integration_dim=3,
                 domain=[[-2, 1], [-2, 1], [-2, 1]],
                 is_complex=False,
                 backend=backend,
             ),
             Sinusoid(
                 24 * np.sin(1) ** 2,
-                dim=3,
+                integration_dim=3,
                 domain=[[0, 2], [0, 2], [0, 2]],
                 is_complex=False,
                 backend=backend,
@@ -105,7 +105,7 @@ def get_test_functions(dim, backend):
             # e^x+e^y+e^z
             Exponential(
                 1.756,
-                dim=3,
+                integration_dim=3,
                 domain=[[-0.05, 0.1], [-0.25, 0.2], [-np.exp(1), np.exp(1)]],
                 is_complex=False,
                 backend=backend,
@@ -113,23 +113,23 @@ def get_test_functions(dim, backend):
             #
             # Complex numbers
             Polynomial(
-                48.0j, [2.0j], dim=3, is_complex=True, backend=backend
+                48.0j, [2.0j], integration_dim=3, is_complex=True, backend=backend
             ),  # f(x,y,z) = 2j
             Polynomial(
-                0, [0, 1.0j], dim=3, is_complex=True, backend=backend
+                0, [0, 1.0j], integration_dim=3, is_complex=True, backend=backend
             ),  # f(x,y,z) = xj
             Polynomial(
-                8.0j, coeffs=[0, 0, 1.0j], dim=3, is_complex=True, backend=backend
+                8.0j, coeffs=[0, 0, 1.0j], integration_dim=3, is_complex=True, backend=backend
             ),  # j*x^2+j*y^2+j*z^2
         ]
-    elif dim == 10:
+    elif integration_dim == 10:
         return [
             # Real numbers
             # f(x_1, ..., x_10) = x_1^2+x_2^2+...
             Polynomial(
                 3413.33333333,
                 coeffs=[0, 0, 1],
-                dim=10,
+                integration_dim=10,
                 is_complex=False,
                 backend=backend,
             ),
@@ -138,19 +138,19 @@ def get_test_functions(dim, backend):
             Polynomial(
                 3413.33333333j,
                 coeffs=[0, 0, 1.0j],
-                dim=10,
+                integration_dim=10,
                 is_complex=True,
                 backend=backend,
             ),
         ]
     else:
-        raise ValueError("Not testing functions implemented for dim " + str(dim))
+        raise ValueError("Not testing functions implemented for integration_dim " + str(integration_dim))
 
 
 def compute_integration_test_errors(
     integrator,
     integrator_args,
-    dim,
+    integration_dim,
     use_complex,
     backend,
 ):
@@ -159,7 +159,7 @@ def compute_integration_test_errors(
     Args:
         integrator (torchquad.base_integrator): Integrator to use.
         integrator_args (dict): Arguments for the integrator.
-        dim (int): Dimensionality of the example functions to choose.
+        integration_dim (int): Dimensionality of the example functions to choose.
         use_complex (Boolean): If True, skip complex example functions.
         backend (string): Numerical backend for the example functions.
 
@@ -172,7 +172,7 @@ def compute_integration_test_errors(
 
     # Compute integration errors on the chosen functions and remember those
     # functions
-    for test_function in get_test_functions(dim, backend):
+    for test_function in get_test_functions(integration_dim, backend):
         if not use_complex and test_function.is_complex:
             continue
         if backend == "torch":
