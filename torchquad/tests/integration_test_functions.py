@@ -20,9 +20,10 @@ class IntegrationTestFunction:
     order = None
     f = None  # Function to evaluate
     is_complex = False  # If the test function contains complex numbers
+    integrand_dims = None # What the dimensions of the integrand should be
 
     def __init__(
-        self, expected_result, integration_dim=1, domain=None, is_complex=False, backend="torch"
+        self, expected_result, integration_dim=1, domain=None, is_complex=False, backend="torch", integrand_dims=1
     ):
         """Initializes domain and stores variables.
 
@@ -30,11 +31,18 @@ class IntegrationTestFunction:
             expected_result (float): Expected integration result.
             integration_dim (int, optional): Dimensionality of investigated function. Defaults to 1.
             domain (list, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
-            is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
+            is_complex (Boolean, optional): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
+            whether once or over a matrix/vector of scaling factors.
         """
         self.integration_dim = integration_dim
         self.expected_result = expected_result
+        if (type(integrand_dims) == int or hasattr(integrand_dims, "__len__")):
+            self.integrand_dims = integrand_dims
+        else:
+             ValueError("Integrand dims should either be either an int or something that can be used to size an ndarray")
+            
 
         self.is_complex = is_complex
         self.domain = _setup_integration_domain(integration_dim, domain, backend)
@@ -42,6 +50,8 @@ class IntegrationTestFunction:
         logger.debug(
             "integration_dim="
             + str(self.integration_dim)
+            + "| integrand_dimensions"
+            + str(self.integrand_dims)
             + "| domain="
             + str(self.domain)
             + "| expected_result="
@@ -68,7 +78,7 @@ class IntegrationTestFunction:
                 "Integration domain and points have a different dtype:"
                 f" {self.domain.dtype} and {x.dtype}"
             )
-            return self.f(x)
+            return self.integrand_scaling(self.f(x))
 
         return integrator(
             fn=integrand, integration_domain=self.domain, **integration_args
@@ -82,6 +92,39 @@ class IntegrationTestFunction:
         """
         return inf if self.order is None else self.order
 
+    def integrand_scaling(self, integrand):
+        """_summary_
+
+        Args:
+            integrand (_type_): the integrand to be multiplied by the scaling grid
+
+        Returns:
+            Union[int, anp.ndarray]: The scaled integrand
+        """
+        integrand_scaling = self._integrand_scaling
+        if (self._is_integrand_1d):
+            return integrand_scaling * integrand
+        raise NotImplementedError(f"Integrand testing not implemented for dimensions {str(self.integrand_dims)}")
+
+    @property
+    def _integrand_scaling(self):
+        """Get the integrand scaling factors dependent on integrand_dims
+
+        Returns:
+            Union[int, anp.ndarray]: The scaling factors
+        """
+        if (self._is_integrand_1d):
+            return 1
+        raise NotImplementedError(f"Integrand testing not implemented for dimensions {str(self.integrand_dims)}")
+
+    @property
+    def _is_integrand_1d(self):
+        return self.integrand_dims == 1 or (
+                len(self.integrand_dims) == 1
+                and self.integrand_dims[0] == 1
+            )
+
+        
 
 class Polynomial(IntegrationTestFunction):
     def __init__(
@@ -92,6 +135,7 @@ class Polynomial(IntegrationTestFunction):
         domain=None,
         is_complex=False,
         backend="torch",
+        integrand_dims=1,
     ):
         """Creates an n-dimensional, degree-K poylnomial test function.
 
@@ -102,8 +146,10 @@ class Polynomial(IntegrationTestFunction):
             domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^integration_dim.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
+            whether once or over a matrix/vector of scaling factors.
         """
-        super().__init__(expected_result, integration_dim, domain, is_complex, backend)
+        super().__init__(expected_result, integration_dim, domain, is_complex, backend, integrand_dims)
         if backend == "tensorflow":
             # Ensure than all coefficients are either Python3 float or Python3
             # complex since tensorflow requires this.
@@ -156,6 +202,7 @@ class Exponential(IntegrationTestFunction):
         domain=None,
         is_complex=False,
         backend="torch",
+        integrand_dims=1,
     ):
         """Creates an n-dimensional exponential test function.
 
@@ -165,8 +212,10 @@ class Exponential(IntegrationTestFunction):
             domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^integration_dim.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
+            whether once or over a matrix/vector of scaling factors.
         """
-        super().__init__(expected_result, integration_dim, domain, is_complex, backend)
+        super().__init__(expected_result, integration_dim, domain, is_complex, backend, integrand_dims)
         self.f = self._exp
 
     def _exp(self, x):
@@ -182,6 +231,7 @@ class Sinusoid(IntegrationTestFunction):
         domain=None,
         is_complex=False,
         backend="torch",
+        integrand_dims=1,
     ):
         """Creates an n-dimensional sinusoidal test function.
 
@@ -191,8 +241,10 @@ class Sinusoid(IntegrationTestFunction):
             domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^integration_dim.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
+            whether once or over a matrix/vector of scaling factors.
         """
-        super().__init__(expected_result, integration_dim, domain, is_complex, backend)
+        super().__init__(expected_result, integration_dim, domain, is_complex, backend, integrand_dims)
         self.f = self._sinusoid
 
     def _sinusoid(self, x):
