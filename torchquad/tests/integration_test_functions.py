@@ -102,8 +102,11 @@ class IntegrationTestFunction:
             Union[int, anp.ndarray]: The scaled integrand
         """
         integrand_scaling = self._integrand_scaling
-        if (self._is_integrand_1d):
+        if (self.is_integrand_1d):
             return integrand_scaling * integrand
+        if (self._is_integrand_tensor):
+            scaling_einsum = "".join([chr(i + 65) for i in range(len(self.integrand_dims))])
+            return anp.einsum(f"i,{scaling_einsum}->i{scaling_einsum}", integrand, integrand_scaling) # TODO: Figure out what is an expected integration dimension (i.e 1d or 2d for the argument)
         raise NotImplementedError(f"Integrand testing not implemented for dimensions {str(self.integrand_dims)}")
 
     @property
@@ -113,16 +116,22 @@ class IntegrationTestFunction:
         Returns:
             Union[int, anp.ndarray]: The scaling factors
         """
-        if (self._is_integrand_1d):
+        if (self.is_integrand_1d):
             return 1
+        if (self._is_integrand_tensor):
+            return anp.arange(anp.prod(self.integrand_dims)).reshape(self.integrand_dims)
         raise NotImplementedError(f"Integrand testing not implemented for dimensions {str(self.integrand_dims)}")
 
     @property
-    def _is_integrand_1d(self):
+    def is_integrand_1d(self):
         return self.integrand_dims == 1 or (
                 len(self.integrand_dims) == 1
                 and self.integrand_dims[0] == 1
             )
+    
+    @property
+    def _is_integrand_tensor(self):
+        return len(self.integrand_dims) > 1
 
         
 
