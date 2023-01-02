@@ -3,7 +3,7 @@
 *** Based on https://github.com/othneildrew/Best-README-Template
 -->
 
-![Read the Docs (version)](https://img.shields.io/readthedocs/torchquad/main?style=flat-square) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/main?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/esa/torchquad?style=flat-square)
+![Read the Docs (version)](https://img.shields.io/readthedocs/torchquad/main?style=flat-square) ![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/esa/torchquad/.github/workflows/run_tests.yml/main?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/esa/torchquad?style=flat-square)
 ![GitHub](https://img.shields.io/github/license/esa/torchquad?style=flat-square) ![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/torchquad?style=flat-square) ![PyPI](https://img.shields.io/pypi/v/torchquad?style=flat-square) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/torchquad?style=flat-square)
 
 ![GitHub contributors](https://img.shields.io/github/contributors/esa/torchquad?style=flat-square)
