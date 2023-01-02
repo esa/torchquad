@@ -56,4 +56,5 @@ jobs:
         cd torchquad/tests
         pip install pytest
         pip install pytest-error-for-skips
+        pip install --upgrade "jax[cpu]"
         pytest -ra --error-for-skips
