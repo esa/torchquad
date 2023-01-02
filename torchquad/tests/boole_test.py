@@ -38,7 +38,7 @@ def _run_boole_tests(backend, _precision):
         )
     print(f"3D Boole Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 5 or err < 2e-13
+        assert test_function.get_order() > 5 or (err < 2e-13 if test_function.is_integrand_1d else err < 2e-12)
     for error in errors:
         assert error < 5e-6
 

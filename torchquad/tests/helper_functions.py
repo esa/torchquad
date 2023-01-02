@@ -133,6 +133,12 @@ def get_test_functions(integration_dim, backend):
             Polynomial(
                 8.0j, coeffs=[0, 0, 1.0j], integration_dim=3, is_complex=True, backend=backend, integrand_dims=1
             ),  # j*x^2+j*y^2+j*z^2
+            Polynomial(
+                np.array([[0.0, 48.0], [96.0, 144.0]]), integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2]
+            ),  # f(x,y,z) = 2
+            Polynomial(
+                np.array([[0.0, 0.0], [0.0, 0.0]]), [0, 1], integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2]
+            ),  # f(x,y,z) = x + y + z
         ]
     elif integration_dim == 10:
         return [
