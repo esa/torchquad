@@ -55,5 +55,5 @@ jobs:
         micromamba activate torchquad
         cd torchquad/tests
         micromamba install pytest
-        micromamba install pytest-error-for-skips
+        pip install pytest-error-for-skips
         pytest -ra --error-for-skips
