@@ -69,7 +69,7 @@ class MonteCarlo(BaseIntegrator):
 
         # Integral = V / N * sum(func values)
         N = function_values.shape[0]
-        integral = volume * anp.sum(function_values) / N
+        integral = volume * anp.sum(function_values, axis=0) / N
         # NumPy automatically casts to float64 when dividing by N
         if (
             infer_backend(integration_domain) == "numpy"
