@@ -23,8 +23,6 @@
     <a href="https://torchquad.readthedocs.io"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/esa/torchquad/blob/master/notebooks/Torchquad%20-%20Example%20notebook.ipynb">View Example notebook</a>
-    ·
     <a href="https://github.com/esa/torchquad/issues">Report Bug</a>
     ·
     <a href="https://github.com/esa/torchquad/issues">Request Feature</a>
@@ -275,7 +273,7 @@ Created by ESA's [Advanced Concepts Team](https://www.esa.int/gsp/ACT/index.html
 
 - Pablo Gómez - `pablo.gomez at esa.int`
 - Gabriele Meoni - `gabriele.meoni at esa.int`
-- Håvard Hem Toftevaag - `havard.hem.toftevaag at esa.int`
+- Håvard Hem Toftevaag
 
 Project Link: [https://github.com/esa/torchquad](https://github.com/esa/torchquad)
 
