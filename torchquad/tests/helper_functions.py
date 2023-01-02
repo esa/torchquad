@@ -82,8 +82,12 @@ def get_test_functions(integration_dim, backend):
                 backend=backend,
                 integrand_dims=1
             ),
+            # over 2 integrand dims
             Polynomial(np.array([[0.0, 4.0], [8.0, 12.0]]), [2.0], is_complex=False, backend=backend, integrand_dims=[2, 2]),  # y = 2
             Polynomial(np.array([[0.0, 0.0], [0.0, 0.0]]), [0, 1], is_complex=False, backend=backend, integrand_dims=[2, 2]),   # y = x
+            # over 3 integrand dims
+            Polynomial(np.array([[[0.0, 4.0], [8.0, 12.0]], [[16.0, 20.0], [24.0, 28.0]]]), [2.0], is_complex=False, backend=backend, integrand_dims=[2, 2, 2]),  # y = 2
+            Polynomial(np.array([[0.0, 0.0], [0.0, 0.0]]), [0, 1], is_complex=False, backend=backend, integrand_dims=[2, 2, 2]),   # y = x
         ]
     elif integration_dim == 3:
         return [
@@ -133,11 +137,19 @@ def get_test_functions(integration_dim, backend):
             Polynomial(
                 8.0j, coeffs=[0, 0, 1.0j], integration_dim=3, is_complex=True, backend=backend, integrand_dims=1
             ),  # j*x^2+j*y^2+j*z^2
+            # Over 2 integrand dims
             Polynomial(
                 np.array([[0.0, 48.0], [96.0, 144.0]]), integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2]
             ),  # f(x,y,z) = 2
             Polynomial(
                 np.array([[0.0, 0.0], [0.0, 0.0]]), [0, 1], integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2]
+            ),  # f(x,y,z) = x + y + z
+            # Over 3 integrand dims
+            Polynomial(
+                np.array([[[0.0, 48.0], [96.0, 144.0]], [[192.0, 240.0], [288.0, 336.0]]]), integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2, 2]
+            ),  # f(x,y,z) = 2
+            Polynomial(
+                np.array([[[0.0, 0.0], [0.0, 0.0]], [[0.0, 0.0], [0.0, 0.0]]]), [0, 1], integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2, 2]
             ),  # f(x,y,z) = x + y + z
         ]
     elif integration_dim == 10:

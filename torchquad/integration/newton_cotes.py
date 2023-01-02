@@ -54,7 +54,8 @@ class NewtonCotes(BaseIntegrator):
         else:
             dim_shape = [n_per_dim] * dim
             new_shape = [*self.integrand_shape, *dim_shape]
-            function_values = anp.einsum(f'ijk->jki', function_values)
+            einsum = "".join([chr(i + 65) for i in range(len(function_values.shape))])
+            function_values = anp.einsum(f'{einsum}->{einsum[1:]}{einsum[0]}', function_values)
             function_values = function_values.reshape(new_shape)
             assert new_shape == list(function_values.shape)
         logger.debug("Computing areas.")
