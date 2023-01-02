@@ -46,7 +46,7 @@ jobs:
     - name: provision-with-micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
-        environment-file: environment.yml
+        environment-file: environment_all_backends.yml
         environment-name: torchquad
         cache-downloads: true
     - name: Test with pytest
