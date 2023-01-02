@@ -43,12 +43,17 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
     #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Install dependencies
-      run: |
-        $CONDA/bin/conda env update --file environment_all_backends.yml --name base
+    - name: provision-with-micromamba
+      uses: mamba-org/provision-with-micromamba@main
+      with:
+        environment-file: environment.yml
+        environment-name: torchquad
+        cache-downloads: true
     - name: Test with pytest
+      shell: bash -l {0}
       run: |
+        micromamba activate torchquad
         cd torchquad/tests
-        conda install pytest
-        $CONDA/bin/pip3 install pytest-error-for-skips
-        $CONDA/bin/pytest -ra --error-for-skips
+        micromamba install pytest
+        micromamba install pytest-error-for-skips
+        pytest -ra --error-for-skips
