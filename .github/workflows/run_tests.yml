@@ -6,55 +6,52 @@ name: Running tests
 on:
   push:
     branches:
-    - main
-    - develop
+      - main
+      - develop
   pull_request:
   workflow_dispatch:
 jobs:
   lint_flake8:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        flake8 . --count --show-source --statistics
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 . --count --show-source --statistics
 
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
-    - name: Search for severe code errors with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        pip install flake8
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-    #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-    #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: provision-with-micromamba
-      uses: mamba-org/provision-with-micromamba@main
-      with:
-        environment-file: environment_all_backends.yml
-        environment-name: torchquad
-        cache-downloads: true
-    - name: Test with pytest
-      shell: bash -l {0}
-      run: |
-        micromamba activate torchquad
-        cd torchquad/tests
-        pip install pytest
-        pip install pytest-error-for-skips
-        pip install --upgrade "jax[cpu]"
-        pytest -ra --error-for-skips
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Search for severe code errors with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+      #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+      #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: provision-with-micromamba
+        uses: mamba-org/provision-with-micromamba@main
+        with:
+          environment-file: environment_all_backends.yml
+          environment-name: torchquad
+          cache-downloads: true
+      - name: Test with pytest
+        shell: bash -l {0}
+        run: |
+          micromamba activate torchquad
+          cd torchquad/tests
+          pip install pytest
+          pip install pytest-error-for-skips
+          pytest -ra --error-for-skips
