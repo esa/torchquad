@@ -106,8 +106,7 @@ class IntegrationTestFunction:
             return integrand_scaling * integrand
         if (self._is_integrand_tensor):
             scaling_einsum = "".join([chr(i + 65) for i in range(len(self.integrand_dims))])
-            return anp.einsum(f"i,{scaling_einsum}->i{scaling_einsum}", integrand, integrand_scaling) # TODO: Figure out what is an expected integration dimension (i.e 1d or 2d for the argument)
-        raise NotImplementedError(f"Integrand testing not implemented for dimensions {str(self.integrand_dims)}")
+            return anp.einsum(f"i,{scaling_einsum}->i{scaling_einsum}", integrand, integrand_scaling)
 
     @property
     def _integrand_scaling(self):
