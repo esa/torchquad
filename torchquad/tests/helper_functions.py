@@ -86,6 +86,9 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
         ]
         if use_multi_dim_integrand:
             res += [
+                # Over 2 integrand dims, one of which is 1 or like 1
+                Polynomial(np.array([[0.0], [4.0]]), [2.0], is_complex=False, backend=backend, integrand_dims=[2, 1]),  # y = 2
+                Polynomial(np.array([0.0, 4.0]), [2.0], is_complex=False, backend=backend, integrand_dims=(2, )),  # y = 2
                 # over 2 integrand dims
                 Polynomial(np.array([[0.0, 4.0], [8.0, 12.0]]), [2.0], is_complex=False, backend=backend, integrand_dims=[2, 2]),  # y = 2
                 Polynomial(np.array([[0.0, 0.0], [0.0, 0.0]]), [0, 1], is_complex=False, backend=backend, integrand_dims=[2, 2]),   # y = x
@@ -145,6 +148,13 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
         ]
         if use_multi_dim_integrand:
             res += [
+                # Over 2 integrand dims, one of which is 1 or like 1
+                Polynomial(
+                    np.array([[0.0], [48.0]]), integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 1]
+                ),  # f(x,y,z) = 2
+                Polynomial(
+                    np.array([0.0, 48.0]), integration_dim=3, is_complex=False, backend=backend, integrand_dims=(2, )
+                ),  # f(x,y,z) = 2
                 # Over 2 integrand dims
                 Polynomial(
                     np.array([[0.0, 48.0], [96.0, 144.0]]), integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2]

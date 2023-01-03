@@ -130,7 +130,10 @@ class IntegrationTestFunction:
     
     @property
     def _is_integrand_tensor(self):
-        return len(self.integrand_dims) > 1
+        return len(self.integrand_dims) > 1 or (
+                len(self.integrand_dims) == 1
+                and self.integrand_dims[0] > 1
+            )
 
         
 
