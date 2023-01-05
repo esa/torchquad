@@ -2,7 +2,7 @@ from autoray import numpy as anp
 import warnings
 from loguru import logger
 
-from .newton_cotes import NewtonCotes
+from .newton_cotes import NewtonCotes, sum_cur_dim_areas
 
 
 class Boole(NewtonCotes):
@@ -27,10 +27,12 @@ class Boole(NewtonCotes):
         """
         return super().integrate(fn, dim, N, integration_domain, backend)
 
-    def _apply_composite_rule(self, cur_dim_areas, dim, hs):
+    @staticmethod
+    def _apply_composite_rule(cur_dim_areas, dim, hs):
         """Apply composite Boole quadrature.
         cur_dim_areas will contain the areas per dimension
         """
+        integrand_shape = cur_dim_areas[:-1]
         # We collapse dimension by dimension
         for cur_dim in range(dim):
             cur_dim_areas = (
@@ -44,7 +46,7 @@ class Boole(NewtonCotes):
                     + 7 * cur_dim_areas[..., 4:][..., ::4]
                 )
             )
-            cur_dim_areas = self.sum_cur_dim_areas(cur_dim_areas, dim, cur_dim)
+            cur_dim_areas = sum_cur_dim_areas(cur_dim_areas, dim, cur_dim, integrand_shape)
         return cur_dim_areas
 
     @staticmethod
