@@ -4,7 +4,7 @@ from autoray import numpy as anp
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
-from .utils import _setup_integration_domain
+from .utils import _setup_integration_domain, is_1d
 
 
 class NewtonCotes(BaseIntegrator):
@@ -49,7 +49,7 @@ class NewtonCotes(BaseIntegrator):
         """
         # Reshape the output to be [N,N,...] points instead of [dim*N] points
         self.integrand_shape = function_values.shape[1:]
-        if len(self.integrand_shape) == 0 or (len(self.integrand_shape) == 1 and self.integrand_shape[0] == 1):
+        if is_1d(self.integrand_shape):
             function_values = function_values.reshape([n_per_dim] * dim)
         else:
             dim_shape = [n_per_dim] * dim

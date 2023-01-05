@@ -206,3 +206,6 @@ def _torch_repeat(a, repeats, axis=None):
     # torch.repeat_interleave corresponds to np.repeat and should not be
     # confused with torch.Tensor.repeat.
     return torch.repeat_interleave(a, repeats, dim=axis)
+
+def is_1d(shape):
+    return len(shape) == 0 or (len(shape) == 1 and shape[0] == 1)
