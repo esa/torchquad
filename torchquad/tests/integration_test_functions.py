@@ -118,7 +118,8 @@ class IntegrationTestFunction:
         if (self.is_integrand_1d):
             return 1
         if (self._is_integrand_tensor):
-            return anp.arange(anp.prod(self.integrand_dims)).reshape(self.integrand_dims)
+            backend = infer_backend(self.domain)
+            return anp.arange(anp.prod(self.integrand_dims), like=backend, dtype=self.domain.dtype).reshape(self.integrand_dims)
         raise NotImplementedError(f"Integrand testing not implemented for dimensions {str(self.integrand_dims)}")
 
     @property
