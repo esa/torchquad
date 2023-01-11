@@ -13,6 +13,7 @@ from autoray import numpy as anp
 from autoray import infer_backend, register_function
 from functools import partial
 from loguru import logger
+import warnings
 
 # from ..utils.set_precision import _get_precision
 from utils.set_precision import _get_precision
@@ -207,5 +208,18 @@ def _torch_repeat(a, repeats, axis=None):
     # confused with torch.Tensor.repeat.
     return torch.repeat_interleave(a, repeats, dim=axis)
 
-def is_1d(shape):
-    return len(shape) == 0 or (len(shape) == 1 and shape[0] == 1)
+@partial(register_function, "torch", 'expand_dims')
+def _torch_expand_dims(a, axis):
+    import torch
+
+    return torch.unsqueeze(a, axis)
+
+def expand_func_values_and_squeeze_intergal(f):
+    def wrap(*args, **kwargs):
+        # i.e we only have one dimension, or the second dimension (that of the integrand) is 1
+        is_1d = len(args[1].shape) == 1 or (len(args[1].shape) == 2 and args[1].shape[1] == 1)
+        if is_1d:
+            warnings.warn("DEPRECATION WARNING: In future versions of torchquad, an array-like object will always be returned.")
+            return anp.squeeze(f(args[0], anp.expand_dims(args[1], axis=1), *args[2:], **kwargs))
+        return  f(*args, **kwargs)
+    return wrap

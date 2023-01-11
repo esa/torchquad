@@ -1,6 +1,6 @@
 from autoray import numpy as anp
 
-from .newton_cotes import NewtonCotes, sum_cur_dim_areas
+from .newton_cotes import NewtonCotes
 
 
 class Trapezoid(NewtonCotes):
@@ -36,7 +36,7 @@ class Trapezoid(NewtonCotes):
             cur_dim_areas = (
                 hs[cur_dim] / 2.0 * (cur_dim_areas[..., 0:-1] + cur_dim_areas[..., 1:])
             )
-            cur_dim_areas = sum_cur_dim_areas(cur_dim_areas, dim, cur_dim, integrand_shape)
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
     @staticmethod

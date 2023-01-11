@@ -1,9 +1,10 @@
 from autoray import numpy as anp
 from autoray import infer_backend
 from loguru import logger
+import warnings
 
 from .base_integrator import BaseIntegrator
-from .utils import _setup_integration_domain, is_1d
+from .utils import _setup_integration_domain, expand_func_values_and_squeeze_intergal
 from .rng import RNG
 
 
@@ -53,6 +54,7 @@ class MonteCarlo(BaseIntegrator):
         function_values, self._nr_of_fevals = self.evaluate_integrand(fn, sample_points)
         return self.calculate_result(function_values, integration_domain)
 
+    @expand_func_values_and_squeeze_intergal
     def calculate_result(self, function_values, integration_domain):
         """Calculate an integral result from the function evaluations
 
@@ -69,10 +71,7 @@ class MonteCarlo(BaseIntegrator):
 
         # Integral = V / N * sum(func values)
         N = function_values.shape[0]
-        summation_axis = 0
-        if is_1d(function_values.shape[1:]):
-            summation_axis = None
-        integral = volume * anp.sum(function_values, axis=summation_axis) / N
+        integral = volume * anp.sum(function_values, axis=0) / N
         # NumPy automatically casts to float64 when dividing by N
         if (
             infer_backend(integration_domain) == "numpy"

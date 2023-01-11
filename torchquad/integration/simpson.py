@@ -2,7 +2,7 @@ from autoray import numpy as anp
 from loguru import logger
 import warnings
 
-from .newton_cotes import NewtonCotes, sum_cur_dim_areas
+from .newton_cotes import NewtonCotes
 
 
 class Simpson(NewtonCotes):
@@ -44,7 +44,7 @@ class Simpson(NewtonCotes):
                     + cur_dim_areas[..., 2:][..., ::2]
                 )
             )
-            cur_dim_areas = sum_cur_dim_areas(cur_dim_areas, dim, cur_dim, integrand_shape)
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
     @staticmethod

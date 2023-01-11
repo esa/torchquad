@@ -1,11 +1,11 @@
 from loguru import logger
 from autoray import infer_backend
 from autoray import numpy as anp
+import warnings
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
-from .utils import _setup_integration_domain, is_1d
-
+from .utils import _setup_integration_domain, expand_func_values_and_squeeze_intergal
 
 class NewtonCotes(BaseIntegrator):
     """The abstract integrator that Composite Newton Cotes integrators inherit from"""
@@ -35,6 +35,7 @@ class NewtonCotes(BaseIntegrator):
 
         return self.calculate_result(function_values, dim, n_per_dim, hs)
 
+    @expand_func_values_and_squeeze_intergal
     def calculate_result(self, function_values, dim, n_per_dim, hs):
         """Apply the Composite Newton Cotes rule to calculate a result from the evaluated integrand.
 
@@ -49,15 +50,12 @@ class NewtonCotes(BaseIntegrator):
         """
         # Reshape the output to be [N,N,...] points instead of [dim*N] points
         integrand_shape = function_values.shape[1:]
-        if is_1d(integrand_shape):
-            function_values = function_values.reshape([n_per_dim] * dim)
-        else:
-            dim_shape = [n_per_dim] * dim
-            new_shape = [*integrand_shape, *dim_shape]
-            einsum = "".join([chr(i + 65) for i in range(len(function_values.shape))])
-            function_values = anp.einsum(f'{einsum}->{einsum[1:]}{einsum[0]}', function_values)
-            function_values = function_values.reshape(new_shape)
-            assert new_shape == list(function_values.shape)
+        dim_shape = [n_per_dim] * dim
+        new_shape = [*integrand_shape, *dim_shape]
+        einsum = "".join([chr(i + 65) for i in range(len(function_values.shape))])
+        function_values = anp.einsum(f'{einsum}->{einsum[1:]}{einsum[0]}', function_values)
+        function_values = function_values.reshape(new_shape)
+        assert new_shape == list(function_values.shape)
         logger.debug("Computing areas.")
 
         result = self._apply_composite_rule(function_values, dim, hs)
@@ -217,8 +215,3 @@ class NewtonCotes(BaseIntegrator):
             return lazy_compiled_integrate
 
         raise ValueError(f"Compilation not implemented for backend {backend}")
-
-def sum_cur_dim_areas(cur_dim_areas, dim, cur_dim, integrand_shape):
-    if len(integrand_shape) == 0: # i.e it is 1
-            return anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
-    return anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)

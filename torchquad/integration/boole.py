@@ -2,7 +2,7 @@ from autoray import numpy as anp
 import warnings
 from loguru import logger
 
-from .newton_cotes import NewtonCotes, sum_cur_dim_areas
+from .newton_cotes import NewtonCotes
 
 
 class Boole(NewtonCotes):
@@ -46,7 +46,7 @@ class Boole(NewtonCotes):
                     + 7 * cur_dim_areas[..., 4:][..., ::4]
                 )
             )
-            cur_dim_areas = sum_cur_dim_areas(cur_dim_areas, dim, cur_dim, integrand_shape)
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
     @staticmethod
