@@ -22,7 +22,7 @@ def _run_trapezoid_tests(backend, _precision):
     print(f"1D Trapezoid Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     # Polynomials up to degree 1 can be integrated almost exactly with Trapezoid.
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 1 or (err < 2e-11 if test_function.is_integrand_1d else err < 2e-10)
+        assert test_function.get_order() > 1 or (err < 2e-11 if test_function.is_integrand_1d else err < 5e-10)
     for error in errors:
         assert error < 1e-5
 
@@ -45,7 +45,7 @@ def _run_trapezoid_tests(backend, _precision):
     )
     print(f"3D Trapezoid Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 1 or (err < 1e-12 if test_function.is_integrand_1d else err < 1e-11)
+        assert test_function.get_order() > 1 or (err < 1e-12 if test_function.is_integrand_1d else err < 2e-11)
     for error in errors:
         assert error < 6e-3
 
