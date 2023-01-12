@@ -1,5 +1,7 @@
 import numpy as np
 import pytest
+from autoray import numpy as anp
+import autoray as ar
 
 from integration_test_functions import Polynomial, Exponential, Sinusoid
 from utils.set_up_backend import set_up_backend
@@ -163,8 +165,8 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
                     np.array([[0.0, 0.0], [0.0, 0.0]]), [0, 1], integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2]
                 ),  # f(x,y,z) = x + y + z
                 # Over 3 integrand dims
-                Polynomial(
-                    np.array([[[0.0, 48.0], [96.0, 144.0]], [[192.0, 240.0], [288.0, 336.0]]]), integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2, 2]
+                Polynomial( # MC tests fail here with default float32 precision, so need float64
+                    np.array([[[0.0, 48.0], [96.0, 144.0]], [[192.0, 240.0], [288.0, 336.0]]]), integration_dim=3, domain=anp.array([[-1., 1.], [-1., 1.], [-1., 1.]], like=backend, dtype=ar.to_backend_dtype('float64', like=backend)), is_complex=False, backend=backend, integrand_dims=[2, 2, 2]
                 ),  # f(x,y,z) = 2
                 Polynomial(
                     np.array([[[0.0, 0.0], [0.0, 0.0]], [[0.0, 0.0], [0.0, 0.0]]]), [0, 1], integration_dim=3, is_complex=False, backend=backend, integrand_dims=[2, 2, 2]
