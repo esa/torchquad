@@ -16,7 +16,7 @@ class GridIntegrator(BaseIntegrator):
         return _linspace_with_grads
     
 
-    def _weights(self, N):
+    def _weights(self, N, dim):
         return None
 
     def integrate(self, fn, dim, N, integration_domain, backend):
@@ -36,7 +36,7 @@ class GridIntegrator(BaseIntegrator):
         grid_points, hs, n_per_dim = self.calculate_grid(N, integration_domain)
 
         logger.debug("Evaluating integrand on the grid.")
-        function_values, num_points = self.evaluate_integrand(fn, grid_points, weights=self._weights(n_per_dim))
+        function_values, num_points = self.evaluate_integrand(fn, grid_points, weights=self._weights(n_per_dim, dim))
         self._nr_of_fevals = num_points
 
         return self.calculate_result(function_values, dim, n_per_dim, hs)

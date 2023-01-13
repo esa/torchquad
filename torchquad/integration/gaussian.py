@@ -5,10 +5,10 @@ from scipy import special
 from loguru import logger
 from autoray import numpy as anp
 from autoray import do
-from .base_integrator import BaseIntegrator
+from .grid_integrator import GridIntegrator
 from .utils import _setup_integration_domain
 
-class Gaussian(BaseIntegrator):
+class Gaussian(GridIntegrator):
     """Gaussian quadrature methods inherit from this. Default behaviour is Gauss-Legendre quadrature on [-1,1]."""
 
     def __init__(self):
@@ -20,115 +20,58 @@ class Gaussian(BaseIntegrator):
         self.transform_interval = True
         self._cache = {}
     
+    def integrate(self, fn, dim, N=8, integration_domain=None, backend=None):
+        """Integrates the passed function on the passed domain using Simpson's rule.
+
+        Args:
+            fn (func): The function to integrate over.
+            dim (int): Dimensionality of the integration domain.
+            N (int, optional): Total number of sample points to use for the integration. Should be odd. Defaults to 3 points per dimension if None is given.
+            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
+            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+
+        Returns:
+            backend-specific number: Integral value
+        """
+        return super().integrate(fn, dim, N, integration_domain, backend)
+    
+    def _weights(self, N, dim):
+        return anp.prod(anp.meshgrid(*([self._cached_points_and_weights(N)[1]] * dim)), axis=0).ravel()
+    
+    def _roots(self, N):
+        return self._cached_points_and_weights(N)[0]
+
+    @property
+    def _grid_func(self):
+        def f(a, b, N, requires_grad=False):
+            return self._resize_roots(a, b, self._roots(N))
+        return f
+
+    def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
+        return roots
+    
     # credit for the idea https://github.com/scipy/scipy/blob/dde50595862a4f9cede24b5d1c86935c30f1f88a/scipy/integrate/_quadrature.py#L72
-    def _cached_roots(self, root_args):
+    def _cached_points_and_weights(self, N):
         """
         Cache polynomial results to speed up integration.
         """
+        root_args = (N, *self.root_args)
         if root_args in self._cache:
             return self._cache[root_args]
 
         self._cache[root_args] = self.root_fn(*root_args)
         return self._cache[root_args]
+    
+    @staticmethod
+    def _apply_composite_rule(cur_dim_areas, dim, hs):
+        """Apply "composite" rule for gaussian integrals
 
-    def _points_and_weights(self, root_args, wrapper_func=None):
-        """Returns points and weights for integration.
-
-        Args:
-            root_args (tuple): arguments required for root-finding function, most commonly the degree N
-            wrapper_func (func,optional): function that performs any additional calculations required to get the proper points and weights, eg. for use in Gauss-Lobatto quadrature, or for transformation of interval in Gauss-Legendre quadrature. Default is None.
-
-        Returns:
-            tuple(points, weights)
-            """
-        xi, wi = self._cached_roots(root_args)  # can autoray work with scipy functions?
-        if isinstance(self._integration_domain, torch.Tensor):
-            device = self._integration_domain.device
-            xi = torch.from_numpy(xi).to(device)
-            wi = torch.from_numpy(wi).to(device)
-        if wrapper_func is not None:
-            xi, wi = wrapper_func(xi, wi)
-        if xi.shape[0] != self._dim:
-            xi = self._expand_dimension(xi)
-        if wi.shape[0] != self._dim:
-            wi = self._expand_dimension(wi)
-
-        return xi, wi
-
-    def _expand_dimension(self, x):
-        '''expand dimensions of 1D array or tensor'''
-        try:
-            x = do(
-                "repeat",
-                x,
-                self._dim,
-                like="numpy").reshape(
-                self._dim,
-                x.shape[0])
-        except TypeError:  # need tensor to be on cpu, then assign it back to GPU
-            x = do(
-                "repeat",
-                x.cpu().detach(),
-                self._dim,
-                like="numpy").reshape(
-                self._dim,
-                x.shape[0]).to(
-                x.device)
-        return x
-
-    def integrate(self, fn, dim, args=None, N=8, integration_domain=None, backend=None):
-        """Integrates the passed function on the passed domain using fixed-point Gaussian quadrature.
-
-        Args:
-            fn (func): The function to integrate over.
-            dim (int): Dimensionality of the function to integrate.
-            args (iterable object, optional): Additional arguments ``t0, ..., tn``, required by `fn`.
-            N (int, optional): Degree to use for computing sample points and weights. Defaults to 8.
-            integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
-
-        Returns:
-            float: integral value
-
+        cur_dim_areas will contain the areas per dimension
         """
-        if integration_domain is None or self.name in [
-                "Gauss-Laguerre", "Gauss-Hermite"]:
-            integration_domain = self.default_integration_domain * dim
-            if self.name in ["Gauss-Laguerre", "Gauss-Hermite"]:
-                logger.info(
-                    f"{self.name} integration only allowed over the interval {self.default_integration_domain[0]}!")
-
-        self._integration_domain = _setup_integration_domain(
-            dim, integration_domain, backend)
-        self._check_inputs(
-            dim=dim,
-            N=N,
-            integration_domain=self._integration_domain)
-
-        logger.debug(
-            f"Using {self.name} for integrating a fn with {N} points over {self._integration_domain}")
-
-        self._dim = dim
-        self._fn = fn
-        const = self._get_constant_multiplier()
-
-        root_args = (N,) + self.root_args
-
-        xi, wi = self._points_and_weights(
-            root_args, wrapper_func=self.wrapper_func)
-
-        # what if there is a sum in the function? then wi*self._eval() will
-        # have dimension mismatch
-        integral = anp.sum(
-            const *
-            anp.sum(
-                self._eval(
-                    xi,
-                    args=args,
-                    weights=wi),
-                axis=1))
-        logger.info(f"Computed integral was {integral}.")
-
-        return integral
+        # We collapse dimension by dimension
+        for _ in range(dim):
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
+        return cur_dim_areas
 
 
 class GaussLegendre(Gaussian):
@@ -143,12 +86,8 @@ class GaussLegendre(Gaussian):
     def __init__(self):
         super().__init__()
 
-    def wrapper_func(self, xi, wi):  # scale from [-1,1] to [a,b]
-        a, b = self._integration_domain.T
-        x0 = 0.5 * (1.0 - xi)  # self.points)
-        x1 = 0.5 * (1.0 + xi)  # self.points)
-        xi = anp.outer(a, x0) + anp.outer(b, x1)
-        return xi, wi
+    def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
+        return ((b-a) / 2) * roots + ((a+b) / 2)
 
     def _get_constant_multiplier(self):
         """Following a change of interval from [-1,1] to [a,b], the sum :math:`\\sum_{i=1}^{n} \omega_i f(x'_{i})` must be multiplied by the constant factor :math:`\frac{b-a}{2}`"""
@@ -172,12 +111,8 @@ class GaussJacobi(Gaussian):
         self.root_fn = scipy.special.roots_jacobi
         self.root_args = (alpha, beta)
 
-    def wrapper_func(self, xi, wi):  # scale from [-1,1] to [a,b]
-        a, b = self._integration_domain.T
-        x0 = 0.5 * (1.0 - xi)  # self.points)
-        x1 = 0.5 * (1.0 + xi)  # self.points)
-        xi = anp.outer(a, x0) + anp.outer(b, x1)
-        return xi, wi
+    def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
+        return ((b-a) / 2) * roots + ((a+b) / 2)
 
     def _get_constant_multiplier(self):
         """Following a change of interval from [-1,1] to [a,b], the sum :math:`\\sum_{i=1}^{n} \omega_i f(x'_{i})` must be multiplied by the constant factor :math:`\frac{b-a}{2}`"""
