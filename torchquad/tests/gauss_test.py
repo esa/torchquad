@@ -57,7 +57,7 @@ def _run_gaussian_tests(backend, _precision):
         return
 
     # 10D Tests
-    N = 60
+    N = (60 ** 3) * 3
     for integrator in integrators:
         ii = integrator
         errors, funcs = compute_integration_test_errors(ii.integrate, {"N": N, "dim": 10}, integration_dim=10, use_complex=True, backend=backend, use_multi_dim_integrand=False)
