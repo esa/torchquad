@@ -18,19 +18,30 @@ class Gaussian(BaseIntegrator):
         self.root_args = ()
         self.default_integration_domain = [[-1, 1]]
         self.transform_interval = True
+        self._cache = {}
+    
+    # credit for the idea https://github.com/scipy/scipy/blob/dde50595862a4f9cede24b5d1c86935c30f1f88a/scipy/integrate/_quadrature.py#L72
+    def _cached_roots(self, root_args):
+        """
+        Cache polynomial results to speed up integration.
+        """
+        if root_args in self._cache:
+            return self._cache[root_args]
 
-    def _points_and_weights(self, root_fn, root_args, wrapper_func=None):
+        self._cache[root_args] = self.root_fn(*root_args)
+        return self._cache[root_args]
+
+    def _points_and_weights(self, root_args, wrapper_func=None):
         """Returns points and weights for integration.
 
         Args:
-            root_fn (func): function to use for computing sample points and weights via the roots of appropriate polynomials
             root_args (tuple): arguments required for root-finding function, most commonly the degree N
             wrapper_func (func,optional): function that performs any additional calculations required to get the proper points and weights, eg. for use in Gauss-Lobatto quadrature, or for transformation of interval in Gauss-Legendre quadrature. Default is None.
 
         Returns:
             tuple(points, weights)
             """
-        xi, wi = root_fn(*root_args)  # can autoray work with scipy functions?
+        xi, wi = self._cached_roots(root_args)  # can autoray work with scipy functions?
         if isinstance(self._integration_domain, torch.Tensor):
             device = self._integration_domain.device
             xi = torch.from_numpy(xi).to(device)
@@ -65,7 +76,7 @@ class Gaussian(BaseIntegrator):
                 x.device)
         return x
 
-    def integrate(self, fn, dim, args=None, N=8, integration_domain=None):
+    def integrate(self, fn, dim, args=None, N=8, integration_domain=None, backend=None):
         """Integrates the passed function on the passed domain using fixed-point Gaussian quadrature.
 
         Args:
@@ -79,7 +90,7 @@ class Gaussian(BaseIntegrator):
             float: integral value
 
         """
-        if not integration_domain or self.name in [
+        if integration_domain is None or self.name in [
                 "Gauss-Laguerre", "Gauss-Hermite"]:
             integration_domain = self.default_integration_domain * dim
             if self.name in ["Gauss-Laguerre", "Gauss-Hermite"]:
@@ -87,7 +98,7 @@ class Gaussian(BaseIntegrator):
                     f"{self.name} integration only allowed over the interval {self.default_integration_domain[0]}!")
 
         self._integration_domain = _setup_integration_domain(
-            dim, integration_domain)
+            dim, integration_domain, backend)
         self._check_inputs(
             dim=dim,
             N=N,
@@ -103,7 +114,7 @@ class Gaussian(BaseIntegrator):
         root_args = (N,) + self.root_args
 
         xi, wi = self._points_and_weights(
-            self.root_fn, root_args, wrapper_func=self.wrapper_func)
+            root_args, wrapper_func=self.wrapper_func)
 
         # what if there is a sum in the function? then wi*self._eval() will
         # have dimension mismatch
