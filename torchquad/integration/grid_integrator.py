@@ -39,10 +39,10 @@ class GridIntegrator(BaseIntegrator):
         function_values, num_points = self.evaluate_integrand(fn, grid_points, weights=self._weights(n_per_dim, dim))
         self._nr_of_fevals = num_points
 
-        return self.calculate_result(function_values, dim, n_per_dim, hs)
+        return self.calculate_result(function_values, dim, n_per_dim, hs, integration_domain)
 
     @expand_func_values_and_squeeze_intergal
-    def calculate_result(self, function_values, dim, n_per_dim, hs):
+    def calculate_result(self, function_values, dim, n_per_dim, hs, integration_domain):
         """Apply the "composite rule" to calculate a result from the evaluated integrand.
 
         Args:
@@ -68,7 +68,7 @@ class GridIntegrator(BaseIntegrator):
         assert new_shape == list(reshaped_function_values.shape), f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
         logger.debug("Computing areas.")
 
-        result = self._apply_composite_rule(reshaped_function_values, dim, hs)
+        result = self._apply_composite_rule(reshaped_function_values, dim, hs, integration_domain)
 
         logger.opt(lazy=True).info(
             "Computed integral: {result}", result=lambda: str(result)

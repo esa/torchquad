@@ -63,14 +63,14 @@ class Gaussian(GridIntegrator):
         return self._cache[root_args]
     
     @staticmethod
-    def _apply_composite_rule(cur_dim_areas, dim, hs):
+    def _apply_composite_rule(cur_dim_areas, dim, hs, integration_domain):
         """Apply "composite" rule for gaussian integrals
 
         cur_dim_areas will contain the areas per dimension
         """
         # We collapse dimension by dimension
-        for _ in range(dim):
-            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
+        for cur_dim in range(dim):
+            cur_dim_areas = .5 * (integration_domain[cur_dim][1] - integration_domain[cur_dim][0]) * anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
 
@@ -88,11 +88,6 @@ class GaussLegendre(Gaussian):
 
     def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
         return ((b-a) / 2) * roots + ((a+b) / 2)
-
-    def _get_constant_multiplier(self):
-        """Following a change of interval from [-1,1] to [a,b], the sum :math:`\\sum_{i=1}^{n} \omega_i f(x'_{i})` must be multiplied by the constant factor :math:`\frac{b-a}{2}`"""
-        diff = self._integration_domain.T[1] - self._integration_domain.T[0]
-        return 0.5 * diff
 
 
 class GaussJacobi(Gaussian):
@@ -114,11 +109,6 @@ class GaussJacobi(Gaussian):
     def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
         return ((b-a) / 2) * roots + ((a+b) / 2)
 
-    def _get_constant_multiplier(self):
-        """Following a change of interval from [-1,1] to [a,b], the sum :math:`\\sum_{i=1}^{n} \omega_i f(x'_{i})` must be multiplied by the constant factor :math:`\frac{b-a}{2}`"""
-        diff = self._integration_domain.T[1] - self._integration_domain.T[0]
-        return 0.5 * diff
-
 
 class GaussLaguerre(Gaussian):
     """Gauss Laguerre quadrature rule in torch, for integrals of the form :math:`\\int_0^{\\infty} e^{-x} f(x) dx`. It will correctly integrate polynomials of degree :math:`2n - 1` or less
@@ -138,9 +128,16 @@ class GaussLaguerre(Gaussian):
         self.default_integration_domain = [[0, numpy.inf]]
         self.wrapper_func = None
 
-    def _get_constant_multiplier(self):
-        """For the fixed integration domain of Gauss-Laguerre integration, the approximation can be calculated with no multiplicative factor."""
-        return 1.0
+    @staticmethod
+    def _apply_composite_rule(cur_dim_areas, dim, hs):
+        """Apply "composite" rule for gaussian integrals
+
+        cur_dim_areas will contain the areas per dimension
+        """
+        # We collapse dimension by dimension
+        for _ in range(dim):
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
+        return cur_dim_areas
 
 
 class GaussHermite(Gaussian):
@@ -162,6 +159,13 @@ class GaussHermite(Gaussian):
         self.default_integration_domain = [[-1 * numpy.inf, numpy.inf]]
         self.wrapper_func = None
 
-    def _get_constant_multiplier(self):
-        """For the fixed integration domain of Gauss-Hermite integration, the approximation can be calculated with no multiplicative factor."""
-        return 1.0
+    @staticmethod
+    def _apply_composite_rule(cur_dim_areas, dim, hs):
+        """Apply "composite" rule for gaussian integrals
+
+        cur_dim_areas will contain the areas per dimension
+        """
+        # We collapse dimension by dimension
+        for _ in range(dim):
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
+        return cur_dim_areas
