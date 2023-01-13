@@ -32,6 +32,7 @@ class Simpson(NewtonCotes):
         """Apply composite Simpson quadrature.
         cur_dim_areas will contain the areas per dimension
         """
+        integrand_shape = cur_dim_areas[:-1]
         # We collapse dimension by dimension
         for cur_dim in range(dim):
             cur_dim_areas = (
@@ -43,7 +44,7 @@ class Simpson(NewtonCotes):
                     + cur_dim_areas[..., 2:][..., ::2]
                 )
             )
-            cur_dim_areas = anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
     @staticmethod

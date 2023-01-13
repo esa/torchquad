@@ -30,12 +30,13 @@ class Trapezoid(NewtonCotes):
 
         cur_dim_areas will contain the areas per dimension
         """
+        integrand_shape = cur_dim_areas[:-1]
         # We collapse dimension by dimension
         for cur_dim in range(dim):
             cur_dim_areas = (
                 hs[cur_dim] / 2.0 * (cur_dim_areas[..., 0:-1] + cur_dim_areas[..., 1:])
             )
-            cur_dim_areas = anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
     @staticmethod
