@@ -1,7 +1,6 @@
 from autoray import numpy as anp
 from autoray import infer_backend
 from loguru import logger
-import warnings
 
 from .base_integrator import BaseIntegrator
 from .utils import _setup_integration_domain, expand_func_values_and_squeeze_intergal
