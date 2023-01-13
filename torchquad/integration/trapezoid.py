@@ -38,8 +38,3 @@ class Trapezoid(NewtonCotes):
             )
             cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
-
-    @staticmethod
-    def _adjust_N(dim, N):
-        # Nothing to do for Trapezoid
-        return N

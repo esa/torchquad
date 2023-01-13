@@ -4,9 +4,9 @@ from time import perf_counter
 from loguru import logger
 
 from .utils import (
-    _linspace_with_grads,
     _check_integration_domain,
     _setup_integration_domain,
+    _linspace_with_grads
 )
 
 
@@ -19,7 +19,7 @@ class IntegrationGrid:
     _dim = None  # dimensionality of the grid
     _runtime = None  # runtime for the creation of the integration grid
 
-    def __init__(self, N, integration_domain):
+    def __init__(self, N, integration_domain, grid_func=_linspace_with_grads):
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
 
         Args:
@@ -57,7 +57,7 @@ class IntegrationGrid:
         # Determine for each dimension grid points and mesh width
         for dim in range(self._dim):
             grid_1d.append(
-                _linspace_with_grads(
+                grid_func(
                     integration_domain[dim][0],
                     integration_domain[dim][1],
                     self._N,
