@@ -1,7 +1,6 @@
 from loguru import logger
 from autoray import infer_backend
 from autoray import numpy as anp
-import warnings
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
