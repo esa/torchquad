@@ -48,10 +48,14 @@ class NewtonCotes(BaseIntegrator):
         Returns:
             backend tensor: Quadrature result
         """
-        # Reshape the output to be [N,N,...] points instead of [integrand_dim,dim*N] points
+        # Reshape the output to be [integrand_dim,N,N,...] points instead of [integrand_dim,dim*N] points
         integrand_shape = function_values.shape[1:]
         dim_shape = [n_per_dim] * dim
         new_shape = [*integrand_shape, *dim_shape]
+        # We need to use einsum instead of just reshape here because reshape does not move the axis - it only reshapes.
+        # So the first line generates a character string for einsum, followed by moving the first dimension i.e `dim*N`
+        # to the end.  Finally we reshape the resulting object so that instead of the last dimension being `dim*N`, it is
+        # `N,N,...` as desired.
         einsum = "".join([chr(i + 65) for i in range(len(function_values.shape))])
         function_values = anp.einsum(f'{einsum}->{einsum[1:]}{einsum[0]}', function_values)
         function_values = function_values.reshape(new_shape)
