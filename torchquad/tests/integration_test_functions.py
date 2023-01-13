@@ -93,10 +93,11 @@ class IntegrationTestFunction:
         return inf if self.order is None else self.order
 
     def integrand_scaling(self, integrand):
-        """_summary_
+        """Applies the scaling to the integrand, which is an `arange`-ed tensor in the shape of the
+        desired integrand (by `self.integrand_dims`) giving a scaled version of the integrand repeated.
 
         Args:
-            integrand (_type_): the integrand to be multiplied by the scaling grid
+            integrand (backend tensor): the integrand to be multiplied by the scaling grid
 
         Returns:
             Union[int, anp.ndarray]: The scaled integrand

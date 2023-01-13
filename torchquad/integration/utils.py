@@ -210,11 +210,27 @@ def _torch_repeat(a, repeats, axis=None):
 
 @partial(register_function, "torch", 'expand_dims')
 def _torch_expand_dims(a, axis):
+    """torch is missing `expand_dims` which appears to exist on all other libraries used.
+
+    Args:
+        a (torch.Tensor): Tensor to be expanded along axis
+        axis (int): the axis along which to expand the dimensions
+
+    Returns:
+        torch.Tensor: a Tensor with an extra dimension.
+    """
     import torch
 
     return torch.unsqueeze(a, axis)
 
 def expand_func_values_and_squeeze_intergal(f):
+    """This decorator ensures that the trailing dimension of integrands is indeed the integrand dimension.
+    This is pertinent in the 1d case when the sampled values are often of shape `(N,)`.  Then, to maintain backward
+    consistency, we squeeze the result in the 1d case so it does not have any trailing dimensions.
+
+    Args:
+        f (Callable): the wrapped function
+    """
     def wrap(*args, **kwargs):
         # i.e we only have one dimension, or the second dimension (that of the integrand) is 1
         is_1d = len(args[1].shape) == 1 or (len(args[1].shape) == 2 and args[1].shape[1] == 1)
