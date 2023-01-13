@@ -48,7 +48,7 @@ class NewtonCotes(BaseIntegrator):
         Returns:
             backend tensor: Quadrature result
         """
-        # Reshape the output to be [N,N,...] points instead of [dim*N] points
+        # Reshape the output to be [N,N,...] points instead of [integrand_dim,dim*N] points
         integrand_shape = function_values.shape[1:]
         dim_shape = [n_per_dim] * dim
         new_shape = [*integrand_shape, *dim_shape]
