@@ -46,7 +46,7 @@ class Gaussian(GridIntegrator):
         Returns:
             backend tensor: the weights
         """
-        return anp.prod(anp.meshgrid(*([self._cached_points_and_weights(N, backend)[1]] * dim)), axis=0).ravel()
+        return anp.prod(anp.meshgrid(*([self._cached_points_and_weights(N)[1]] * dim), like=backend), axis=0).ravel()
     
     def _roots(self, N, backend):
         """return the roots generated from the polynomial of choice
@@ -58,7 +58,7 @@ class Gaussian(GridIntegrator):
         Returns:
             backend tensor: the roots
         """
-        return self._cached_points_and_weights(N, backend)[0]
+        return anp.array(self._cached_points_and_weights(N)[0], like=backend)
 
     @property
     def _grid_func(self):
@@ -80,7 +80,7 @@ class Gaussian(GridIntegrator):
         return roots
     
     # credit for the idea https://github.com/scipy/scipy/blob/dde50595862a4f9cede24b5d1c86935c30f1f88a/scipy/integrate/_quadrature.py#L72
-    def _cached_points_and_weights(self, N, backend):
+    def _cached_points_and_weights(self, N):
         """wrap the calls to get weights/roots in a cache
 
         Args:
@@ -92,10 +92,10 @@ class Gaussian(GridIntegrator):
         """
         root_args = (N, *self.root_args)
         if root_args in self._cache:
-            return anp.array(self._cache[root_args], like=backend)
+            return self._cache[root_args]
 
         self._cache[root_args] = self.root_fn(*root_args)
-        return anp.array(self._cache[root_args], like=backend)
+        return self._cache[root_args]
     
     @staticmethod
     def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
