@@ -77,6 +77,9 @@ class BaseIntegrator:
             )
 
         if weights is not None:
+            if len(result.shape) > 1:
+                integrand_shape = anp.array(result.shape[1:], like = infer_backend(points))
+                weights = anp.repeat(anp.expand_dims(weights,axis=1), anp.prod(integrand_shape)).reshape((weights.shape[0], *(integrand_shape)))
             result *= weights
             
         return result, num_points
