@@ -36,9 +36,28 @@ class Gaussian(GridIntegrator):
         return super().integrate(fn, dim, N, integration_domain, backend)
     
     def _weights(self, N, dim, backend):
+        """return the weights, broadcast across the dimensions, generated from the polynomial of choice
+
+        Args:
+            N (int): number of nodes
+            dim (int): number of dimensions
+            backend (string): which backend array to return
+
+        Returns:
+            backend tensor: the weights
+        """
         return anp.prod(anp.meshgrid(*([self._cached_points_and_weights(N, backend)[1]] * dim)), axis=0).ravel()
     
     def _roots(self, N, backend):
+        """return the roots generated from the polynomial of choice
+
+        Args:
+            N (int): number of nodes
+            backend (string): which backend array to return
+
+        Returns:
+            backend tensor: the roots
+        """
         return self._cached_points_and_weights(N, backend)[0]
 
     @property
@@ -48,12 +67,28 @@ class Gaussian(GridIntegrator):
         return f
 
     def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
+        """resize the roots based on domain of [a,b]
+
+        Args:
+            a (backend tensor): lower bound
+            b (backend tensor): upper bound
+            roots (backend tensor): polynomial nodes
+
+        Returns:
+            backend tensor: rescaled roots
+        """
         return roots
     
     # credit for the idea https://github.com/scipy/scipy/blob/dde50595862a4f9cede24b5d1c86935c30f1f88a/scipy/integrate/_quadrature.py#L72
     def _cached_points_and_weights(self, N, backend):
-        """
-        Cache polynomial results to speed up integration.
+        """wrap the calls to get weights/roots in a cache
+
+        Args:
+            N (int): number of nodes to return
+            backend (string): which backend to use
+
+        Returns:
+            tuple: nodes and weights  
         """
         root_args = (N, *self.root_args)
         if root_args in self._cache:
