@@ -46,7 +46,11 @@ class Gaussian(GridIntegrator):
         Returns:
             backend tensor: the weights
         """
-        return anp.prod(anp.meshgrid(*([self._cached_points_and_weights(N)[1]] * dim), like=backend), axis=0).ravel()
+        weights = anp.array(self._cached_points_and_weights(N)[1], like=backend)
+        if backend == "torch":
+            return anp.prod(anp.array(anp.stack(list(anp.meshgrid(*([weights] * dim))), like=backend, dim=0)), axis=0).ravel()
+        else:
+            return anp.prod(anp.meshgrid(*([weights] * dim), like=backend), axis=0).ravel()
     
     def _roots(self, N, backend):
         """return the roots generated from the polynomial of choice

@@ -1,5 +1,5 @@
 from loguru import logger
-from autoray import numpy as anp
+from autoray import numpy as anp, infer_backend
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
@@ -33,6 +33,7 @@ class GridIntegrator(BaseIntegrator):
             N = self._get_minimal_N(dim)
 
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)
+        backend = infer_backend(integration_domain)
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
 
         grid_points, hs, n_per_dim = self.calculate_grid(N, integration_domain)
