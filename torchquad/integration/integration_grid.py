@@ -9,6 +9,9 @@ from .utils import (
     _linspace_with_grads
 )
 
+def grid_func(a, b, N, requires_grad=False, backend=None):
+    return _linspace_with_grads(a, b, N, requires_grad=requires_grad)
+
 
 class IntegrationGrid:
     """This class is used to store the integration grid for methods like Trapezoid or Simpsons, which require a grid."""
@@ -19,7 +22,7 @@ class IntegrationGrid:
     _dim = None  # dimensionality of the grid
     _runtime = None  # runtime for the creation of the integration grid
 
-    def __init__(self, N, integration_domain, grid_func=_linspace_with_grads):
+    def __init__(self, N, integration_domain, grid_func=grid_func):
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
 
         Args:
