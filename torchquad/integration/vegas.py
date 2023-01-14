@@ -58,7 +58,7 @@ class VEGAS(BaseIntegrator):
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
             max_iterations (int, optional): Maximum number of vegas iterations to perform. The number of performed iterations is usually lower than this value because the number of sample points per iteration increases every fifth iteration. Defaults to 20.
             use_warmup (bool, optional): If True, execute a warmup to initialize the vegas map. Defaults to True.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. "jax" and "tensorflow" are unsupported. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+            backend (string, optional): Numerical backend. "jax" and "tensorflow" are unsupported. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Raises:
             ValueError: If the integration_domain or backend argument is invalid

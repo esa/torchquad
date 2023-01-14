@@ -16,10 +16,9 @@ dependencies:
   # Numerical backend installations with CUDA support where possible:
   - numpy>=1.19.5
   - cudatoolkit>=11.1
-  - pytorch>=1.9 # CPU version
-  - tensorflow>=2.10.0 # CPU version
+  - pytorch>=1.9=*cuda*
+  - tensorflow-gpu>=2.6.0
   # jaxlib with CUDA support is not available for conda
   - pip:
-      - --find-links https://storage.googleapis.com/jax-releases/jax_releases.html
-      - jax[cpu]>=0.2.22 # this will only work on linux. for win see e.g. https://github.com/cloudhan/jax-windows-builder
-        # CPU version
+      - --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+      - jax[cuda]>=0.2.22 # this will only work on linux. for win see e.g. https://github.com/cloudhan/jax-windows-builder

@@ -29,10 +29,10 @@ class MonteCarlo(BaseIntegrator):
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the function to integrate.
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
-            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
+            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
             rng (RNG, optional): An initialised RNG; this can be used when compiling the function for Tensorflow
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+            backend (string, optional): Numerical backend. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Raises:
             ValueError: If len(integration_domain) != dim
@@ -120,9 +120,9 @@ class MonteCarlo(BaseIntegrator):
         Args:
             dim (int): Dimensionality of the integration domain.
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
-            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
+            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
             seed (int, optional): Random number generation seed for the sequence of sampling point calculations, only set if provided. The returned integrate function calculates different points in each invocation with and without specified seed. Defaults to None.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+            backend (string, optional): Numerical backend. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Returns:
             function(fn, integration_domain): JIT compiled integrate function where all parameters except the integrand and domain are fixed

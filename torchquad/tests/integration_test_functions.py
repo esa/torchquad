@@ -23,16 +23,16 @@ class IntegrationTestFunction:
     integrand_dims = None # What the dimensions of the integrand should be
 
     def __init__(
-        self, expected_result, integration_dim=1, domain=None, is_complex=False, backend="torch", integrand_dims=1
+        self, expected_result, integration_dim=1, domain=None, is_complex=False, backend=None, integrand_dims=1
     ):
         """Initializes domain and stores variables.
 
         Args:
             expected_result (float): Expected integration result.
             integration_dim (int, optional): Dimensionality of investigated function. Defaults to 1.
-            domain (list, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
-            is_complex (Boolean, optional): If the test function contains complex numbers. Defaults to False.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
+            is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
+            backend (string, optional): Numerical backend passed to _setup_integration_domain.
             integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
             whether once or over a matrix/vector of scaling factors.
         """
@@ -147,18 +147,18 @@ class Polynomial(IntegrationTestFunction):
         integration_dim=1,
         domain=None,
         is_complex=False,
-        backend="torch",
+        backend=None,
         integrand_dims=1,
     ):
         """Creates an n-dimensional, degree-K poylnomial test function.
 
         Args:
             expected_result (backend tensor): Expected result. Required to compute errors.
-            coeffs (list, optional): Polynomial coefficients. Are the same for each integration_dim. Defaults to [2].
+            coeffs (list, optional): Polynomial coefficients. Are the same for each dim. Defaults to [2].
             integration_dim (int, optional): Polynomial dimensionality. Defaults to 1.
-            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^integration_dim.
+            domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            backend (string, optional): Numerical backend.
             integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
             whether once or over a matrix/vector of scaling factors.
         """
@@ -214,7 +214,7 @@ class Exponential(IntegrationTestFunction):
         integration_dim=1,
         domain=None,
         is_complex=False,
-        backend="torch",
+        backend=None,
         integrand_dims=1,
     ):
         """Creates an n-dimensional exponential test function.
@@ -222,9 +222,9 @@ class Exponential(IntegrationTestFunction):
         Args:
             expected_result (backend tensor): Expected result. Required to compute errors.
             integration_dim (int, optional): Input dimension. Defaults to 1.
-            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^integration_dim.
+            domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            backend (string, optional): Numerical backend passed to _setup_integration_domain.
             integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
             whether once or over a matrix/vector of scaling factors.
         """
@@ -243,7 +243,7 @@ class Sinusoid(IntegrationTestFunction):
         integration_dim=1,
         domain=None,
         is_complex=False,
-        backend="torch",
+        backend=None,
         integrand_dims=1,
     ):
         """Creates an n-dimensional sinusoidal test function.
@@ -251,9 +251,9 @@ class Sinusoid(IntegrationTestFunction):
         Args:
             expected_result (backend tensor): Expected result. Required to compute errors.
             integration_dim (int, optional): Input dimension. Defaults to 1.
-            domain (list, optional): Integration domain. Defaults to [-1.0, 1.0]^integration_dim.
+            domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from domain. Defaults to "torch".
+            backend (string, optional): Numerical backend passed to _setup_integration_domain.
             integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
             whether once or over a matrix/vector of scaling factors.
         """
