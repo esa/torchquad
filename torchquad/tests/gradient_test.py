@@ -171,7 +171,7 @@ def _run_gradient_tests(backend, dtype_name):
     maintain gradients and if the gradients are consistent and correct
     """
     # Define integrators and numbers of evaluation points
-    integrators = [Trapezoid(), Simpson(), Boole(), MonteCarlo(), VEGAS(), GaussLegendre(), GaussJacobi(), GaussLaguerre(), GaussHermite()]
+    integrators = [Trapezoid(), Simpson(), Boole(), MonteCarlo(), VEGAS(), GaussLegendre()]
     Ns_1d = [149, 149, 149, 99997, 99997]
     Ns_2d = [549, 121, 81, 99997, 99997]
     for integrator, N_1d, N_2d in zip(integrators, Ns_1d, Ns_2d):
