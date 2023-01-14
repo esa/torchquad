@@ -63,14 +63,14 @@ class Gaussian(GridIntegrator):
         return self._cache[root_args]
     
     @staticmethod
-    def _apply_composite_rule(cur_dim_areas, dim, hs, integration_domain):
+    def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
         """Apply "composite" rule for gaussian integrals
 
         cur_dim_areas will contain the areas per dimension
         """
         # We collapse dimension by dimension
         for cur_dim in range(dim):
-            cur_dim_areas = .5 * (integration_domain[cur_dim][1] - integration_domain[cur_dim][0]) * anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
+            cur_dim_areas = .5 * (domain[cur_dim][1] - domain[cur_dim][0]) * anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
 
@@ -129,7 +129,7 @@ class GaussLaguerre(Gaussian):
         self.wrapper_func = None
 
     @staticmethod
-    def _apply_composite_rule(cur_dim_areas, dim, hs):
+    def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
         """Apply "composite" rule for gaussian integrals
 
         cur_dim_areas will contain the areas per dimension
@@ -160,7 +160,7 @@ class GaussHermite(Gaussian):
         self.wrapper_func = None
 
     @staticmethod
-    def _apply_composite_rule(cur_dim_areas, dim, hs):
+    def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
         """Apply "composite" rule for gaussian integrals
 
         cur_dim_areas will contain the areas per dimension

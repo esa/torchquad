@@ -25,7 +25,7 @@ class Trapezoid(NewtonCotes):
         return super().integrate(fn, dim, N, integration_domain, backend)
 
     @staticmethod
-    def _apply_composite_rule(cur_dim_areas, dim, hs):
+    def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
         """Apply composite Trapezoid quadrature.
 
         cur_dim_areas will contain the areas per dimension
