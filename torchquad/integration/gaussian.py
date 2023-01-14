@@ -35,32 +35,32 @@ class Gaussian(GridIntegrator):
         """
         return super().integrate(fn, dim, N, integration_domain, backend)
     
-    def _weights(self, N, dim):
-        return anp.prod(anp.meshgrid(*([self._cached_points_and_weights(N)[1]] * dim)), axis=0).ravel()
+    def _weights(self, N, dim, backend):
+        return anp.prod(anp.meshgrid(*([self._cached_points_and_weights(N, backend)[1]] * dim)), axis=0).ravel()
     
-    def _roots(self, N):
-        return self._cached_points_and_weights(N)[0]
+    def _roots(self, N, backend):
+        return self._cached_points_and_weights(N, backend)[0]
 
     @property
     def _grid_func(self):
-        def f(a, b, N, requires_grad=False):
-            return self._resize_roots(a, b, self._roots(N))
+        def f(a, b, N, requires_grad=False, backend=None):
+            return self._resize_roots(a, b, self._roots(N, backend))
         return f
 
     def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
         return roots
     
     # credit for the idea https://github.com/scipy/scipy/blob/dde50595862a4f9cede24b5d1c86935c30f1f88a/scipy/integrate/_quadrature.py#L72
-    def _cached_points_and_weights(self, N):
+    def _cached_points_and_weights(self, N, backend):
         """
         Cache polynomial results to speed up integration.
         """
         root_args = (N, *self.root_args)
         if root_args in self._cache:
-            return self._cache[root_args]
+            return anp.array(self._cache[root_args], like=backend)
 
         self._cache[root_args] = self.root_fn(*root_args)
-        return self._cache[root_args]
+        return anp.array(self._cache[root_args], like=backend)
     
     @staticmethod
     def _apply_composite_rule(cur_dim_areas, dim, hs, domain):

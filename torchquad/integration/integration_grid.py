@@ -28,9 +28,11 @@ class IntegrationGrid:
         """
         start = perf_counter()
         self._check_inputs(N, integration_domain)
-        if infer_backend(integration_domain) == "builtins":
+        backend = infer_backend(integration_domain)
+        if backend == "builtins":
+            backend = "torch"
             integration_domain = _setup_integration_domain(
-                len(integration_domain), integration_domain, backend="torch"
+                len(integration_domain), integration_domain, backend=backend
             )
         self._dim = integration_domain.shape[0]
 
@@ -62,6 +64,7 @@ class IntegrationGrid:
                     integration_domain[dim][1],
                     self._N,
                     requires_grad=requires_grad,
+                    backend=backend
                 )
             )
         self.h = anp.stack(
