@@ -9,6 +9,7 @@ from .integration.trapezoid import Trapezoid
 from .integration.simpson import Simpson
 from .integration.boole import Boole
 from .integration.vegas import VEGAS
+from .integration.gaussian import GaussLegendre
 
 from .integration.rng import RNG
 
