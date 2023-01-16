@@ -3,7 +3,7 @@
 *** Based on https://github.com/othneildrew/Best-README-Template
 -->
 
-![Read the Docs (version)](https://img.shields.io/readthedocs/torchquad/main?style=flat-square) ![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/main?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/esa/torchquad?style=flat-square)
+![Read the Docs (version)](https://img.shields.io/readthedocs/torchquad/main?style=flat-square) ![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/esa/torchquad/.github/workflows/run_tests.yml/main?style=flat-square) ![GitHub last commit](https://img.shields.io/github/last-commit/esa/torchquad?style=flat-square)
 ![GitHub](https://img.shields.io/github/license/esa/torchquad?style=flat-square) ![Conda (channel only)](https://img.shields.io/conda/vn/conda-forge/torchquad?style=flat-square) ![PyPI](https://img.shields.io/pypi/v/torchquad?style=flat-square) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/torchquad?style=flat-square)
 
 ![GitHub contributors](https://img.shields.io/github/contributors/esa/torchquad?style=flat-square)
@@ -23,8 +23,6 @@
     <a href="https://torchquad.readthedocs.io"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/esa/torchquad/blob/master/notebooks/Torchquad%20-%20Example%20notebook.ipynb">View Example notebook</a>
-    ·
     <a href="https://github.com/esa/torchquad/issues">Report Bug</a>
     ·
     <a href="https://github.com/esa/torchquad/issues">Request Feature</a>
@@ -275,7 +273,7 @@ Created by ESA's [Advanced Concepts Team](https://www.esa.int/gsp/ACT/index.html
 
 - Pablo Gómez - `pablo.gomez at esa.int`
 - Gabriele Meoni - `gabriele.meoni at esa.int`
-- Håvard Hem Toftevaag - `havard.hem.toftevaag at esa.int`
+- Håvard Hem Toftevaag
 
 Project Link: [https://github.com/esa/torchquad](https://github.com/esa/torchquad)
 
