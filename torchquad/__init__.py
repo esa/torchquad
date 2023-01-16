@@ -10,6 +10,8 @@ from .integration.simpson import Simpson
 from .integration.boole import Boole
 from .integration.vegas import VEGAS
 from .integration.gaussian import GaussLegendre
+from .integration.grid_integrator import GridIntegrator
+from .integration.base_integrator import BaseIntegrator
 
 from .integration.rng import RNG
 
@@ -23,6 +25,8 @@ from .utils.set_up_backend import set_up_backend
 from .utils.deployment_test import _deployment_test
 
 __all__ = [
+    "GridIntegrator",
+    "BaseIntegrator",
     "IntegrationGrid",
     "MonteCarlo",
     "Trapezoid",
