@@ -18,7 +18,7 @@ class GridIntegrator(BaseIntegrator):
         return f
     
 
-    def _weights(self, N, dim, backend):
+    def _weights(self, N, dim, backend, requires_grad=False):
         return None
 
     def integrate(self, fn, dim, N, integration_domain, backend):

@@ -35,7 +35,7 @@ class Gaussian(GridIntegrator):
         """
         return super().integrate(fn, dim, N, integration_domain, backend)
     
-    def _weights(self, N, dim, backend):
+    def _weights(self, N, dim, backend, requires_grad=False):
         """return the weights, broadcast across the dimensions, generated from the polynomial of choice
 
         Args:
@@ -48,11 +48,12 @@ class Gaussian(GridIntegrator):
         """
         weights = anp.array(self._cached_points_and_weights(N)[1], like=backend)
         if backend == "torch":
+            weights.requires_grad = requires_grad
             return anp.prod(anp.array(anp.stack(list(anp.meshgrid(*([weights] * dim))), like=backend, dim=0)), axis=0).ravel()
         else:
             return anp.prod(anp.meshgrid(*([weights] * dim), like=backend), axis=0).ravel()
     
-    def _roots(self, N, backend):
+    def _roots(self, N, backend, requires_grad=False):
         """return the roots generated from the polynomial of choice
 
         Args:
@@ -62,12 +63,15 @@ class Gaussian(GridIntegrator):
         Returns:
             backend tensor: the roots
         """
-        return anp.array(self._cached_points_and_weights(N)[0], like=backend)
+        roots = anp.array(self._cached_points_and_weights(N)[0], like=backend)
+        if requires_grad:
+            roots.requires_grad = True
+        return roots
 
     @property
     def _grid_func(self):
-        def f(a, b, N, requires_grad=False, backend=None):
-            return self._resize_roots(a, b, self._roots(N, backend))
+        def f(a, b, N, requires_grad, backend=None):
+            return self._resize_roots(a, b, self._roots(N, backend, requires_grad))
         return f
 
     def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
