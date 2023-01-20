@@ -6,6 +6,7 @@ from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
 from .utils import _setup_integration_domain, expand_func_values_and_squeeze_intergal
 
+
 class NewtonCotes(BaseIntegrator):
     """The abstract integrator that Composite Newton Cotes integrators inherit from"""
 
@@ -56,9 +57,13 @@ class NewtonCotes(BaseIntegrator):
         # to the end.  Finally we reshape the resulting object so that instead of the last dimension being `dim*N`, it is
         # `N,N,...` as desired.
         einsum = "".join([chr(i + 65) for i in range(len(function_values.shape))])
-        reshaped_function_values = anp.einsum(f'{einsum}->{einsum[1:]}{einsum[0]}', function_values)
+        reshaped_function_values = anp.einsum(
+            f"{einsum}->{einsum[1:]}{einsum[0]}", function_values
+        )
         reshaped_function_values = reshaped_function_values.reshape(new_shape)
-        assert new_shape == list(reshaped_function_values.shape), f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
+        assert new_shape == list(
+            reshaped_function_values.shape
+        ), f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
         logger.debug("Computing areas.")
 
         result = self._apply_composite_rule(reshaped_function_values, dim, hs)

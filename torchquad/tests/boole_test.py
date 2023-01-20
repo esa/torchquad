@@ -20,7 +20,11 @@ def _run_boole_tests(backend, _precision):
     N = 401
 
     errors, funcs = compute_integration_test_errors(
-        bl.integrate, {"N": N, "dim": 1}, integration_dim=1, use_complex=True, backend=backend
+        bl.integrate,
+        {"N": N, "dim": 1},
+        integration_dim=1,
+        use_complex=True,
+        backend=backend,
     )
     print(f"1D Boole Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     # Polynomials up to degree 5 can be integrated almost exactly with Boole.
@@ -34,11 +38,17 @@ def _run_boole_tests(backend, _precision):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         errors, funcs = compute_integration_test_errors(
-            bl.integrate, {"N": N, "dim": 3}, integration_dim=3, use_complex=True, backend=backend
+            bl.integrate,
+            {"N": N, "dim": 3},
+            integration_dim=3,
+            use_complex=True,
+            backend=backend,
         )
     print(f"3D Boole Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 5 or (err < 2e-13 if test_function.is_integrand_1d else err < 2e-11)
+        assert test_function.get_order() > 5 or (
+            err < 2e-13 if test_function.is_integrand_1d else err < 2e-11
+        )
     for error in errors:
         assert error < 5e-6
 

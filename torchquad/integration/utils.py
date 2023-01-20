@@ -220,7 +220,8 @@ def _torch_repeat(a, repeats, axis=None):
     # confused with torch.Tensor.repeat.
     return torch.repeat_interleave(a, repeats, dim=axis)
 
-@partial(register_function, "torch", 'expand_dims')
+
+@partial(register_function, "torch", "expand_dims")
 def _torch_expand_dims(a, axis):
     """torch is missing `expand_dims` which appears to exist on all other libraries used.
 
@@ -235,6 +236,7 @@ def _torch_expand_dims(a, axis):
 
     return torch.unsqueeze(a, axis)
 
+
 def expand_func_values_and_squeeze_integral(f):
     """This decorator ensures that the trailing dimension of integrands is indeed the integrand dimension.
     This is pertinent in the 1d case when the sampled values are often of shape `(N,)`.  Then, to maintain backward
@@ -243,11 +245,19 @@ def expand_func_values_and_squeeze_integral(f):
     Args:
         f (Callable): the wrapped function
     """
+
     def wrap(*args, **kwargs):
         # i.e we only have one dimension, or the second dimension (that of the integrand) is 1
-        is_1d = len(args[1].shape) == 1 or (len(args[1].shape) == 2 and args[1].shape[1] == 1)
+        is_1d = len(args[1].shape) == 1 or (
+            len(args[1].shape) == 2 and args[1].shape[1] == 1
+        )
         if is_1d:
-            warnings.warn("DEPRECATION WARNING: In future versions of torchquad, an array-like object will be returned.")
-            return anp.squeeze(f(args[0], anp.expand_dims(args[1], axis=1), *args[2:], **kwargs))
-        return  f(*args, **kwargs)
+            warnings.warn(
+                "DEPRECATION WARNING: In future versions of torchquad, an array-like object will be returned."
+            )
+            return anp.squeeze(
+                f(args[0], anp.expand_dims(args[1], axis=1), *args[2:], **kwargs)
+            )
+        return f(*args, **kwargs)
+
     return wrap
