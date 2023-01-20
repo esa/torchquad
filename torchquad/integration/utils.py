@@ -235,7 +235,7 @@ def _torch_expand_dims(a, axis):
 
     return torch.unsqueeze(a, axis)
 
-def expand_func_values_and_squeeze_intergal(f):
+def expand_func_values_and_squeeze_integral(f):
     """This decorator ensures that the trailing dimension of integrands is indeed the integrand dimension.
     This is pertinent in the 1d case when the sampled values are often of shape `(N,)`.  Then, to maintain backward
     consistency, we squeeze the result in the 1d case so it does not have any trailing dimensions.
@@ -247,7 +247,7 @@ def expand_func_values_and_squeeze_intergal(f):
         # i.e we only have one dimension, or the second dimension (that of the integrand) is 1
         is_1d = len(args[1].shape) == 1 or (len(args[1].shape) == 2 and args[1].shape[1] == 1)
         if is_1d:
-            warnings.warn("DEPRECATION WARNING: In future versions of torchquad, an array-like object will always be returned.")
+            warnings.warn("DEPRECATION WARNING: In future versions of torchquad, an array-like object will be returned.")
             return anp.squeeze(f(args[0], anp.expand_dims(args[1], axis=1), *args[2:], **kwargs))
         return  f(*args, **kwargs)
     return wrap
