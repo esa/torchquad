@@ -60,7 +60,7 @@ def _run_monte_carlo_tests(backend, _precision):
     for err, test_function in zip(errors, funcs):
         assert test_function.get_order() > 0 or err == 0.0
     for error, test_function in zip(errors, funcs):
-        assert (error < 1e-1 if test_function.is_integrand_1d else error < .33) # errors are generally on order of ~4e-2 so times up to 8 of these
+        assert (error < 1e-1 if test_function.is_integrand_1d else error < .33) # errors add up if the integrand is higher dimensional
 
     # 10D Tests
     N = 10000

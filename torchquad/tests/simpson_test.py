@@ -25,7 +25,7 @@ def _run_simpson_tests(backend, _precision):
     print(f"1D Simpson Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     # Polynomials up to degree 3 can be integrated almost exactly with Simpson.
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 3 or (err < 3e-11 if test_function.is_integrand_1d else err < 6e-10)
+        assert test_function.get_order() > 3 or (err < 3e-11 if test_function.is_integrand_1d else err < 6e-10) # errors add up if the integrand is higher dimensional
     for error in errors:
         assert error < 1e-7
 
@@ -37,7 +37,7 @@ def _run_simpson_tests(backend, _precision):
     # All polynomials up to degree = 3 should be 0
     # If this breaks, check if test functions in helper_functions changed.
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 3 or err < (1e-15 if test_function.is_integrand_1d else 1e-14)
+        assert test_function.get_order() > 3 or err < (1e-15 if test_function.is_integrand_1d else 1e-14) # errors add up if the integrand is higher dimensional
 
     # 3D Tests
     N = 1076890  # N = 102.5 per dim (will change to 101 if all works)
@@ -48,7 +48,7 @@ def _run_simpson_tests(backend, _precision):
         )
     print(f"3D Simpson Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 3 or err < (1e-12 if test_function.is_integrand_1d else 1e-11)
+        assert test_function.get_order() > 3 or err < (1e-12 if test_function.is_integrand_1d else 1e-11) # errors add up if the integrand is higher dimensional
     for error in errors:
         assert error < 5e-6
 
