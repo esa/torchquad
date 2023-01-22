@@ -13,7 +13,9 @@ class GridIntegrator(BaseIntegrator):
 
     @property
     def _grid_func(self):
-        def f(a, b, N, requires_grad=False, backend=None):
+        def f(integration_domain, N, requires_grad=False, backend=None):
+            a = integration_domain[0]
+            b = integration_domain[1]
             return _linspace_with_grads(a, b, N, requires_grad=requires_grad)
         return f
     
