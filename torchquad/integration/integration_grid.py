@@ -9,7 +9,9 @@ from .utils import (
     _linspace_with_grads
 )
 
-def grid_func(a, b, N, requires_grad=False, backend=None):
+def grid_func(integration_domain, N, requires_grad=False, backend=None):
+    a = integration_domain[0]
+    b = integration_domain[1]
     return _linspace_with_grads(a, b, N, requires_grad=requires_grad)
 
 
@@ -30,7 +32,7 @@ class IntegrationGrid:
             integration_domain (list or backend tensor): Domain to choose points in, e.g. [[-1,1],[0,1]]. It also determines the numerical backend (if it is a list, the backend is "torch").
         """
         start = perf_counter()
-        self._check_inputs(N, integration_domain)
+        # self._check_inputs(N, integration_domain)
         backend = infer_backend(integration_domain)
         if backend == "builtins":
             backend = "torch"
@@ -63,8 +65,7 @@ class IntegrationGrid:
         for dim in range(self._dim):
             grid_1d.append(
                 grid_func(
-                    integration_domain[dim][0],
-                    integration_domain[dim][1],
+                    integration_domain[dim],
                     self._N,
                     requires_grad=requires_grad,
                     backend=backend
@@ -79,6 +80,7 @@ class IntegrationGrid:
 
         # Get grid points
         points = anp.meshgrid(*grid_1d)
+        # print(points, points[0].shape, grid_1d, grid_1d[0].shape)
         self.points = anp.stack(
             [mg.ravel() for mg in points], axis=1, like=integration_domain
         )

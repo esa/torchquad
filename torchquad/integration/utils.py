@@ -177,7 +177,7 @@ def _check_integration_domain(integration_domain):
                     integration_domain,
                     " does not specify a valid integration bound.",
                 )
-            if bounds[0] > bounds[1]:
+            if anp.all(bounds[0] > bounds[1]):
                 raise ValueError(
                     bounds,
                     " in ",
