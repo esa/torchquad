@@ -728,6 +728,7 @@ Multidimensional/Vectorized Integrands
 --------------------------------------
 
 If you wish to evaluate many different integrands over the same domain, it may be faster to pass in a vectorized formulation if possible.
+Our inspiration for this came from scipy's own vectorization capabilities e.g., from its ``fixed_quad`` `method <https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.fixed_quad.html>`__.
 
 As an example, here we evaluate a similar integrand many times for different values of ``a`` and ``b``. This is an example that could be sped up by a vectorized evaluation of all integrals:
 
