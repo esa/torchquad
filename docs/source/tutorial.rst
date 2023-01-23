@@ -743,7 +743,7 @@ As an example, here we evaluate a similar integrand many times for different val
     result = torch.stack([torch.Tensor([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
 
 
-Now let's see how to do this a bit more simply, and in a way that provides signficant speedup as the size of the integrand's `grid` grows:
+Now let's see how to do this a bit more simply, and in a way that provides signficant speedup as the size of the integrand's ``grid`` grows:
 
 .. code:: ipython3
 
