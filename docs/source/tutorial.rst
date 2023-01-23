@@ -735,14 +735,13 @@ As an example, here we evaluate a similar integrand many times for different val
 .. code:: ipython3
 
     def parametrized_integrand(x, a, b):
-        return torch.sin((a + b) * x)
+    return torch.sqrt(torch.cos(torch.sin((a + b) * x)))
 
-    a_params = torch.arange(10)
-    b_params = torch.arange(2, 10)
+    a_params = torch.arange(40)
+    b_params = torch.arange(10, 20)
     integration_domain = torch.Tensor([[0, 1]])
     simp = Simpson()
     result = torch.stack([torch.Tensor([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
-
 
 Now let's see how to do this a bit more simply, and in a way that provides signficant speedup as the size of the integrand's ``grid`` grows:
 
@@ -751,7 +750,7 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
     grid = torch.stack([torch.Tensor([a + b for a in a_params]) for b in b_params])
 
     def integrand(x):
-        return torch.sin(torch.einsum("i,jk->ijk", x.flatten(), grid))
+        return torch.sqrt(torch.cos(torch.sin(torch.einsum("i,jk->ijk", x.flatten(), grid))))
 
     result_vectorized = simp.integrate(integrand, dim=1, N=101, integration_domain=integration_domain)
 
