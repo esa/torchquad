@@ -45,7 +45,7 @@ class Boole(NewtonCotes):
                     + 7 * cur_dim_areas[..., 4:][..., ::4]
                 )
             )
-            cur_dim_areas = anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
     @staticmethod

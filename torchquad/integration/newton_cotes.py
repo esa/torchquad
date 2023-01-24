@@ -1,9 +1,10 @@
 from loguru import logger
 from autoray import infer_backend
+from autoray import numpy as anp
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
-from .utils import _setup_integration_domain
+from .utils import _setup_integration_domain, expand_func_values_and_squeeze_integral
 
 
 class NewtonCotes(BaseIntegrator):
@@ -34,6 +35,7 @@ class NewtonCotes(BaseIntegrator):
 
         return self.calculate_result(function_values, dim, n_per_dim, hs)
 
+    @expand_func_values_and_squeeze_integral
     def calculate_result(self, function_values, dim, n_per_dim, hs):
         """Apply the Composite Newton Cotes rule to calculate a result from the evaluated integrand.
 
@@ -46,12 +48,25 @@ class NewtonCotes(BaseIntegrator):
         Returns:
             backend tensor: Quadrature result
         """
-        # Reshape the output to be [N,N,...] points instead of [dim*N] points
-        function_values = function_values.reshape([n_per_dim] * dim)
-
+        # Reshape the output to be [integrand_dim,N,N,...] points instead of [integrand_dim,dim*N] points
+        integrand_shape = function_values.shape[1:]
+        dim_shape = [n_per_dim] * dim
+        new_shape = [*integrand_shape, *dim_shape]
+        # We need to use einsum instead of just reshape here because reshape does not move the axis - it only reshapes.
+        # So the first line generates a character string for einsum, followed by moving the first dimension i.e `dim*N`
+        # to the end.  Finally we reshape the resulting object so that instead of the last dimension being `dim*N`, it is
+        # `N,N,...` as desired.
+        einsum = "".join([chr(i + 65) for i in range(len(function_values.shape))])
+        reshaped_function_values = anp.einsum(
+            f"{einsum}->{einsum[1:]}{einsum[0]}", function_values
+        )
+        reshaped_function_values = reshaped_function_values.reshape(new_shape)
+        assert new_shape == list(
+            reshaped_function_values.shape
+        ), f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
         logger.debug("Computing areas.")
 
-        result = self._apply_composite_rule(function_values, dim, hs)
+        result = self._apply_composite_rule(reshaped_function_values, dim, hs)
 
         logger.opt(lazy=True).info(
             "Computed integral: {result}", result=lambda: str(result)

@@ -724,3 +724,36 @@ sample points for both functions:
 
     print(f"Quadrature results: {integral1}, {integral2}")
 
+Multidimensional/Vectorized Integrands
+--------------------------------------
+
+If you wish to evaluate many different integrands over the same domain, it may be faster to pass in a vectorized formulation if possible.
+Our inspiration for this came from scipy's own vectorization capabilities e.g., from its ``fixed_quad`` `method <https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.fixed_quad.html>`__.
+
+As an example, here we evaluate a similar integrand many times for different values of ``a`` and ``b``. This is an example that could be sped up by a vectorized evaluation of all integrals:
+
+.. code:: ipython3
+
+    def parametrized_integrand(x, a, b):
+    return torch.sqrt(torch.cos(torch.sin((a + b) * x)))
+
+    a_params = torch.arange(40)
+    b_params = torch.arange(10, 20)
+    integration_domain = torch.Tensor([[0, 1]])
+    simp = Simpson()
+    result = torch.stack([torch.Tensor([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
+
+Now let's see how to do this a bit more simply, and in a way that provides signficant speedup as the size of the integrand's ``grid`` grows:
+
+.. code:: ipython3
+
+    grid = torch.stack([torch.Tensor([a + b for a in a_params]) for b in b_params])
+
+    def integrand(x):
+        return torch.sqrt(torch.cos(torch.sin(torch.einsum("i,jk->ijk", x.flatten(), grid))))
+
+    result_vectorized = simp.integrate(integrand, dim=1, N=101, integration_domain=integration_domain)
+
+    torch.all(torch.isclose(result_vectorized, result)) # True!
+
+

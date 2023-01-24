@@ -3,7 +3,7 @@ from autoray import infer_backend
 from loguru import logger
 
 from .base_integrator import BaseIntegrator
-from .utils import _setup_integration_domain
+from .utils import _setup_integration_domain, expand_func_values_and_squeeze_integral
 from .rng import RNG
 
 
@@ -53,6 +53,7 @@ class MonteCarlo(BaseIntegrator):
         function_values, self._nr_of_fevals = self.evaluate_integrand(fn, sample_points)
         return self.calculate_result(function_values, integration_domain)
 
+    @expand_func_values_and_squeeze_integral
     def calculate_result(self, function_values, integration_domain):
         """Calculate an integral result from the function evaluations
 
@@ -69,7 +70,7 @@ class MonteCarlo(BaseIntegrator):
 
         # Integral = V / N * sum(func values)
         N = function_values.shape[0]
-        integral = volume * anp.sum(function_values) / N
+        integral = volume * anp.sum(function_values, axis=0) / N
         # NumPy automatically casts to float64 when dividing by N
         if (
             infer_backend(integration_domain) == "numpy"
