@@ -32,7 +32,6 @@ class Boole(NewtonCotes):
         """Apply composite Boole quadrature.
         cur_dim_areas will contain the areas per dimension
         """
-        integrand_shape = cur_dim_areas[:-1]
         # We collapse dimension by dimension
         for cur_dim in range(dim):
             cur_dim_areas = (

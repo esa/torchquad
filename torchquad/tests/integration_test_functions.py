@@ -20,10 +20,16 @@ class IntegrationTestFunction:
     order = None
     f = None  # Function to evaluate
     is_complex = False  # If the test function contains complex numbers
-    integrand_dims = None # What the dimensions of the integrand should be
+    integrand_dims = None  # What the dimensions of the integrand should be
 
     def __init__(
-        self, expected_result, integration_dim=1, domain=None, is_complex=False, backend=None, integrand_dims=1
+        self,
+        expected_result,
+        integration_dim=1,
+        domain=None,
+        is_complex=False,
+        backend=None,
+        integrand_dims=1,
     ):
         """Initializes domain and stores variables.
 
@@ -38,11 +44,12 @@ class IntegrationTestFunction:
         """
         self.integration_dim = integration_dim
         self.expected_result = expected_result
-        if (type(integrand_dims) == int or hasattr(integrand_dims, "__len__")):
+        if type(integrand_dims) == int or hasattr(integrand_dims, "__len__"):
             self.integrand_dims = integrand_dims
         else:
-             ValueError("Integrand dims should either be either an int or something that can be used to size an ndarray")
-            
+            ValueError(
+                "Integrand dims should either be either an int or something that can be used to size an ndarray"
+            )
 
         self.is_complex = is_complex
         self.domain = _setup_integration_domain(integration_dim, domain, backend)
@@ -103,11 +110,15 @@ class IntegrationTestFunction:
             Union[int, anp.ndarray]: The scaled integrand
         """
         integrand_scaling = self._integrand_scaling
-        if (self.is_integrand_1d):
+        if self.is_integrand_1d:
             return integrand_scaling * integrand
-        if (self._is_integrand_tensor):
-            scaling_einsum = "".join([chr(i + 65) for i in range(len(self.integrand_dims))])
-            return anp.einsum(f"i,{scaling_einsum}->i{scaling_einsum}", integrand, integrand_scaling)
+        if self._is_integrand_tensor:
+            scaling_einsum = "".join(
+                [chr(i + 65) for i in range(len(self.integrand_dims))]
+            )
+            return anp.einsum(
+                f"i,{scaling_einsum}->i{scaling_einsum}", integrand, integrand_scaling
+            )
 
     @property
     def _integrand_scaling(self):
@@ -116,28 +127,29 @@ class IntegrationTestFunction:
         Returns:
             Union[int, anp.ndarray]: The scaling factors
         """
-        if (self.is_integrand_1d):
+        if self.is_integrand_1d:
             return 1
-        if (self._is_integrand_tensor):
+        if self._is_integrand_tensor:
             backend = infer_backend(self.domain)
-            return anp.arange(anp.prod(self.integrand_dims), like=backend, dtype=self.domain.dtype).reshape(self.integrand_dims)
-        raise NotImplementedError(f"Integrand testing not implemented for dimensions {str(self.integrand_dims)}")
+            return anp.arange(
+                anp.prod(self.integrand_dims), like=backend, dtype=self.domain.dtype
+            ).reshape(self.integrand_dims)
+        raise NotImplementedError(
+            f"Integrand testing not implemented for dimensions {str(self.integrand_dims)}"
+        )
 
     @property
     def is_integrand_1d(self):
         return self.integrand_dims == 1 or (
-                len(self.integrand_dims) == 1
-                and self.integrand_dims[0] == 1
-            )
-    
+            len(self.integrand_dims) == 1 and self.integrand_dims[0] == 1
+        )
+
     @property
     def _is_integrand_tensor(self):
         return len(self.integrand_dims) > 1 or (
-                len(self.integrand_dims) == 1
-                and self.integrand_dims[0] > 1
-            )
+            len(self.integrand_dims) == 1 and self.integrand_dims[0] > 1
+        )
 
-        
 
 class Polynomial(IntegrationTestFunction):
     def __init__(
@@ -162,7 +174,14 @@ class Polynomial(IntegrationTestFunction):
             integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
             whether once or over a matrix/vector of scaling factors.
         """
-        super().__init__(expected_result, integration_dim, domain, is_complex, backend, integrand_dims)
+        super().__init__(
+            expected_result,
+            integration_dim,
+            domain,
+            is_complex,
+            backend,
+            integrand_dims,
+        )
         if backend == "tensorflow":
             # Ensure than all coefficients are either Python3 float or Python3
             # complex since tensorflow requires this.
@@ -227,7 +246,14 @@ class Exponential(IntegrationTestFunction):
             integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
             whether once or over a matrix/vector of scaling factors.
         """
-        super().__init__(expected_result, integration_dim, domain, is_complex, backend, integrand_dims)
+        super().__init__(
+            expected_result,
+            integration_dim,
+            domain,
+            is_complex,
+            backend,
+            integrand_dims,
+        )
         self.f = self._exp
 
     def _exp(self, x):
@@ -255,7 +281,14 @@ class Sinusoid(IntegrationTestFunction):
             integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
             whether once or over a matrix/vector of scaling factors.
         """
-        super().__init__(expected_result, integration_dim, domain, is_complex, backend, integrand_dims)
+        super().__init__(
+            expected_result,
+            integration_dim,
+            domain,
+            is_complex,
+            backend,
+            integrand_dims,
+        )
         self.f = self._sinusoid
 
     def _sinusoid(self, x):

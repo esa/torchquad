@@ -31,7 +31,7 @@ def _run_example_integrations(backend, dtype_name):
         integration_dim=1,
         use_complex=False,
         backend=backend,
-        use_multi_dim_integrand=False
+        use_multi_dim_integrand=False,
     )
     print("1D VEGAS Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors[:3]:
@@ -51,7 +51,7 @@ def _run_example_integrations(backend, dtype_name):
         integration_dim=3,
         use_complex=False,
         backend=backend,
-        use_multi_dim_integrand=False
+        use_multi_dim_integrand=False,
     )
     print("3D VEGAS Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:
@@ -65,7 +65,7 @@ def _run_example_integrations(backend, dtype_name):
         integration_dim=10,
         use_complex=False,
         backend=backend,
-        use_multi_dim_integrand=False
+        use_multi_dim_integrand=False,
     )
     print("10D VEGAS Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:
