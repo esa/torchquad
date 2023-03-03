@@ -11,7 +11,7 @@ from integration.monte_carlo import MonteCarlo
 from integration.trapezoid import Trapezoid
 from integration.simpson import Simpson
 from integration.boole import Boole
-from integration.gaussian import GaussLegendre, GaussJacobi, GaussLaguerre, GaussHermite
+from integration.gaussian import GaussLegendre
 
 from helper_functions import setup_test_for_backend
 
@@ -171,7 +171,14 @@ def _run_gradient_tests(backend, dtype_name):
     maintain gradients and if the gradients are consistent and correct
     """
     # Define integrators and numbers of evaluation points
-    integrators = [Trapezoid(), Simpson(), Boole(), MonteCarlo(), VEGAS(), GaussLegendre()]
+    integrators = [
+        Trapezoid(),
+        Simpson(),
+        Boole(),
+        MonteCarlo(),
+        VEGAS(),
+        GaussLegendre(),
+    ]
     Ns_1d = [149, 149, 149, 99997, 99997]
     Ns_2d = [549, 121, 81, 99997, 99997]
     for integrator, N_1d, N_2d in zip(integrators, Ns_1d, Ns_2d):
