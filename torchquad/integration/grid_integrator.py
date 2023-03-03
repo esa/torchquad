@@ -5,7 +5,7 @@ from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
 from .utils import (
     _linspace_with_grads,
-    expand_func_values_and_squeeze_intergal,
+    expand_func_values_and_squeeze_integral,
     _setup_integration_domain,
 )
 
@@ -53,7 +53,7 @@ class GridIntegrator(BaseIntegrator):
             function_values, dim, n_per_dim, hs, integration_domain
         )
 
-    @expand_func_values_and_squeeze_intergal
+    @expand_func_values_and_squeeze_integral
     def calculate_result(self, function_values, dim, n_per_dim, hs, integration_domain):
         """Apply the "composite rule" to calculate a result from the evaluated integrand.
 
