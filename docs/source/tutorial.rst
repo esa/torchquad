@@ -756,4 +756,40 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
 
     torch.all(torch.isclose(result_vectorized, result)) # True!
 
+Custom Integrators
+------------------
+
+It is of course possible to extend our provided Integrators, perhaps for a special class of functions or for a new algorithm.
+
+.. code:: ipython3
+
+    class GaussHermite(Gaussian):
+    """Gauss Hermite quadrature rule in torch, for integrals of the form :math:`\\int_{-\\infty}^{+\\infty} e^{-x^{2}} f(x) dx`. It will correctly integrate
+    polynomials of degree :math:`2n - 1` or less over the interval
+    :math:`[-\\infty, \\infty]` with weight function :math:`f(x) = e^{-x^2}`. See https://en.wikipedia.org/wiki/Gauss%E2%80%93Hermite_quadrature
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.name = "Gauss-Hermite"
+        self.root_fn = scipy.special.roots_hermite
+        self.default_integration_domain = [[-1 * numpy.inf, numpy.inf]]
+        self.wrapper_func = None
+
+    @staticmethod
+    def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
+        """Apply "composite" rule for gaussian integrals
+        cur_dim_areas will contain the areas per dimension
+        """
+        # We collapse dimension by dimension
+        for _ in range(dim):
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
+        return cur_dim_areas
+
+    gh=torchquad.GaussHermite()
+    integral=gh.integrate(lambda x: 1-x,dim=1,N=200) #integral from -inf to inf of np.exp(-(x**2))*(1-x)
+    # Computed integral was 1.7724538509055168.
+    # analytic result = sqrt(pi)
+    
+
 
