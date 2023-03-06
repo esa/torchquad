@@ -82,6 +82,39 @@ def _run_monte_carlo_tests(backend, _precision):
     for error in errors:
         assert error < 26
 
+    # JIT Tests
+    if backend != "numpy":
+        N = 100000
+
+        def integrate(*args, **kwargs):
+            jit_integrate = mc.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
+            return jit_integrate(*args, **kwargs)
+
+        errors, funcs = compute_integration_test_errors(
+            integrate,
+            {},
+            integration_dim=1,
+            use_complex=True,
+            backend=backend,
+        )
+        print(f"1D MC JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}")
+
+        for err, test_function in zip(errors, funcs):
+            assert test_function.get_order() > 0 or err < 1e-14
+
+        # If this breaks check if test functions in helper_functions changed.
+        for error in errors[:3]:
+            assert error < 7e-3
+
+        assert errors[3] < 0.5
+        assert errors[4] < 32.0
+
+        for error in errors[6:10]:
+            assert error < 2e-2
+
+        for error in errors[10:]:
+            assert error < 28.03
+
 
 test_integrate_numpy = setup_test_for_backend(
     _run_monte_carlo_tests, "numpy", "float32"
