@@ -65,9 +65,7 @@ def _run_boole_tests(backend, _precision):
     if backend != "numpy":
         N = 401
 
-        integrate = bl.get_jit_compiled_integrate(
-            dim=1, N=N, backend=backend
-        )
+        integrate = bl.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
         errors, funcs = compute_integration_test_errors(
             integrate,
             {},
