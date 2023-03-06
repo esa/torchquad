@@ -13,7 +13,8 @@ from helper_functions import (
 
 def _run_boole_tests(backend, _precision):
     """Test the integrate function in integration.Boole for the given backend.
-    Note: For now the 10-D test is diabled due to lack of GPU memory on some computers."""
+    Note: For now the 10-D test is diabled due to lack of GPU memory on some computers.
+    """
 
     bl = Boole()
     # 1D Tests
