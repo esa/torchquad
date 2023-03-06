@@ -64,10 +64,11 @@ def _run_boole_tests(backend, _precision):
     # JIT Tests
     if backend != "numpy":
         N = 401
-
-        integrate = bl.get_jit_compiled_integrate(
-            dim=1, N=N, backend=backend
-        )
+        def integrate(*args, **kwargs):
+            jit_integrate = bl.get_jit_compiled_integrate(
+                dim=1, N=N, backend=backend
+            )
+            return jit_integrate(*args, **kwargs)
         errors, funcs = compute_integration_test_errors(
             integrate,
             {},

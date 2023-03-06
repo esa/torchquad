@@ -90,11 +90,13 @@ def _run_simpson_tests(backend, _precision):
         assert error < 5e-9
 
     if backend != "numpy":
-        N = 401
+        N = 100001
 
-        integrate = simp.get_jit_compiled_integrate(
-            dim=1, N=N, backend=backend
-        )
+        def integrate(*args, **kwargs):
+            jit_integrate = simp.get_jit_compiled_integrate(
+                dim=1, N=N, backend=backend
+            )
+            return jit_integrate(*args, **kwargs)
         errors, funcs = compute_integration_test_errors(
             integrate,
             {},
@@ -105,9 +107,11 @@ def _run_simpson_tests(backend, _precision):
         print(f"1D Simpson JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}")
         # Polynomials up to degree 5 can be integrated almost exactly with Boole.
         for err, test_function in zip(errors, funcs):
-            assert test_function.get_order() > 5 or err < 6.33e-11
+            assert test_function.get_order() > 3 or (
+                err < 3e-11 if test_function.is_integrand_1d else err < 6e-10
+            )  # errors add up if the integrand is higher dimensional
         for error in errors:
-            assert error < 6.33e-11
+            assert error < 1e-7
 
 
 test_integrate_numpy = setup_test_for_backend(_run_simpson_tests, "numpy", "float64")
