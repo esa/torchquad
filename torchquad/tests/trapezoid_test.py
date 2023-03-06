@@ -103,7 +103,6 @@ def _run_trapezoid_tests(backend, _precision):
         print(
             f"1D Trapezoid JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}"
         )
-        # Polynomials up to degree 5 can be integrated almost exactly with Boole.
         for err, test_function in zip(errors, funcs):
             assert test_function.get_order() > 1 or (
                 err < 2e-11 if test_function.is_integrand_1d else err < 5e-10
