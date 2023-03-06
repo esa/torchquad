@@ -93,10 +93,9 @@ def _run_simpson_tests(backend, _precision):
         N = 100001
 
         def integrate(*args, **kwargs):
-            jit_integrate = simp.get_jit_compiled_integrate(
-                dim=1, N=N, backend=backend
-            )
+            jit_integrate = simp.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
             return jit_integrate(*args, **kwargs)
+
         errors, funcs = compute_integration_test_errors(
             integrate,
             {},

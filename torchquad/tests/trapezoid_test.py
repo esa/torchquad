@@ -90,10 +90,9 @@ def _run_trapezoid_tests(backend, _precision):
         N = 100000
 
         def integrate(*args, **kwargs):
-            jit_integrate = tp.get_jit_compiled_integrate(
-                dim=1, N=N, backend=backend
-            )
+            jit_integrate = tp.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
             return jit_integrate(*args, **kwargs)
+
         errors, funcs = compute_integration_test_errors(
             integrate,
             {},
