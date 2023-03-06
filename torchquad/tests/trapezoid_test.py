@@ -90,10 +90,9 @@ def _run_trapezoid_tests(backend, _precision):
         N = 100000
 
         def integrate(*args, **kwargs):
-            jit_integrate = tp.get_jit_compiled_integrate(
-                dim=1, N=N, backend=backend
-            )
+            jit_integrate = tp.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
             return jit_integrate(*args, **kwargs)
+
         errors, funcs = compute_integration_test_errors(
             integrate,
             {},
@@ -101,7 +100,9 @@ def _run_trapezoid_tests(backend, _precision):
             use_complex=True,
             backend=backend,
         )
-        print(f"1D Trapezoid JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}")
+        print(
+            f"1D Trapezoid JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}"
+        )
         # Polynomials up to degree 5 can be integrated almost exactly with Boole.
         for err, test_function in zip(errors, funcs):
             assert test_function.get_order() > 1 or (
