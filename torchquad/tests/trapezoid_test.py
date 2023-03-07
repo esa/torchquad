@@ -88,9 +88,14 @@ def _run_trapezoid_tests(backend, _precision):
 
     if backend != "numpy":
         N = 100000
+        jit_integrate = None
 
         def integrate(*args, **kwargs):
-            jit_integrate = tp.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
+            nonlocal jit_integrate
+            if jit_integrate is None:
+                jit_integrate = tp.get_jit_compiled_integrate(
+                    dim=1, N=N, backend=backend
+                )
             return jit_integrate(*args, **kwargs)
 
         errors, funcs = compute_integration_test_errors(
@@ -99,9 +104,39 @@ def _run_trapezoid_tests(backend, _precision):
             integration_dim=1,
             use_complex=True,
             backend=backend,
+            filter_test_functions=lambda x: x.is_integrand_1d,
+        )
+
+        print(
+            f"1D Trapezoid JIT Test passed for 1D integrands. N: {N}, backend: {backend}, Errors: {errors}"
+        )
+        for err, test_function in zip(errors, funcs):
+            assert test_function.get_order() > 1 or (
+                err < 2e-11 if test_function.is_integrand_1d else err < 5e-10
+            )  # errors add up if the integrand is higher dimensional
+        for error in errors:
+            assert error < 1e-5
+
+        jit_integrate = None
+
+        def integrate(*args, **kwargs):
+            nonlocal jit_integrate
+            if jit_integrate is None:
+                jit_integrate = tp.get_jit_compiled_integrate(
+                    dim=1, N=N, backend=backend
+                )
+            return jit_integrate(*args, **kwargs)
+
+        errors, funcs = compute_integration_test_errors(
+            integrate,
+            {},
+            integration_dim=1,
+            use_complex=True,
+            backend=backend,
+            filter_test_functions=lambda x: x.integrand_dims == [2, 2, 2],
         )
         print(
-            f"1D Trapezoid JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}"
+            f"1D Trapezoid JIT Test passed for [2, 2, 2] dimensional integrands. N: {N}, backend: {backend}, Errors: {errors}"
         )
         for err, test_function in zip(errors, funcs):
             assert test_function.get_order() > 1 or (
