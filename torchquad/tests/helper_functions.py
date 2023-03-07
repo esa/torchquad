@@ -324,6 +324,7 @@ def compute_integration_test_errors(
     use_complex,
     backend,
     use_multi_dim_integrand=True,
+    filter_test_functions=lambda x: x,
 ):
     """Computes errors on all test functions for given dimension and integrator.
 
@@ -334,7 +335,7 @@ def compute_integration_test_errors(
         use_complex (Boolean): If True, skip complex example functions.
         backend (string): Numerical backend for the example functions.
         use_multi_dim_integrand (bool, optional): Whether or not to allow for a multi-dimensional integrand i.e an array of integrands
-
+        filter_test_functions (function, optional): function for filtering which test functions to run
     Returns:
         (list, list): Absolute errors on all example functions and the chosen
             example functions
@@ -344,8 +345,9 @@ def compute_integration_test_errors(
 
     # Compute integration errors on the chosen functions and remember those
     # functions
-    for test_function in get_test_functions(
-        integration_dim, backend, use_multi_dim_integrand
+    for test_function in filter(
+        filter_test_functions,
+        get_test_functions(integration_dim, backend, use_multi_dim_integrand),
     ):
         if not use_complex and test_function.is_complex:
             continue
