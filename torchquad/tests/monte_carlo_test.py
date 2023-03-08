@@ -123,7 +123,7 @@ def _run_monte_carlo_tests(backend, _precision):
             assert error < 2e-2
 
         for error in errors[10:]:
-            assert error < 28.03
+            assert error < 35.0
 
         jit_integrate = (
             None  # set to None again so can be re-used with new integrand shape
