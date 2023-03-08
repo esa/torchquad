@@ -586,7 +586,7 @@ Compiling the integrate method
 ``````````````````````````````
 
 To speed up the quadrature in situations where it is executed often with the
-same number of points ``N`` and dimensionality ``dim``,
+same number of points ``N``, dimensionality ``dim``, and shape of the ``integrand``,
 we can JIT-compile the performance-relevant parts of the integrate method:
 
 .. code:: ipython3

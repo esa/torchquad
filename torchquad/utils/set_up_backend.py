@@ -7,7 +7,8 @@ from .enable_cuda import enable_cuda
 
 def _get_default_backend():
     """Get the latest backend which was passed to set_up_backend.
-    If set_up_backend has never been executed, return "torch" for backwards compatibility"""
+    If set_up_backend has never been executed, return "torch" for backwards compatibility
+    """
     return os.environ.get("TORCHQUAD_DEFAULT_BACKEND", "torch")
 
 
