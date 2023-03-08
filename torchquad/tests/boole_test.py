@@ -67,6 +67,8 @@ def _run_boole_tests(backend, _precision):
         jit_integrate = None
 
         def integrate(*args, **kwargs):
+            # this function initializes the jit_integrate variable with a jit'ed integrate function
+            # which is then re-used on all other integrations (as is the point of JIT).
             nonlocal jit_integrate
             if jit_integrate is None:
                 jit_integrate = bl.get_jit_compiled_integrate(
@@ -94,14 +96,6 @@ def _run_boole_tests(backend, _precision):
         jit_integrate = (
             None  # set to None again so can be re-used with new integrand shape
         )
-
-        def integrate(*args, **kwargs):
-            nonlocal jit_integrate
-            if jit_integrate is None:
-                jit_integrate = bl.get_jit_compiled_integrate(
-                    dim=1, N=N, backend=backend
-                )
-            return jit_integrate(*args, **kwargs)
 
         errors, funcs = compute_integration_test_errors(
             integrate,
