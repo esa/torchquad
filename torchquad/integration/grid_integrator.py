@@ -173,7 +173,11 @@ class GridIntegrator(BaseIntegrator):
                         self.calculate_grid, static_argnames=["N"]
                     )
                     self._jax_jit_calculate_result = jax.jit(
-                        self.calculate_result, static_argnames=["dim", "n_per_dim"]
+                        self.calculate_result,
+                        static_argnums=(
+                            1,
+                            2,
+                        ),  # dim and n_per_dim
                     )
                 jit_calculate_grid = self._jax_jit_calculate_grid
                 jit_calculate_result = self._jax_jit_calculate_result
