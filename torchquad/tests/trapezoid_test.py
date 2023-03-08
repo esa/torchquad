@@ -86,11 +86,14 @@ def _run_trapezoid_tests(backend, _precision):
     for error in errors:
         assert error < 7000
 
+    # JIT Tests
     if backend != "numpy":
         N = 100000
         jit_integrate = None
 
         def integrate(*args, **kwargs):
+            # this function initializes the jit_integrate variable with a jit'ed integrate function
+            # which is then re-used on all other integrations (as is the point of JIT).
             nonlocal jit_integrate
             if jit_integrate is None:
                 jit_integrate = tp.get_jit_compiled_integrate(
@@ -117,15 +120,9 @@ def _run_trapezoid_tests(backend, _precision):
         for error in errors:
             assert error < 1e-5
 
-        jit_integrate = None
-
-        def integrate(*args, **kwargs):
-            nonlocal jit_integrate
-            if jit_integrate is None:
-                jit_integrate = tp.get_jit_compiled_integrate(
-                    dim=1, N=N, backend=backend
-                )
-            return jit_integrate(*args, **kwargs)
+        jit_integrate = (
+            None  # set to None again so can be re-used with new integrand shape
+        )
 
         errors, funcs = compute_integration_test_errors(
             integrate,
