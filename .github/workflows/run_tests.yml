@@ -59,7 +59,7 @@ jobs:
       - name: pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: ./pytest-coverage.txt
+          pytest-coverage-path: ./torchquad/tests/pytest-coverage.txt
           title: Coverage Report
           badge-title: Overall Coverage
           hide-badge: false
@@ -67,4 +67,4 @@ jobs:
           create-new-comment: false
           hide-comment: false
           report-only-changed-files: false
-          junitxml-path: ./pytest.xml
+          junitxml-path: ./torchquad/tests/pytest.xml
