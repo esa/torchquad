@@ -1,5 +1,4 @@
 import numpy
-import scipy
 from autoray import numpy as anp
 from .grid_integrator import GridIntegrator
 
