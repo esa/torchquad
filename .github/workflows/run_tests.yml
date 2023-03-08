@@ -55,7 +55,7 @@ jobs:
           pip install pytest
           pip install pytest-error-for-skips
           pip install pytest-cov
-          pytest -ra --error-for-skips --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=torchquad . | tee pytest-coverage.txt
+          pytest -ra --error-for-skips --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=../../torchquad . | tee pytest-coverage.txt
       - name: pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
