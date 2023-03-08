@@ -51,7 +51,20 @@ jobs:
         shell: bash -l {0}
         run: |
           micromamba activate torchquad
-          cd torchquad/tests
+          cd torchquad/tests/
           pip install pytest
           pip install pytest-error-for-skips
-          pytest -ra --error-for-skips
+          pip install pytest-cov
+          pytest -ra --error-for-skips --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=../../torchquad . | tee pytest-coverage.txt
+      - name: pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./torchquad/tests/pytest-coverage.txt
+          title: Coverage Report
+          badge-title: Overall Coverage
+          hide-badge: false
+          hide-report: false
+          create-new-comment: false
+          hide-comment: false
+          report-only-changed-files: false
+          junitxml-path: ./torchquad/tests/pytest.xml
