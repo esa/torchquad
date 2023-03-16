@@ -104,6 +104,11 @@ class Gaussian(GridIntegrator):
             tuple: nodes and weights
         """
         root_args = (N, *self.root_args)
+        if not isinstance(N, int):
+            if hasattr(N, "item"):
+                root_args = (N.item(), *self.root_args)
+            else:
+                raise NotImplementedError(f"N {N} is not an int and lacks an `item` method")
         if root_args in self._cache:
             return self._cache[root_args]
 
