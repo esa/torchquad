@@ -108,7 +108,9 @@ class Gaussian(GridIntegrator):
             if hasattr(N, "item"):
                 root_args = (N.item(), *self.root_args)
             else:
-                raise NotImplementedError(f"N {N} is not an int and lacks an `item` method")
+                raise NotImplementedError(
+                    f"N {N} is not an int and lacks an `item` method"
+                )
         if root_args in self._cache:
             return self._cache[root_args]
         self._cache[root_args] = self.root_fn(*root_args)

@@ -215,7 +215,7 @@ class GridIntegrator(BaseIntegrator):
                     return self.calculate_result(
                         function_values, dim, n_per_dim, hs, integration_domain
                     )
-                
+
                 # Trace the first step
                 step1 = torch.jit.trace(step1, (integration_domain,))
 
@@ -237,7 +237,9 @@ class GridIntegrator(BaseIntegrator):
                 if function_values.requires_grad:
                     function_values = function_values.detach()
                     function_values.requires_grad = True
-                step3 = torch.jit.trace(step3, (function_values, hs, integration_domain))
+                step3 = torch.jit.trace(
+                    step3, (function_values, hs, integration_domain)
+                )
 
                 # Define a compiled integrate function
                 def compiled_integrate(fn, integration_domain):
