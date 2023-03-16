@@ -211,11 +211,11 @@ class GridIntegrator(BaseIntegrator):
 
                 dim = int(integration_domain.shape[0])
 
-                def step3(function_values, hs):
+                def step3(function_values, hs, integration_domain):
                     return self.calculate_result(
                         function_values, dim, n_per_dim, hs, integration_domain
                     )
-
+                
                 # Trace the first step
                 step1 = torch.jit.trace(step1, (integration_domain,))
 
@@ -237,7 +237,7 @@ class GridIntegrator(BaseIntegrator):
                 if function_values.requires_grad:
                     function_values = function_values.detach()
                     function_values.requires_grad = True
-                step3 = torch.jit.trace(step3, (function_values, hs))
+                step3 = torch.jit.trace(step3, (function_values, hs, integration_domain))
 
                 # Define a compiled integrate function
                 def compiled_integrate(fn, integration_domain):
@@ -245,7 +245,7 @@ class GridIntegrator(BaseIntegrator):
                     function_values, _ = self.evaluate_integrand(
                         fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
                     )
-                    result = step3(function_values, hs)
+                    result = step3(function_values, hs, integration_domain)
                     return result
 
                 return compiled_integrate
@@ -257,7 +257,9 @@ class GridIntegrator(BaseIntegrator):
             def lazy_compiled_integrate(fn, integration_domain):
                 if compiled_func[0] is None:
                     compiled_func[0] = do_compile(fn)
-                return compiled_func[0](fn, integration_domain)
+                res = compiled_func[0](fn, integration_domain)
+                print(res)
+                return res
 
             return lazy_compiled_integrate
 

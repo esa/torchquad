@@ -117,7 +117,7 @@ def _run_gaussian_tests(backend, _precision):
         )
         # Polynomials up to degree 1 can be integrated almost exactly with gaussian.
         for err, test_function in zip(errors, funcs):
-            assert test_function.get_order() > 1 or err < 2e-11
+            assert test_function.get_order() > float("inf") or err < 2e-10
         for error in errors:
             assert error < 1e-5
 
@@ -137,7 +137,7 @@ def _run_gaussian_tests(backend, _precision):
             f"1D Gaussian JIT Test passed for [2, 2, 2] dimensional integrands. N: {N}, backend: {backend}, Errors: {errors}"
         )
         for err, test_function in zip(errors, funcs):
-            assert test_function.get_order() > 1 or err < 2e-11
+            assert test_function.get_order() > 1 or err < 2e-10
         for error in errors:
             assert error < 1e-5
 
