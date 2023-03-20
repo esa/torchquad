@@ -74,7 +74,9 @@ class GridIntegrator(BaseIntegrator):
         # So the first line generates a character string for einsum, followed by moving the first dimension i.e `dim*N`
         # to the end.  Finally we reshape the resulting object so that instead of the last dimension being `dim*N`, it is
         # `N,N,...` as desired.
-        einsum = "".join([chr(i + 65) for i in range(len(function_values.shape))]) # chr(i + 65) generates an alphabetical character
+        einsum = "".join(
+            [chr(i + 65) for i in range(len(function_values.shape))]
+        )  # chr(i + 65) generates an alphabetical character
         reshaped_function_values = anp.einsum(
             f"{einsum}->{einsum[1:]}{einsum[0]}", function_values
         )
