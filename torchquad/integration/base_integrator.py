@@ -79,7 +79,7 @@ class BaseIntegrator:
             )
 
         if weights is not None:
-            if len(result.shape) > 1:
+            if len(result.shape) > 1: # if the the integrand is multi-dimensional, we need to reshape/repeat weights so they can be broadcast in the *=
                 integrand_shape = anp.array(
                     result.shape[1:], like=infer_backend(points)
                 )

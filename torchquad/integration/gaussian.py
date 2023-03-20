@@ -74,6 +74,10 @@ class Gaussian(GridIntegrator):
 
     @property
     def _grid_func(self):
+        """
+        function for generating a grid to be integrated over i.e., the polynomial roots, resized to the domain.
+        """
+
         def f(a, b, N, requires_grad, backend=None):
             return self._resize_roots(a, b, self._roots(N, backend, requires_grad))
 
