@@ -25,9 +25,9 @@ def _run_gaussian_tests(backend, _precision):
         backend=backend,
     )
     print(f"1D {gauss} Test passed. N: {N}, backend: {backend}, Errors: {errors}")
-    # Polynomials up to degree 1 can be integrated almost exactly with gaussian.
+    # Polynomials up to degree 2N-1 can be integrated almost exactly with gaussian.
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 1 or err < 2e-11
+        assert test_function.get_order() > (2*N - 1) or err < 6e-11
     for error in errors:
         assert error < 1e-5
 
@@ -41,10 +41,10 @@ def _run_gaussian_tests(backend, _precision):
         backend=backend,
     )
     print(f"1D {gauss} Test passed. N: {N}, backend: {backend}, Errors: {errors}")
-    # All polynomials up to degree = 1 should be 0
+    # All polynomials up to degree 3 = 2N-1 should be 0, others should be good as well.
     # If this breaks check if test functions in helper_functions changed.
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 1 or err < 1e-15
+        assert test_function.get_order() > 3 or err < 2e-16
     for error in errors[:2]:
         assert error < 1e-15
 
@@ -84,9 +84,9 @@ def _run_gaussian_tests(backend, _precision):
     )
     print(f"10D {gauss} Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 1 or err < 1e-11
+        assert test_function.get_order() > 60 or err < 4e-09 # poly order should be relatively high
     for error in errors:
-        assert error < 7000
+        assert error < 1e-5
 
     # JIT Tests
     if backend != "numpy":
@@ -117,9 +117,9 @@ def _run_gaussian_tests(backend, _precision):
         )
         # Polynomials up to degree 2N-1 can be integrated almost exactly with gaussian.
         for err, test_function in zip(errors, funcs):
-            assert test_function.get_order() > float("inf") or err < 2e-10
+            assert test_function.get_order() > (2*N - 1) or err < 2e-10
         for error in errors:
-            assert error < 1e-5
+            assert error < 6.33e-11
 
         jit_integrate = (
             None  # set to None again so can be re-used with new integrand shape
