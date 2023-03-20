@@ -259,9 +259,7 @@ class GridIntegrator(BaseIntegrator):
             def lazy_compiled_integrate(fn, integration_domain):
                 if compiled_func[0] is None:
                     compiled_func[0] = do_compile(fn)
-                res = compiled_func[0](fn, integration_domain)
-                print(res)
-                return res
+                return compiled_func[0](fn, integration_domain)
 
             return lazy_compiled_integrate
 
