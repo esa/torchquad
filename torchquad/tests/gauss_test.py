@@ -115,7 +115,7 @@ def _run_gaussian_tests(backend, _precision):
         print(
             f"1D Gaussian JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}"
         )
-        # Polynomials up to degree 1 can be integrated almost exactly with gaussian.
+        # Polynomials up to degree 2N-1 can be integrated almost exactly with gaussian.
         for err, test_function in zip(errors, funcs):
             assert test_function.get_order() > float("inf") or err < 2e-10
         for error in errors:
