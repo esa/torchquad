@@ -27,7 +27,10 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-
+    permissions:
+      pull-requests: write
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
@@ -58,6 +61,7 @@ jobs:
           pytest -ra --error-for-skips --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=../../torchquad . | tee pytest-coverage.txt
       - name: pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
+        if: github.event_name == 'pull_request'
         with:
           pytest-coverage-path: ./torchquad/tests/pytest-coverage.txt
           title: Coverage Report
