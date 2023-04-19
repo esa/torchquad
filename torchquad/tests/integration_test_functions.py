@@ -239,8 +239,7 @@ class Exponential(IntegrationTestFunction):
         """Creates an n-dimensional exponential test function.
 
         Args:
-            expected_result (backend tensor): Expected result. Required to compute errors.
-            integration_dim (int, optional): Input dimension. Defaults to 1.
+            expected_result (backend tensor): Expected result. Required to compute errors.            integration_dim (int, optional): Input dimension. Defaults to 1.
             domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend passed to _setup_integration_domain.
@@ -275,8 +274,7 @@ class Sinusoid(IntegrationTestFunction):
         """Creates an n-dimensional sinusoidal test function.
 
         Args:
-            expected_result (backend tensor): Expected result. Required to compute errors.
-            integration_dim (int, optional): Input dimension. Defaults to 1.
+            expected_result (backend tensor): Expected result. Required to compute errors.            integration_dim (int, optional): Input dimension. Defaults to 1.
             domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
             is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
             backend (string, optional): Numerical backend passed to _setup_integration_domain.

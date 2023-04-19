@@ -29,30 +29,41 @@ class BaseIntegrator:
             NotImplementedError("This is an abstract base class. Should not be called.")
         )
 
-    def _eval(self, points):
+    def _eval(self, points, weights=None, args=None):
         """Call evaluate_integrand to evaluate self._fn function at the passed points and update self._nr_of_evals
 
         Args:
             points (backend tensor): Integration points
+            weights (backend tensor, optional): Integration weights. Defaults to None.
+            args (list or tuple, optional): Any arguments required by the function. Defaults to None.
         """
-        result, num_points = self.evaluate_integrand(self._fn, points)
+        result, num_points = self.evaluate_integrand(
+            self._fn, points, weights=weights, args=args
+        )
         self._nr_of_fevals += num_points
         return result
 
     @staticmethod
-    def evaluate_integrand(fn, points):
+    def evaluate_integrand(fn, points, weights=None, args=None):
         """Evaluate the integrand function at the passed points
 
         Args:
             fn (function): Integrand function
             points (backend tensor): Integration points
+            weights (backend tensor, optional): Integration weights. Defaults to None.
+            args (list or tuple, optional): Any arguments required by the function. Defaults to None.
 
         Returns:
             backend tensor: Integrand function output
             int: Number of evaluated points
         """
         num_points = points.shape[0]
-        result = fn(points)
+
+        if args is None:
+            args = ()
+
+        result = fn(points, *args)
+
         if infer_backend(result) != infer_backend(points):
             warnings.warn(
                 "The passed function's return value has a different numerical backend than the passed points. Will try to convert. Note that this may be slow as it results in memory transfers between CPU and GPU, if torchquad uses the GPU."
@@ -67,17 +78,27 @@ class BaseIntegrator:
                 f"where first dimension matches length of passed elements. "
             )
 
+        if weights is not None:
+            if (
+                len(result.shape) > 1
+            ):  # if the the integrand is multi-dimensional, we need to reshape/repeat weights so they can be broadcast in the *=
+                integrand_shape = anp.array(
+                    result.shape[1:], like=infer_backend(points)
+                )
+                weights = anp.repeat(
+                    anp.expand_dims(weights, axis=1), anp.prod(integrand_shape)
+                ).reshape((weights.shape[0], *(integrand_shape)))
+            result *= weights
+
         return result, num_points
 
     @staticmethod
     def _check_inputs(dim=None, N=None, integration_domain=None):
         """Used to check input validity
-
         Args:
             dim (int, optional): Dimensionality of function to integrate. Defaults to None.
             N (int, optional): Total number of integration points. Defaults to None.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[0,1],[1,2]]. Defaults to None.
-
         Raises:
             ValueError: if inputs are not compatible with each other.
         """

@@ -4,10 +4,14 @@ from time import perf_counter
 from loguru import logger
 
 from .utils import (
-    _linspace_with_grads,
     _check_integration_domain,
     _setup_integration_domain,
+    _linspace_with_grads,
 )
+
+
+def grid_func(a, b, N, requires_grad=False, backend=None):
+    return _linspace_with_grads(a, b, N, requires_grad=requires_grad)
 
 
 class IntegrationGrid:
@@ -19,7 +23,7 @@ class IntegrationGrid:
     _dim = None  # dimensionality of the grid
     _runtime = None  # runtime for the creation of the integration grid
 
-    def __init__(self, N, integration_domain):
+    def __init__(self, N, integration_domain, grid_func=grid_func):
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
 
         Args:
@@ -28,9 +32,11 @@ class IntegrationGrid:
         """
         start = perf_counter()
         self._check_inputs(N, integration_domain)
-        if infer_backend(integration_domain) == "builtins":
+        backend = infer_backend(integration_domain)
+        if backend == "builtins":
+            backend = "torch"
             integration_domain = _setup_integration_domain(
-                len(integration_domain), integration_domain, backend="torch"
+                len(integration_domain), integration_domain, backend=backend
             )
         self._dim = integration_domain.shape[0]
 
@@ -57,11 +63,12 @@ class IntegrationGrid:
         # Determine for each dimension grid points and mesh width
         for dim in range(self._dim):
             grid_1d.append(
-                _linspace_with_grads(
+                grid_func(
                     integration_domain[dim][0],
                     integration_domain[dim][1],
                     self._N,
                     requires_grad=requires_grad,
+                    backend=backend,
                 )
             )
         self.h = anp.stack(
