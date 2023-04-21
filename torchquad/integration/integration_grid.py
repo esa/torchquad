@@ -37,6 +37,8 @@ class IntegrationGrid:
         Args:
             N (int): Total desired number of points in the grid (will take next lower root depending on dim)
             integration_domain (list or backend tensor): Domain to choose points in, e.g. [[-1,1],[0,1]]. It also determines the numerical backend (if it is a list, the backend is "torch").
+            grid_func (function): function for generating a grid of points over which to integrate (arguments: integration_domain, N, requires_grad, backend)
+            disable_integration_domain_check (bool): Disbaling integration domain checks (default False)
         """
         start = perf_counter()
         if not disable_integration_domain_check:
