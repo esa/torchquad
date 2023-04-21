@@ -6,8 +6,9 @@ from loguru import logger
 from .utils import (
     _check_integration_domain,
     _setup_integration_domain,
-    _linspace_with_grads
+    _linspace_with_grads,
 )
+
 
 def grid_func(integration_domain, N, requires_grad=False, backend=None):
     a = integration_domain[0]
@@ -68,7 +69,7 @@ class IntegrationGrid:
                     integration_domain[dim],
                     self._N,
                     requires_grad=requires_grad,
-                    backend=backend
+                    backend=backend,
                 )
             )
         self.h = anp.stack(

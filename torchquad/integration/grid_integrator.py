@@ -3,7 +3,12 @@ from autoray import numpy as anp, infer_backend
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
-from .utils import _linspace_with_grads, expand_func_values_and_squeeze_intergal, _setup_integration_domain
+from .utils import (
+    _linspace_with_grads,
+    expand_func_values_and_squeeze_integral,
+    _setup_integration_domain,
+)
+
 
 class GridIntegrator(BaseIntegrator):
     """The abstract integrator that grid-like integrators (Newton-Cotes and Gaussian) integrators inherit from"""
@@ -17,8 +22,8 @@ class GridIntegrator(BaseIntegrator):
             a = integration_domain[0]
             b = integration_domain[1]
             return _linspace_with_grads(a, b, N, requires_grad=requires_grad)
+
         return f
-    
 
     def _weights(self, N, dim, backend, requires_grad=False):
         return None
@@ -41,12 +46,16 @@ class GridIntegrator(BaseIntegrator):
         grid_points, hs, n_per_dim = self.calculate_grid(N, integration_domain)
 
         logger.debug("Evaluating integrand on the grid.")
-        function_values, num_points = self.evaluate_integrand(fn, grid_points, weights=self._weights(n_per_dim, dim, backend))
+        function_values, num_points = self.evaluate_integrand(
+            fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
+        )
         self._nr_of_fevals = num_points
 
-        return self.calculate_result(function_values, dim, n_per_dim, hs, integration_domain)
+        return self.calculate_result(
+            function_values, dim, n_per_dim, hs, integration_domain
+        )
 
-    @expand_func_values_and_squeeze_intergal
+    @expand_func_values_and_squeeze_integral
     def calculate_result(self, function_values, dim, n_per_dim, hs, integration_domain):
         """Apply the "composite rule" to calculate a result from the evaluated integrand.
 
@@ -67,13 +76,21 @@ class GridIntegrator(BaseIntegrator):
         # So the first line generates a character string for einsum, followed by moving the first dimension i.e `dim*N`
         # to the end.  Finally we reshape the resulting object so that instead of the last dimension being `dim*N`, it is
         # `N,N,...` as desired.
-        einsum = "".join([chr(i + 65) for i in range(len(function_values.shape))])
-        reshaped_function_values = anp.einsum(f'{einsum}->{einsum[1:]}{einsum[0]}', function_values)
+        einsum = "".join(
+            [chr(i + 65) for i in range(len(function_values.shape))]
+        )  # chr(i + 65) generates an alphabetical character
+        reshaped_function_values = anp.einsum(
+            f"{einsum}->{einsum[1:]}{einsum[0]}", function_values
+        )
         reshaped_function_values = reshaped_function_values.reshape(new_shape)
-        assert new_shape == list(reshaped_function_values.shape), f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
+        assert new_shape == list(
+            reshaped_function_values.shape
+        ), f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
         logger.debug("Computing areas.")
 
-        result = self._apply_composite_rule(reshaped_function_values, dim, hs, integration_domain)
+        result = self._apply_composite_rule(
+            reshaped_function_values, dim, hs, integration_domain
+        )
 
         logger.opt(lazy=True).info(
             "Computed integral: {result}", result=lambda: str(result)
@@ -112,7 +129,7 @@ class GridIntegrator(BaseIntegrator):
     def _adjust_N(dim, N):
         # Nothing to do by default
         return N
-    
+
     def get_jit_compiled_integrate(
         self, dim, N=None, integration_domain=None, backend=None
     ):
@@ -160,15 +177,23 @@ class GridIntegrator(BaseIntegrator):
                         self.calculate_grid, static_argnames=["N"]
                     )
                     self._jax_jit_calculate_result = jax.jit(
-                        self.calculate_result, static_argnums=(1, 2,)
+                        self.calculate_result,
+                        static_argnums=(
+                            1,
+                            2,
+                        ),  # dim and n_per_dim
                     )
                 jit_calculate_grid = self._jax_jit_calculate_grid
                 jit_calculate_result = self._jax_jit_calculate_result
 
             def compiled_integrate(fn, integration_domain):
                 grid_points, hs, n_per_dim = jit_calculate_grid(N, integration_domain)
-                function_values, _ = self.evaluate_integrand(fn, grid_points, weights=self._weights(n_per_dim, dim, backend))
-                return jit_calculate_result(function_values, dim, int(n_per_dim), hs, integration_domain)
+                function_values, _ = self.evaluate_integrand(
+                    fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
+                )
+                return jit_calculate_result(
+                    function_values, dim, int(n_per_dim), hs, integration_domain
+                )
 
             return compiled_integrate
 
@@ -190,8 +215,10 @@ class GridIntegrator(BaseIntegrator):
 
                 dim = int(integration_domain.shape[0])
 
-                def step3(function_values, hs):
-                    return self.calculate_result(function_values, dim, n_per_dim, hs, integration_domain)
+                def step3(function_values, hs, integration_domain):
+                    return self.calculate_result(
+                        function_values, dim, n_per_dim, hs, integration_domain
+                    )
 
                 # Trace the first step
                 step1 = torch.jit.trace(step1, (integration_domain,))
@@ -200,7 +227,9 @@ class GridIntegrator(BaseIntegrator):
                 grid_points, hs, n_per_dim = step1(integration_domain)
                 n_per_dim = int(n_per_dim)
                 function_values, _ = self.evaluate_integrand(
-                    example_integrand, grid_points, weights=self._weights(n_per_dim, dim, backend)
+                    example_integrand,
+                    grid_points,
+                    weights=self._weights(n_per_dim, dim, backend),
                 )
 
                 # Trace the third step
@@ -212,13 +241,17 @@ class GridIntegrator(BaseIntegrator):
                 if function_values.requires_grad:
                     function_values = function_values.detach()
                     function_values.requires_grad = True
-                step3 = torch.jit.trace(step3, (function_values, hs))
+                step3 = torch.jit.trace(
+                    step3, (function_values, hs, integration_domain)
+                )
 
                 # Define a compiled integrate function
                 def compiled_integrate(fn, integration_domain):
                     grid_points, hs, _ = step1(integration_domain)
-                    function_values, _ = self.evaluate_integrand(fn, grid_points, weights=self._weights(n_per_dim, dim, backend))
-                    result = step3(function_values, hs)
+                    function_values, _ = self.evaluate_integrand(
+                        fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
+                    )
+                    result = step3(function_values, hs, integration_domain)
                     return result
 
                 return compiled_integrate

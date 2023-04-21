@@ -14,7 +14,7 @@ dependencies:
   - tqdm>=4.56.0
   # Numerical backend installations with CUDA support where possible:
   - numpy>=1.19.5
-  - cudatoolkit>=11.1
+  # - cudatoolkit>=11.1
   - pytorch>=1.9 # CPU version
   - tensorflow>=2.10.0 # CPU version
   # jaxlib with CUDA support is not available for conda

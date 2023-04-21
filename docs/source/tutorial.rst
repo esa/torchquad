@@ -586,7 +586,7 @@ Compiling the integrate method
 ``````````````````````````````
 
 To speed up the quadrature in situations where it is executed often with the
-same number of points ``N`` and dimensionality ``dim``,
+same number of points ``N``, dimensionality ``dim``, and shape of the ``integrand``,
 we can JIT-compile the performance-relevant parts of the integrate method:
 
 .. code:: ipython3
@@ -723,4 +723,73 @@ sample points for both functions:
     integral2 = integrator.calculate_result(function_values, dim, n_per_dim, hs)
 
     print(f"Quadrature results: {integral1}, {integral2}")
+
+Multidimensional/Vectorized Integrands
+--------------------------------------
+
+If you wish to evaluate many different integrands over the same domain, it may be faster to pass in a vectorized formulation if possible.
+Our inspiration for this came from scipy's own vectorization capabilities e.g., from its ``fixed_quad`` `method <https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.fixed_quad.html>`__.
+
+As an example, here we evaluate a similar integrand many times for different values of ``a`` and ``b``. This is an example that could be sped up by a vectorized evaluation of all integrals:
+
+.. code:: ipython3
+
+    def parametrized_integrand(x, a, b):
+    return torch.sqrt(torch.cos(torch.sin((a + b) * x)))
+
+    a_params = torch.arange(40)
+    b_params = torch.arange(10, 20)
+    integration_domain = torch.Tensor([[0, 1]])
+    simp = Simpson()
+    result = torch.stack([torch.Tensor([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
+
+Now let's see how to do this a bit more simply, and in a way that provides signficant speedup as the size of the integrand's ``grid`` grows:
+
+.. code:: ipython3
+
+    grid = torch.stack([torch.Tensor([a + b for a in a_params]) for b in b_params])
+
+    def integrand(x):
+        return torch.sqrt(torch.cos(torch.sin(torch.einsum("i,jk->ijk", x.flatten(), grid))))
+
+    result_vectorized = simp.integrate(integrand, dim=1, N=101, integration_domain=integration_domain)
+
+    torch.all(torch.isclose(result_vectorized, result)) # True!
+
+Custom Integrators
+------------------
+
+It is of course possible to extend our provided Integrators, perhaps for a special class of functions or for a new algorithm.
+
+.. code:: ipython3
+
+    class GaussHermite(Gaussian):
+    """Gauss Hermite quadrature rule in torch, for integrals of the form :math:`\\int_{-\\infty}^{+\\infty} e^{-x^{2}} f(x) dx`. It will correctly integrate
+    polynomials of degree :math:`2n - 1` or less over the interval
+    :math:`[-\\infty, \\infty]` with weight function :math:`f(x) = e^{-x^2}`. See https://en.wikipedia.org/wiki/Gauss%E2%80%93Hermite_quadrature
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.name = "Gauss-Hermite"
+        self.root_fn = scipy.special.roots_hermite
+        self.default_integration_domain = [[-1 * numpy.inf, numpy.inf]]
+        self.wrapper_func = None
+
+    @staticmethod
+    def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
+        """Apply "composite" rule for gaussian integrals
+        cur_dim_areas will contain the areas per dimension
+        """
+        # We collapse dimension by dimension
+        for _ in range(dim):
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
+        return cur_dim_areas
+
+    gh=torchquad.GaussHermite()
+    integral=gh.integrate(lambda x: 1-x,dim=1,N=200) #integral from -inf to inf of np.exp(-(x**2))*(1-x)
+    # Computed integral was 1.7724538509055168.
+    # analytic result = sqrt(pi)
+    
+
 

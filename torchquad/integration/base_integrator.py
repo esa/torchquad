@@ -37,12 +37,14 @@ class BaseIntegrator:
             weights (backend tensor, optional): Integration weights. Defaults to None.
             args (list or tuple, optional): Any arguments required by the function. Defaults to None.
         """
-        result, num_points = self.evaluate_integrand(self._fn, points,weights=weights,args=args)
+        result, num_points = self.evaluate_integrand(
+            self._fn, points, weights=weights, args=args
+        )
         self._nr_of_fevals += num_points
         return result
 
     @staticmethod
-    def evaluate_integrand(fn, points, weights=None,args=None):
+    def evaluate_integrand(fn, points, weights=None, args=None):
         """Evaluate the integrand function at the passed points
 
         Args:
@@ -56,12 +58,12 @@ class BaseIntegrator:
             int: Number of evaluated points
         """
         num_points = points.shape[0]
-        
+
         if args is None:
             args = ()
-        
+
         result = fn(points, *args)
-        
+
         if infer_backend(result) != infer_backend(points):
             warnings.warn(
                 "The passed function's return value has a different numerical backend than the passed points. Will try to convert. Note that this may be slow as it results in memory transfers between CPU and GPU, if torchquad uses the GPU."
@@ -77,11 +79,17 @@ class BaseIntegrator:
             )
 
         if weights is not None:
-            if len(result.shape) > 1:
-                integrand_shape = anp.array(result.shape[1:], like = infer_backend(points))
-                weights = anp.repeat(anp.expand_dims(weights,axis=1), anp.prod(integrand_shape)).reshape((weights.shape[0], *(integrand_shape)))
+            if (
+                len(result.shape) > 1
+            ):  # if the the integrand is multi-dimensional, we need to reshape/repeat weights so they can be broadcast in the *=
+                integrand_shape = anp.array(
+                    result.shape[1:], like=infer_backend(points)
+                )
+                weights = anp.repeat(
+                    anp.expand_dims(weights, axis=1), anp.prod(integrand_shape)
+                ).reshape((weights.shape[0], *(integrand_shape)))
             result *= weights
-            
+
         return result, num_points
 
     @staticmethod
@@ -106,4 +114,6 @@ class BaseIntegrator:
         if integration_domain is not None:
             dim_domain = _check_integration_domain(integration_domain)
             if dim is not None and dim != dim_domain:
-                raise ValueError("The dimension of the integration domain must match the passed function dimensionality dim.")
+                raise ValueError(
+                    "The dimension of the integration domain must match the passed function dimensionality dim."
+                )

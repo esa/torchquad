@@ -130,3 +130,5 @@ dmypy.json
 
 my_notebooks
 .vscode
+pytest-coverage.txt
+pytest.xml
