@@ -88,7 +88,6 @@ class IntegrationGrid:
 
         # Get grid points
         points = anp.meshgrid(*grid_1d)
-        # print(points, points[0].shape, grid_1d, grid_1d[0].shape)
         self.points = anp.stack(
             [mg.ravel() for mg in points], axis=1, like=integration_domain
         )
