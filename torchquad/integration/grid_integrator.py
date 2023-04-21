@@ -97,12 +97,18 @@ class GridIntegrator(BaseIntegrator):
         )
         return result
 
-    def calculate_grid(self, N, integration_domain):
+    def calculate_grid(
+        self,
+        N,
+        integration_domain,
+        disable_integration_domain_check=False,
+    ):
         """Calculate grid points, widths and N per dim
 
         Args:
             N (int): Number of points
             integration_domain (backend tensor): Integration domain
+            disable_integration_domain_check (bool): Disbaling integration domain checks (default False)
 
         Returns:
             backend tensor: Grid points
@@ -121,7 +127,9 @@ class GridIntegrator(BaseIntegrator):
         )
 
         # Create grid and assemble evaluation points
-        grid = IntegrationGrid(N, integration_domain, self._grid_func)
+        grid = IntegrationGrid(
+            N, integration_domain, self._grid_func, disable_integration_domain_check
+        )
 
         return grid.points, grid.h, grid._N
 

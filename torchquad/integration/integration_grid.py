@@ -25,7 +25,13 @@ class IntegrationGrid:
     _dim = None  # dimensionality of the grid
     _runtime = None  # runtime for the creation of the integration grid
 
-    def __init__(self, N, integration_domain, grid_func=grid_func):
+    def __init__(
+        self,
+        N,
+        integration_domain,
+        grid_func=grid_func,
+        disable_integration_domain_check=False,
+    ):
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
 
         Args:
@@ -33,7 +39,8 @@ class IntegrationGrid:
             integration_domain (list or backend tensor): Domain to choose points in, e.g. [[-1,1],[0,1]]. It also determines the numerical backend (if it is a list, the backend is "torch").
         """
         start = perf_counter()
-        # self._check_inputs(N, integration_domain)
+        if not disable_integration_domain_check:
+            self._check_inputs(N, integration_domain)
         backend = infer_backend(integration_domain)
         if backend == "builtins":
             backend = "torch"
