@@ -41,8 +41,7 @@ class IntegrationGrid:
             disable_integration_domain_check (bool): Disbaling integration domain checks (default False)
         """
         start = perf_counter()
-        if not disable_integration_domain_check:
-            self._check_inputs(N, integration_domain)
+        self._check_inputs(N, integration_domain, disable_integration_domain_check)
         backend = infer_backend(integration_domain)
         if backend == "builtins":
             backend = "torch"
@@ -98,11 +97,14 @@ class IntegrationGrid:
 
         self._runtime = perf_counter() - start
 
-    def _check_inputs(self, N, integration_domain):
+    def _check_inputs(self, N, integration_domain, disable_integration_domain_check):
         """Used to check input validity"""
 
         logger.debug("Checking inputs to IntegrationGrid.")
-        dim = _check_integration_domain(integration_domain)
+        if disable_integration_domain_check:
+            dim = len(integration_domain)
+        else:
+            dim = _check_integration_domain(integration_domain)
 
         if N < 2:
             raise ValueError("N has to be > 1.")

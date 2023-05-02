@@ -97,7 +97,7 @@ def _run_integration_grid_tests(backend, dtype_name):
 
     # Bypassing check, the output grid should be shape (N, 3) for 3 different 1d domains.
     # Our custom _grid_func treats the integration_domain as a list of 1d domains
-    # That is why it's shape is (1, 3, 2) so that the IntegrationGrid recognizes it as a 1d integral, but our
+    # That is why the domain shape is (1, 3, 2) so that the IntegrationGrid recognizes it as a 1d integral but our
     # custom handler does the rest without the check, and fails with the check.
     N = 500
     dim = 1
