@@ -32,7 +32,10 @@ class MockIntegrator(GridIntegrator):
         def f(integration_domain, N, requires_grad=False, backend=None):
             b = integration_domain[:, 1]
             a = integration_domain[:, 0]
-            return _linspace_with_grads(a, b, N, requires_grad=requires_grad)
+            return anp.stack(
+                _linspace_with_grads(a[ind], b[ind], N, requires_grad=requires_grad)
+                for ind in range(len(a))
+            ).T
 
         return f
 
