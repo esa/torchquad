@@ -6,6 +6,7 @@ sys.path.append("../")
 
 from autoray import numpy as anp
 from autoray import to_backend_dtype
+import autoray as ar
 from integration.integration_grid import IntegrationGrid
 from integration.grid_integrator import GridIntegrator
 from integration.utils import _linspace_with_grads
@@ -109,7 +110,9 @@ def _run_integration_grid_tests(backend, dtype_name):
 
     def grid_check(x):
         has_right_shape = x.shape == (N, 3)
-        has_right_vals = anp.all(x[0, :] == 0) and anp.all(x[-1, :] == 1)
+        has_right_vals = anp.all(ar.to_numpy(x[0, :]) == 0) and anp.all(
+            ar.to_numpy(x[-1, :]) == 1
+        )
         return has_right_shape and has_right_vals
 
     mock_integrator_no_check.integrate(
