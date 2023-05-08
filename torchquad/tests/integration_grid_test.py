@@ -10,7 +10,7 @@ import autoray as ar
 from integration.integration_grid import IntegrationGrid
 from integration.grid_integrator import GridIntegrator
 from integration.utils import _linspace_with_grads
-
+import tensorflow as tf
 from helper_functions import setup_test_for_backend
 
 
@@ -33,16 +33,17 @@ class MockIntegrator(GridIntegrator):
         def f(integration_domain, N, requires_grad=False, backend=None):
             b = integration_domain[:, 1]
             a = integration_domain[:, 0]
-            return anp.flatten(
-                anp.stack(
-                    [
-                        _linspace_with_grads(
-                            a[ind], b[ind], N, requires_grad=requires_grad
-                        )
-                        for ind in range(len(a))
-                    ]
-                )
-            )
+            grid = anp.stack(
+                [
+                    _linspace_with_grads(a[ind], b[ind], N, requires_grad=requires_grad)
+                    for ind in range(len(a))
+                ]
+            ).T
+            if backend == "tensorflow":
+                return tf.reshape(
+                    grid, [-1]
+                )  # no flatten method (?!?!?!) for TF Tensors
+            return grid.flatten()
 
         return f
 
