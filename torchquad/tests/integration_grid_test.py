@@ -36,7 +36,9 @@ class MockIntegrator(GridIntegrator):
             return anp.flatten(
                 anp.stack(
                     [
-                        _linspace_with_grads(a[ind], b[ind], N, requires_grad=requires_grad)
+                        _linspace_with_grads(
+                            a[ind], b[ind], N, requires_grad=requires_grad
+                        )
                         for ind in range(len(a))
                     ]
                 )
