@@ -10,7 +10,6 @@ import autoray as ar
 from integration.integration_grid import IntegrationGrid
 from integration.grid_integrator import GridIntegrator
 from integration.utils import _linspace_with_grads
-import tensorflow as tf
 from helper_functions import setup_test_for_backend
 
 
@@ -39,7 +38,9 @@ class MockIntegrator(GridIntegrator):
                     for ind in range(len(a))
                 ]
             ).T
-            return anp.reshape(grid, [-1]) # flatten, but it works with TF as well which has no flatten
+            return anp.reshape(
+                grid, [-1]
+            )  # flatten, but it works with TF as well which has no flatten
 
         return f
 
