@@ -10,7 +10,9 @@ from .utils import (
 )
 
 
-def grid_func(a, b, N, requires_grad=False, backend=None):
+def grid_func(integration_domain, N, requires_grad=False, backend=None):
+    a = integration_domain[0]
+    b = integration_domain[1]
     return _linspace_with_grads(a, b, N, requires_grad=requires_grad)
 
 
@@ -23,15 +25,23 @@ class IntegrationGrid:
     _dim = None  # dimensionality of the grid
     _runtime = None  # runtime for the creation of the integration grid
 
-    def __init__(self, N, integration_domain, grid_func=grid_func):
+    def __init__(
+        self,
+        N,
+        integration_domain,
+        grid_func=grid_func,
+        disable_integration_domain_check=False,
+    ):
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
 
         Args:
             N (int): Total desired number of points in the grid (will take next lower root depending on dim)
             integration_domain (list or backend tensor): Domain to choose points in, e.g. [[-1,1],[0,1]]. It also determines the numerical backend (if it is a list, the backend is "torch").
+            grid_func (function): function for generating a grid of points over which to integrate (arguments: integration_domain, N, requires_grad, backend)
+            disable_integration_domain_check (bool): Disbaling integration domain checks (default False)
         """
         start = perf_counter()
-        self._check_inputs(N, integration_domain)
+        self._check_inputs(N, integration_domain, disable_integration_domain_check)
         backend = infer_backend(integration_domain)
         if backend == "builtins":
             backend = "torch"
@@ -64,8 +74,7 @@ class IntegrationGrid:
         for dim in range(self._dim):
             grid_1d.append(
                 grid_func(
-                    integration_domain[dim][0],
-                    integration_domain[dim][1],
+                    integration_domain[dim],
                     self._N,
                     requires_grad=requires_grad,
                     backend=backend,
@@ -88,11 +97,14 @@ class IntegrationGrid:
 
         self._runtime = perf_counter() - start
 
-    def _check_inputs(self, N, integration_domain):
+    def _check_inputs(self, N, integration_domain, disable_integration_domain_check):
         """Used to check input validity"""
 
         logger.debug("Checking inputs to IntegrationGrid.")
-        dim = _check_integration_domain(integration_domain)
+        if disable_integration_domain_check:
+            dim = len(integration_domain)
+        else:
+            dim = _check_integration_domain(integration_domain)
 
         if N < 2:
             raise ValueError("N has to be > 1.")

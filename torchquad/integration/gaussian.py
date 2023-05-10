@@ -78,17 +78,18 @@ class Gaussian(GridIntegrator):
         function for generating a grid to be integrated over i.e., the polynomial roots, resized to the domain.
         """
 
-        def f(a, b, N, requires_grad, backend=None):
-            return self._resize_roots(a, b, self._roots(N, backend, requires_grad))
+        def f(integration_domain, N, requires_grad, backend=None):
+            return self._resize_roots(
+                integration_domain, self._roots(N, backend, requires_grad)
+            )
 
         return f
 
-    def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
+    def _resize_roots(self, integration_domain, roots):  # scale from [-1,1] to [a,b]
         """resize the roots based on domain of [a,b]
 
         Args:
-            a (backend tensor): lower bound
-            b (backend tensor): upper bound
+            integration_domain (backend tensor): domain
             roots (backend tensor): polynomial nodes
 
         Returns:
@@ -148,5 +149,7 @@ class GaussLegendre(Gaussian):
     def __init__(self):
         super().__init__()
 
-    def _resize_roots(self, a, b, roots):  # scale from [-1,1] to [a,b]
+    def _resize_roots(self, integration_domain, roots):  # scale from [-1,1] to [a,b]
+        a = integration_domain[0]
+        b = integration_domain[1]
         return ((b - a) / 2) * roots + ((a + b) / 2)
