@@ -39,11 +39,7 @@ class MockIntegrator(GridIntegrator):
                     for ind in range(len(a))
                 ]
             ).T
-            if backend == "tensorflow":
-                return tf.reshape(
-                    grid, [-1]
-                )  # no flatten method (?!?!?!) for TF Tensors
-            return grid.flatten()
+            return anp.reshape(grid, [-1]) # flatten, but it works with TF as well which has no flatten
 
         return f
 
