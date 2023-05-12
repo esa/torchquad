@@ -51,3 +51,14 @@ Trapezoid Rule
 .. autoclass:: torchquad.Trapezoid
    :members: integrate
    :noindex:
+
+Gaussian Quadrature
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: torchquad.Gaussian
+   :members: integrate
+   :noindex:
+
+.. autoclass:: torchquad.GaussLegendre
+   :members: integrate
+   :noindex:

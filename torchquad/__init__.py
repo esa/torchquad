@@ -10,6 +10,7 @@ from .integration.simpson import Simpson
 from .integration.boole import Boole
 from .integration.vegas import VEGAS
 from .integration.gaussian import GaussLegendre
+from .integration.gaussian import Gaussian
 from .integration.grid_integrator import GridIntegrator
 from .integration.base_integrator import BaseIntegrator
 
@@ -34,6 +35,7 @@ __all__ = [
     "Boole",
     "VEGAS",
     "GaussLegendre",
+    "Gaussian",
     "RNG",
     "plot_convergence",
     "plot_runtime",
