@@ -56,7 +56,7 @@ Gaussian Quadrature
 ^^^^^^^^^^^^^^^^^^^^^^
 
 .. autoclass:: torchquad.Gaussian
-   :members: integrate
+   :members: integrate, _resize_roots
    :noindex:
 
 .. autoclass:: torchquad.GaussLegendre

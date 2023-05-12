@@ -6,11 +6,11 @@ from .grid_integrator import GridIntegrator
 class Gaussian(GridIntegrator):
     """
     Base method for Gaussian Quadrature.  Different Gaussian methods should inherit from this class, and override as necessary methods.
-    Default behaviour is Gauss-Legendre quadrature on [-1,1] (i.e., this "parent" class should __not__ be used directly with other integration domains).
+    Default behaviour is Gauss-Legendre quadrature on [-1,1] (i.e., this "parent" class should __not__ be used directly with other integration domains, and for this parent class `integration_domain` as an argument to `integrate` is ignored internally).
 
     For an example of how to properly override the behavior to acheive different Gaussian Integration methods, please see the `Custom Integrators` section of the Tutorial or the implementation of `GaussLegendre`.
 
-    The primary methods/attributes of interest to override are _root_fn (for different polynomials, like `numpy.polynomial.legendre.leggauss`), _apply_composite_rule (as in other integration methods), and _resize_roots (for handling different integration domains).
+    The primary methods/attributes of interest to override are `_root_fn` (for different polynomials, like `numpy.polynomial.legendre.leggauss`), `_apply_composite_rule` (as in other integration methods), and `_resize_roots` (for handling different integration domains).
 
     Attributes:
         name  (str): A human-readable name for the integral.
@@ -33,7 +33,7 @@ class Gaussian(GridIntegrator):
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
             N (int, optional): Total number of sample points to use for the integration. Should be odd. Defaults to 3 points per dimension if None is given.
-            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim, and should __not__ be called with any other domain unless the `_resize_roots` method has been overriden.  Subclasses can provide and use this argument, specifically after overriding `_resize_roots` as needed.  It also determines the numerical backend if possible.
+            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.   It also determines the numerical backend if possible.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Returns:
@@ -97,7 +97,7 @@ class Gaussian(GridIntegrator):
         return f
 
     def _resize_roots(self, integration_domain, roots):  # scale from [-1,1] to [a,b]
-        """resize the roots based on domain of [a,b]
+        """Resize the roots based on domain of [a,b].  Default behavior is to simply return the roots, unsized by `integraton_domain`.
 
         Args:
             integration_domain (backend tensor): domain
