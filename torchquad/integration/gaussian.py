@@ -4,15 +4,26 @@ from .grid_integrator import GridIntegrator
 
 
 class Gaussian(GridIntegrator):
-    """Gaussian quadrature methods inherit from this. Default behaviour is Gauss-Legendre quadrature on [-1,1]."""
+    """
+    Base method for Gaussian Quadrature.  Different Gaussian methods should inherit from this class, and override as necessary methods.
+    Default behaviour is Gauss-Legendre quadrature on [-1,1] (i.e., this "parent" class should __not__ be used directly with other integration domains, and for this parent class `integration_domain` as an argument to `integrate` is ignored internally).
+
+    For an example of how to properly override the behavior to acheive different Gaussian Integration methods, please see the `Custom Integrators` section of the Tutorial or the implementation of `GaussLegendre`.
+
+    The primary methods/attributes of interest to override are `_root_fn` (for different polynomials, like `numpy.polynomial.legendre.leggauss`), `_apply_composite_rule` (as in other integration methods), and `_resize_roots` (for handling different integration domains).
+
+    Attributes:
+        name  (str): A human-readable name for the integral.
+        _root_fn (function): A function that returns roots and weights like `numpy.polynomial.legendre.leggauss`.
+        _root_args (tuple): a way of adding information to be passed into `_root_fn` as needed.  This is then used when caching roots/weights to potentially distinguish different calls to `_root_fn` based on arguments.
+        _cache (dict): a cache for roots and weights, used internally.
+    """
 
     def __init__(self):
         super().__init__()
         self.name = "Gauss-Legendre"
-        self.root_fn = numpy.polynomial.legendre.leggauss
-        self.root_args = ()
-        self.default_integration_domain = [[-1, 1]]
-        self.transform_interval = True
+        self._root_fn = numpy.polynomial.legendre.leggauss
+        self._root_args = ()
         self._cache = {}
 
     def integrate(self, fn, dim, N=8, integration_domain=None, backend=None):
@@ -22,7 +33,7 @@ class Gaussian(GridIntegrator):
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
             N (int, optional): Total number of sample points to use for the integration. Should be odd. Defaults to 3 points per dimension if None is given.
-            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
+            integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.   It also determines the numerical backend if possible.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Returns:
@@ -86,7 +97,7 @@ class Gaussian(GridIntegrator):
         return f
 
     def _resize_roots(self, integration_domain, roots):  # scale from [-1,1] to [a,b]
-        """resize the roots based on domain of [a,b]
+        """Resize the roots based on domain of [a,b].  Default behavior is to simply return the roots, unsized by `integraton_domain`.
 
         Args:
             integration_domain (backend tensor): domain
@@ -108,18 +119,18 @@ class Gaussian(GridIntegrator):
         Returns:
             tuple: nodes and weights
         """
-        root_args = (N, *self.root_args)
+        _root_args = (N, *self._root_args)
         if not isinstance(N, int):
             if hasattr(N, "item"):
-                root_args = (N.item(), *self.root_args)
+                _root_args = (N.item(), *self._root_args)
             else:
                 raise NotImplementedError(
                     f"N {N} is not an int and lacks an `item` method"
                 )
-        if root_args in self._cache:
-            return self._cache[root_args]
-        self._cache[root_args] = self.root_fn(*root_args)
-        return self._cache[root_args]
+        if _root_args in self._cache:
+            return self._cache[_root_args]
+        self._cache[_root_args] = self._root_fn(*_root_args)
+        return self._cache[_root_args]
 
     @staticmethod
     def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
@@ -138,7 +149,7 @@ class Gaussian(GridIntegrator):
 
 
 class GaussLegendre(Gaussian):
-    """Gauss Legendre quadrature rule in torch. See https://en.wikipedia.org/wiki/Gaussian_quadrature#Gauss%E2%80%93Legendre_quadrature.
+    """Gauss Legendre quadrature rule in torch for any domain [a,b]. See https://en.wikipedia.org/wiki/Gaussian_quadrature#Gauss%E2%80%93Legendre_quadrature.
 
     Examples
     --------
