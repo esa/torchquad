@@ -27,7 +27,7 @@ class Gaussian(GridIntegrator):
         self._cache = {}
 
     def integrate(self, fn, dim, N=8, integration_domain=None, backend=None):
-        """Integrates the passed function on the passed domain using Simpson's rule.
+        """Integrates the passed function on the passed domain using a Gaussian rule (Gauss-Legendre on [-1,1] as a default).
 
         Args:
             fn (func): The function to integrate over.

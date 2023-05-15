@@ -27,7 +27,7 @@ class MonteCarlo(BaseIntegrator):
 
         Args:
             fn (func): The function to integrate over.
-            dim (int): Dimensionality of the function to integrate.
+            dim (int): Dimensionality of the function's domain over which to integrate.
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.

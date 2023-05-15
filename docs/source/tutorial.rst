@@ -62,26 +62,32 @@ dimensions.
 At the time, *torchquad* offers the following integration methods for
 abritrary dimensionality.
 
-+--------------+-------------------------------------------------+------------+
-| Name         | How it works                                    | Spacing    |
-|              |                                                 |            |
-+==============+=================================================+============+
-| Trapezoid    | Creates a linear interpolant between two |br|   | Equal      |
-| rule         | neighbouring points                             |            |
-+--------------+-------------------------------------------------+------------+
-| Simpson's    | Creates a quadratic interpolant between |br|    | Equal      |
-| rule         | three neighbouring point                        |            |
-+--------------+-------------------------------------------------+------------+
-| Boole's      | Creates a more complex interpolant between |br| | Equal      |
-| rule         | five neighbouring points                        |            |
-+--------------+-------------------------------------------------+------------+
-| Monte Carlo  | Randomly chooses points at which the |br|       | Random     |
-|              | integrand is evaluated                          |            |
-+--------------+-------------------------------------------------+------------+
-| VEGAS        | Adaptive multidimensional Monte Carlo |br|      | Stratified |
-| Enhanced     | integration (VEGAS with adaptive stratified     | |br|       |
-| |br| (VEGAS+)| |br| sampling)                                  | sampling   |
-+--------------+-------------------------------------------------+------------+
++--------------+----------------------------------------------------+------------+
+| Name         | How it works                                       | Spacing    |
+|              |                                                    |            |
++==============+====================================================+============+
+| Trapezoid    | Creates a linear interpolant between two |br|      | Equal      |
+| rule         | neighbouring points                                |            |
++--------------+----------------------------------------------------+------------+
+| Simpson's    | Creates a quadratic interpolant between |br|       | Equal      |
+| rule         | three neighbouring point                           |            |
++--------------+----------------------------------------------------+------------+
+| Boole's      | Creates a more complex interpolant between |br|    | Equal      |
+| rule         | five neighbouring points                           |            |
++--------------+----------------------------------------------------+------------+
+| Gaussian     | Uses orthogonal polynomials to generate a grid     | Unequal    |
+| Quadrature   | of sample points along with corresponding weights. |            |
+|              | A `GaussLegendre` implementation is provided       |            |
+|              | as is a base `Gaussian` class that can be extended |            |
+|              | e.g., to other polynomials.                        |            |
++--------------+----------------------------------------------------+------------+
+| Monte Carlo  | Randomly chooses points at which the |br|          | Random     |
+|              | integrand is evaluated                             |            |
++--------------+----------------------------------------------------+------------+
+| VEGAS        | Adaptive multidimensional Monte Carlo |br|         | Stratified |
+| Enhanced     | integration (VEGAS with adaptive stratified        | |br|       |
+| |br| (VEGAS+)| |br| sampling)                                     | sampling   |
++--------------+----------------------------------------------------+------------+
 
 .. |br| raw:: html
 
@@ -100,6 +106,7 @@ the following way:
 4.  Information on how to select a numerical backend
 5.  Example showing how gradients can be obtained w.r.t. the integration domain with PyTorch
 6.  Methods to speed up the integration
+7.  Custom Integrators
 
 Feel free to test the code on your own computer as we go along.
 
@@ -586,7 +593,8 @@ Compiling the integrate method
 ``````````````````````````````
 
 To speed up the quadrature in situations where it is executed often with the
-same number of points ``N``, dimensionality ``dim``, and shape of the ``integrand``,
+same number of points ``N``, dimensionality ``dim``, and shape of the ``integrand``
+(see :ref:`the next section <multi_dim_integrand>` for more information on integrands),
 we can JIT-compile the performance-relevant parts of the integrate method:
 
 .. code:: ipython3
@@ -724,6 +732,8 @@ sample points for both functions:
 
     print(f"Quadrature results: {integral1}, {integral2}")
 
+.. _multi_dim_integrand:
+
 Multidimensional/Vectorized Integrands
 --------------------------------------
 
@@ -755,6 +765,9 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
     result_vectorized = simp.integrate(integrand, dim=1, N=101, integration_domain=integration_domain)
 
     torch.all(torch.isclose(result_vectorized, result)) # True!
+
+.. note::
+    VEGAS does not support multi-dimensional integrands.  If you would like this, please consider opening an issue or PR.
 
 Custom Integrators
 ------------------
