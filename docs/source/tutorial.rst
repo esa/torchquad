@@ -766,6 +766,9 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
 
     torch.all(torch.isclose(result_vectorized, result)) # True!
 
+.. note::
+    VEGAS does not support multi-dimensional integrands.  If you would like this, please consider opening an issue or PR.
+
 Custom Integrators
 ------------------
 

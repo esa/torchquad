@@ -16,7 +16,7 @@ class VEGASMap:
 
         Args:
             N_intervals (int): Number of intervals per dimension to split the domain in.
-            dim (int): Dimensionality of the integrand.
+            dim (int): Dimensionality of the integration domain.
             backend (string): Numerical backend
             dtype (backend dtype): dtype used for the calculations
             alpha (float, optional): Alpha from the paper, EQ 19. Defaults to 0.5.
