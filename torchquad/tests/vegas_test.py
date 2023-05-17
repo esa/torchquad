@@ -28,9 +28,10 @@ def _run_example_integrations(backend, dtype_name):
     errors, _ = compute_integration_test_errors(
         vegas.integrate,
         {"N": N, "dim": 1, "seed": 0},
-        dim=1,
+        integration_dim=1,
         use_complex=False,
         backend=backend,
+        use_multi_dim_integrand=False,
     )
     print("1D VEGAS Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors[:3]:
@@ -47,9 +48,10 @@ def _run_example_integrations(backend, dtype_name):
     errors, _ = compute_integration_test_errors(
         vegas.integrate,
         {"N": N, "dim": 3, "seed": 0},
-        dim=3,
+        integration_dim=3,
         use_complex=False,
         backend=backend,
+        use_multi_dim_integrand=False,
     )
     print("3D VEGAS Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:
@@ -60,9 +62,10 @@ def _run_example_integrations(backend, dtype_name):
     errors, _ = compute_integration_test_errors(
         vegas.integrate,
         {"N": N, "dim": 10, "seed": 0},
-        dim=10,
+        integration_dim=10,
         use_complex=False,
         backend=backend,
+        use_multi_dim_integrand=False,
     )
     print("10D VEGAS Test: Passed N =", N, "\n", "Errors: ", errors)
     for error in errors:

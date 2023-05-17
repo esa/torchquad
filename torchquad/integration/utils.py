@@ -13,6 +13,7 @@ from autoray import numpy as anp
 from autoray import infer_backend, register_function
 from functools import partial
 from loguru import logger
+import warnings
 
 # from ..utils.set_precision import _get_precision
 from utils.set_precision import _get_precision
@@ -103,8 +104,8 @@ def _setup_integration_domain(dim, integration_domain, backend):
     """Sets up the integration domain if unspecified by the user.
     Args:
         dim (int): Dimensionality of the integration domain.
-        integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It also determines the numerical backend if possible.
-        backend (string or None): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. If set to None, use the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+        integration_domain (list or backend tensor or None): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
+        backend (string or None): Numerical backend. If set to None, use integration_domain's backend if it is a tensor and otherwise use the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
     Returns:
         backend tensor: Integration domain.
     """
@@ -114,8 +115,20 @@ def _setup_integration_domain(dim, integration_domain, backend):
     if integration_domain is None:
         integration_domain = [[-1.0, 1.0]] * dim
 
+    # Give an explicitly set backend argument higher precedence than
+    # integration_domain's backend.
+    # If the backend argument is not None, the dtype of integration_domain is
+    # ignored unless its backend and the backend argument are the same.
+    domain_arg_backend = infer_backend(integration_domain)
+    convert_to_tensor = domain_arg_backend == "builtins"
+    if not convert_to_tensor and backend is not None and domain_arg_backend != backend:
+        logger.warning(
+            "integration_domain should be a list when the backend argument is set."
+        )
+        convert_to_tensor = True
+
     # Convert integration_domain to a tensor if needed
-    if infer_backend(integration_domain) == "builtins":
+    if convert_to_tensor:
         # Cast all integration domain values to Python3 float because
         # some numerical backends create a tensor based on the Python3 types
         integration_domain = [
@@ -164,7 +177,7 @@ def _check_integration_domain(integration_domain):
                     integration_domain,
                     " does not specify a valid integration bound.",
                 )
-            if bounds[0] > bounds[1]:
+            if anp.any(bounds[0] > bounds[1]):
                 raise ValueError(
                     bounds,
                     " in ",
@@ -206,3 +219,45 @@ def _torch_repeat(a, repeats, axis=None):
     # torch.repeat_interleave corresponds to np.repeat and should not be
     # confused with torch.Tensor.repeat.
     return torch.repeat_interleave(a, repeats, dim=axis)
+
+
+@partial(register_function, "torch", "expand_dims")
+def _torch_expand_dims(a, axis):
+    """torch is missing `expand_dims` which appears to exist on all other libraries used.
+
+    Args:
+        a (torch.Tensor): Tensor to be expanded along axis
+        axis (int): the axis along which to expand the dimensions
+
+    Returns:
+        torch.Tensor: a Tensor with an extra dimension.
+    """
+    import torch
+
+    return torch.unsqueeze(a, axis)
+
+
+def expand_func_values_and_squeeze_integral(f):
+    """This decorator ensures that the trailing dimension of integrands is indeed the integrand dimension.
+    This is pertinent in the 1d case when the sampled values are often of shape `(N,)`.  Then, to maintain backward
+    consistency, we squeeze the result in the 1d case so it does not have any trailing dimensions.
+
+    Args:
+        f (Callable): the wrapped function
+    """
+
+    def wrap(*args, **kwargs):
+        # i.e we only have one dimension, or the second dimension (that of the integrand) is 1
+        is_1d = len(args[1].shape) == 1 or (
+            len(args[1].shape) == 2 and args[1].shape[1] == 1
+        )
+        if is_1d:
+            warnings.warn(
+                "DEPRECATION WARNING: In future versions of torchquad, an array-like object will be returned."
+            )
+            return anp.squeeze(
+                f(args[0], anp.expand_dims(args[1], axis=1), *args[2:], **kwargs)
+            )
+        return f(*args, **kwargs)
+
+    return wrap

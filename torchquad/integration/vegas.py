@@ -45,10 +45,11 @@ class VEGAS(BaseIntegrator):
         """Integrates the passed function on the passed domain using VEGAS.
 
         If the integrand output is far away from zero, i.e. lies within [b, b+c] for a constant b with large absolute value and small constant c, VEGAS does not adapt well to the integrand. Shifting the integrand so that it is close to zero may improve the accuracy of the calculated integral in this case.
+        This method does not support multi-dimensional/vectorized integrands (i.e., integrating an integrand repeatedly over a grid of points).
 
         Args:
             fn (func): The function to integrate over.
-            dim (int): Dimensionality of the function to integrate.
+            dim (int): Dimensionality of the function's domain over which to integrate.
             N (int, optional): Approximate maximum number of function evaluations to use for the integration. This value can be exceeded if the vegas stratification distributes evaluations per hypercube very unevenly. Defaults to 10000.
             integration_domain (list, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.
             seed (int, optional): Random number generation seed for the sampling point creation; only set if provided. Defaults to None.
@@ -58,7 +59,7 @@ class VEGAS(BaseIntegrator):
             eps_abs (float, optional): Absolute error to abort at. Defaults to 0.
             max_iterations (int, optional): Maximum number of vegas iterations to perform. The number of performed iterations is usually lower than this value because the number of sample points per iteration increases every fifth iteration. Defaults to 20.
             use_warmup (bool, optional): If True, execute a warmup to initialize the vegas map. Defaults to True.
-            backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. "jax" and "tensorflow" are unsupported. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+            backend (string, optional): Numerical backend. "jax" and "tensorflow" are unsupported. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
         Raises:
             ValueError: If the integration_domain or backend argument is invalid

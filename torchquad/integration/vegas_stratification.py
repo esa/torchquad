@@ -15,7 +15,7 @@ class VEGASStratification:
 
         Args:
             N_increment (int): Number of evaluations per iteration.
-            dim (int): Dimensionality
+            dim (int): Dimensionality of the integration domain
             rng (RNG): Random number generator
             backend (string): Numerical backend
             dtype (backend dtype): dtype used for the calculations
