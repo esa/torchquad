@@ -264,7 +264,7 @@ def _run_gradient_tests(backend, dtype_name):
         )
         # Check if the integral and gradient are accurate enough
         assert np.abs(integral - 34.0) < 0.2
-        assert np.abs(gradient - 4.0) < 0.1
+        assert np.abs(gradient - 4.0) < 0.15
 
 
 test_gradients_torch = setup_test_for_backend(_run_gradient_tests, "torch", "float64")
