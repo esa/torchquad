@@ -1,5 +1,5 @@
 from autoray import numpy as anp
-from autoray import infer_backend,astype,to_backend_dtype
+from autoray import infer_backend, astype, to_backend_dtype
 from time import perf_counter
 from loguru import logger
 
@@ -53,8 +53,8 @@ class IntegrationGrid:
             # will cause problems otherwise as in issue #180
             if "int" in str(integration_domain.dtype):
                 dtype = to_backend_dtype("float64", like=backend)
-                integration_domain = astype(integration_domain,dtype)
-        
+                integration_domain = astype(integration_domain, dtype)
+
         self._dim = integration_domain.shape[0]
 
         # TODO Add that N can be different for each dimension
