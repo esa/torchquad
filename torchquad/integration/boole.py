@@ -28,7 +28,7 @@ class Boole(NewtonCotes):
         return super().integrate(fn, dim, N, integration_domain, backend)
 
     @staticmethod
-    def _apply_composite_rule(cur_dim_areas, dim, hs):
+    def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
         """Apply composite Boole quadrature.
         cur_dim_areas will contain the areas per dimension
         """
@@ -45,7 +45,7 @@ class Boole(NewtonCotes):
                     + 7 * cur_dim_areas[..., 4:][..., ::4]
                 )
             )
-            cur_dim_areas = anp.sum(cur_dim_areas, axis=dim - cur_dim - 1)
+            cur_dim_areas = anp.sum(cur_dim_areas, axis=len(cur_dim_areas.shape) - 1)
         return cur_dim_areas
 
     @staticmethod

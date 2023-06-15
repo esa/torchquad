@@ -18,13 +18,3 @@ jobs:
         run: pip install black
       - name: Run black --check .
         run: black --check .
-      - name: If needed, commit black changes to the pull request
-        if: failure()
-        run: |
-          black .
-          git config --global user.name 'htoftevaag'
-          git config --global user.email 'htoftevaag@users.noreply.github.com'
-          git remote set-url origin https://x-access-token:${{ secrets.Autoblack_access_token }}@github.com/$GITHUB_REPOSITORY
-          git checkout $GITHUB_HEAD_REF
-          git commit -am "WORKFLOW: Format Python code with black"
-          git push

@@ -3,7 +3,7 @@ from autoray import infer_backend
 from loguru import logger
 
 from .base_integrator import BaseIntegrator
-from .utils import _setup_integration_domain
+from .utils import _setup_integration_domain, expand_func_values_and_squeeze_integral
 from .rng import RNG
 
 
@@ -27,7 +27,7 @@ class MonteCarlo(BaseIntegrator):
 
         Args:
             fn (func): The function to integrate over.
-            dim (int): Dimensionality of the function to integrate.
+            dim (int): Dimensionality of the function's domain over which to integrate.
             N (int, optional): Number of sample points to use for the integration. Defaults to 1000.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
@@ -53,6 +53,7 @@ class MonteCarlo(BaseIntegrator):
         function_values, self._nr_of_fevals = self.evaluate_integrand(fn, sample_points)
         return self.calculate_result(function_values, integration_domain)
 
+    @expand_func_values_and_squeeze_integral
     def calculate_result(self, function_values, integration_domain):
         """Calculate an integral result from the function evaluations
 
@@ -69,7 +70,7 @@ class MonteCarlo(BaseIntegrator):
 
         # Integral = V / N * sum(func values)
         N = function_values.shape[0]
-        integral = volume * anp.sum(function_values) / N
+        integral = volume * anp.sum(function_values, axis=0) / N
         # NumPy automatically casts to float64 when dividing by N
         if (
             infer_backend(integration_domain) == "numpy"
