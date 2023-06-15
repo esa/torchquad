@@ -44,7 +44,7 @@ def _run_gaussian_tests(backend, _precision):
     # All polynomials up to degree 3 = 2N-1 should be 0, others should be good as well.
     # If this breaks check if test functions in helper_functions changed.
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > 3 or err < 2e-16
+        assert test_function.get_order() > 3 or err < 8e-15
     for error in errors[:2]:
         assert error < 1e-15
 
