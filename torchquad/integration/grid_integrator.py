@@ -1,6 +1,7 @@
 from loguru import logger
 from autoray import numpy as anp, infer_backend
 
+from ..utils.torch_trace_without_warnings import _torch_trace_without_warnings
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
 from .utils import (
@@ -229,7 +230,7 @@ class GridIntegrator(BaseIntegrator):
                     )
 
                 # Trace the first step
-                step1 = torch.jit.trace(step1, (integration_domain,))
+                step1 = _torch_trace_without_warnings(step1, (integration_domain,))
 
                 # Get example input for the third step
                 grid_points, hs, n_per_dim = step1(integration_domain)
@@ -241,15 +242,7 @@ class GridIntegrator(BaseIntegrator):
                 )
 
                 # Trace the third step
-                # Avoid the warnings about a .grad attribute access of a
-                # non-leaf Tensor
-                if hs.requires_grad:
-                    hs = hs.detach()
-                    hs.requires_grad = True
-                if function_values.requires_grad:
-                    function_values = function_values.detach()
-                    function_values.requires_grad = True
-                step3 = torch.jit.trace(
+                step3 = _torch_trace_without_warnings(
                     step3, (function_values, hs, integration_domain)
                 )
 

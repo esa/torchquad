@@ -2,6 +2,7 @@ from autoray import numpy as anp
 from autoray import infer_backend
 from loguru import logger
 
+from ..utils.torch_trace_without_warnings import _torch_trace_without_warnings
 from .base_integrator import BaseIntegrator
 from .utils import _setup_integration_domain, expand_func_values_and_squeeze_integral
 from .rng import RNG
@@ -195,8 +196,6 @@ class MonteCarlo(BaseIntegrator):
         elif backend == "torch":
             # Torch requires explicit tracing with example inputs.
             def do_compile(example_integrand):
-                import torch
-
                 # Define traceable first and third steps
                 def step1(integration_domain):
                     return self.calculate_sample_points(
@@ -206,7 +205,9 @@ class MonteCarlo(BaseIntegrator):
                 step3 = self.calculate_result
 
                 # Trace the first step (which is non-deterministic)
-                step1 = torch.jit.trace(step1, (integration_domain,), check_trace=False)
+                step1 = _torch_trace_without_warnings(
+                    step1, (integration_domain,), check_trace=False
+                )
 
                 # Get example input for the third step
                 sample_points = step1(integration_domain)
@@ -215,12 +216,9 @@ class MonteCarlo(BaseIntegrator):
                 )
 
                 # Trace the third step
-                if function_values.requires_grad:
-                    # Avoid the warning about a .grad attribute access of a
-                    # non-leaf Tensor
-                    function_values = function_values.detach()
-                    function_values.requires_grad = True
-                step3 = torch.jit.trace(step3, (function_values, integration_domain))
+                step3 = _torch_trace_without_warnings(
+                    step3, (function_values, integration_domain)
+                )
 
                 # Define a compiled integrate function
                 def compiled_integrate(fn, integration_domain):
