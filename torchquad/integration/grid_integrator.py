@@ -139,7 +139,7 @@ class GridIntegrator(BaseIntegrator):
         return N
 
     def get_jit_compiled_integrate(
-        self, dim, N=None, integration_domain=None, backend=None
+        self, dim, N=None, integration_domain=None, backend=None, args=None
     ):
         """Create an integrate function where the performance-relevant steps except the integrand evaluation are JIT compiled.
         Use this method only if the integrand cannot be compiled.
@@ -197,7 +197,7 @@ class GridIntegrator(BaseIntegrator):
             def compiled_integrate(fn, integration_domain):
                 grid_points, hs, n_per_dim = jit_calculate_grid(N, integration_domain)
                 function_values, _ = self.evaluate_integrand(
-                    fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
+                    fn, grid_points, weights=self._weights(n_per_dim, dim, backend), args=args
                 )
                 return jit_calculate_result(
                     function_values, dim, int(n_per_dim), hs, integration_domain
@@ -238,6 +238,7 @@ class GridIntegrator(BaseIntegrator):
                     example_integrand,
                     grid_points,
                     weights=self._weights(n_per_dim, dim, backend),
+                    args=args,
                 )
 
                 # Trace the third step
@@ -257,7 +258,7 @@ class GridIntegrator(BaseIntegrator):
                 def compiled_integrate(fn, integration_domain):
                     grid_points, hs, _ = step1(integration_domain)
                     function_values, _ = self.evaluate_integrand(
-                        fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
+                        fn, grid_points, weights=self._weights(n_per_dim, dim, backend), args=args
                     )
                     result = step3(function_values, hs, integration_domain)
                     return result
