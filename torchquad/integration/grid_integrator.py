@@ -151,6 +151,7 @@ class GridIntegrator(BaseIntegrator):
             N (int, optional): Total number of sample points to use for the integration. See the integrate method documentation for more details.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
             backend (string, optional): Numerical backend. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+            args (list or tuple, optional): Any arguments required by the function. Defaults to None.
 
         Returns:
             function(fn, integration_domain): JIT compiled integrate function where all parameters except the integrand and domain are fixed
