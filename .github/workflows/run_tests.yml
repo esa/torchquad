@@ -62,6 +62,7 @@ jobs:
       - name: pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         with:
           pytest-coverage-path: ./torchquad/tests/pytest-coverage.txt
           title: Coverage Report
