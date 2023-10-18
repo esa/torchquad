@@ -1,13 +1,13 @@
 from loguru import logger
 from autoray import numpy as anp, infer_backend
 
-from ..utils.torch_trace_without_warnings import _torch_trace_without_warnings
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid
 from .utils import (
     _linspace_with_grads,
     expand_func_values_and_squeeze_integral,
     _setup_integration_domain,
+    _torch_trace_without_warnings,
 )
 
 

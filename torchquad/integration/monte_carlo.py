@@ -2,9 +2,12 @@ from autoray import numpy as anp
 from autoray import infer_backend
 from loguru import logger
 
-from ..utils.torch_trace_without_warnings import _torch_trace_without_warnings
 from .base_integrator import BaseIntegrator
-from .utils import _setup_integration_domain, expand_func_values_and_squeeze_integral
+from .utils import (
+    _setup_integration_domain,
+    expand_func_values_and_squeeze_integral,
+    _torch_trace_without_warnings,
+)
 from .rng import RNG
 
 
