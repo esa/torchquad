@@ -209,8 +209,6 @@ class GridIntegrator(BaseIntegrator):
         elif backend == "torch":
             # Torch requires explicit tracing with example inputs.
             def do_compile(example_integrand):
-                import torch
-
                 # Define traceable first and third steps
                 def step1(integration_domain):
                     grid_points, hs, n_per_dim = self.calculate_grid(
@@ -219,7 +217,7 @@ class GridIntegrator(BaseIntegrator):
                     return (
                         grid_points,
                         hs,
-                        torch.Tensor([n_per_dim]),
+                        anp.array([n_per_dim], like="torch"),
                     )  # n_per_dim is constant
 
                 dim = int(integration_domain.shape[0])
