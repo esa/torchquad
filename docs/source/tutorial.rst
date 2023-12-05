@@ -745,7 +745,7 @@ As an example, here we evaluate a similar integrand many times for different val
 .. code:: ipython3
 
     def parametrized_integrand(x, a, b):
-    return torch.sqrt(torch.cos(torch.sin((a + b) * x)))
+        return torch.sqrt(torch.cos(torch.sin((a + b) * x)))
 
     a_params = torch.arange(40)
     b_params = torch.arange(10, 20)
