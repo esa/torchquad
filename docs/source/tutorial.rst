@@ -724,11 +724,11 @@ sample points for both functions:
 
     # Integrate the first integrand with the sample points
     function_values, _ = integrator.evaluate_integrand(integrand1, grid_points)
-    integral1 = integrator.calculate_result(function_values, dim, n_per_dim, hs)
+    integral1 = integrator.calculate_result(function_values, dim, n_per_dim, hs, integration_domain)
 
     # Integrate the second integrand with the same sample points
     function_values, _ = integrator.evaluate_integrand(integrand2, grid_points)
-    integral2 = integrator.calculate_result(function_values, dim, n_per_dim, hs)
+    integral2 = integrator.calculate_result(function_values, dim, n_per_dim, hs, integration_domain)
 
     print(f"Quadrature results: {integral1}, {integral2}")
 
