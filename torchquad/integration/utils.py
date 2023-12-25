@@ -193,20 +193,11 @@ def _check_integration_domain(integration_domain):
             raise ValueError("integration_domain.shape[0] needs to be 1 or larger.")
         if num_bounds != 2:
             raise ValueError("integration_domain must have 2 values per boundary")
-        # Skip the values check if an integrator.integrate method is JIT
-        # compiled with JAX
-        if any(
-            nam in type(integration_domain).__name__ for nam in ["Jaxpr", "JVPTracer"]
-        ):
+        # The boundary values check does not work if the code is JIT compiled
+        # with JAX or TensorFlow.
+        if _is_compiling(integration_domain):
             return dim
-        boundaries_are_invalid = (
-            anp.min(integration_domain[:, 1] - integration_domain[:, 0]) < 0.0
-        )
-        # Skip the values check if an integrator.integrate method is
-        # compiled with tensorflow.function
-        if type(boundaries_are_invalid).__name__ == "Tensor":
-            return dim
-        if boundaries_are_invalid:
+        if anp.min(integration_domain[:, 1] - integration_domain[:, 0]) < 0.0:
             raise ValueError("integration_domain has invalid boundary values")
         return dim
 
@@ -261,6 +252,37 @@ def expand_func_values_and_squeeze_integral(f):
         return f(*args, **kwargs)
 
     return wrap
+
+
+def _is_compiling(x):
+    """
+    Check if code is currently being compiled with PyTorch, JAX or TensorFlow
+
+    Args:
+        x (backend tensor): A tensor currently used for computations
+    Returns:
+        bool: True if code is currently being compiled, False otherwise
+    """
+    backend = infer_backend(x)
+    if backend == "jax":
+        return any(nam in type(x).__name__ for nam in ["Jaxpr", "JVPTracer"])
+    if backend == "torch":
+        import torch
+
+        if hasattr(torch.jit, "is_tracing"):
+            # We ignore torch.jit.is_scripting() since we do not support
+            # compilation to TorchScript
+            return torch.jit.is_tracing()
+        # torch.jit.is_tracing() is unavailable below PyTorch version 1.11.0
+        return type(x.shape[0]).__name__ == "Tensor"
+    if backend == "tensorflow":
+        import tensorflow as tf
+
+        if hasattr(tf, "is_symbolic_tensor"):
+            return tf.is_symbolic_tensor(x)
+        # tf.is_symbolic_tensor() is unavailable below TensorFlow version 2.13.0
+        return type(x).__name__ == "Tensor"
+    return False
 
 
 def _torch_trace_without_warnings(*args, **kwargs):
