@@ -12,6 +12,7 @@ from integration.utils import (
     _linspace_with_grads,
     _add_at_indices,
     _setup_integration_domain,
+    _is_compiling,
 )
 from utils.set_precision import set_precision
 from utils.enable_cuda import enable_cuda
@@ -196,11 +197,48 @@ def test_setup_integration_domain():
     _run_tests_with_all_backends(_run_setup_integration_domain_tests)
 
 
+def _run_is_compiling_tests(dtype_name, backend):
+    """
+    Test _is_compiling with the given dtype and numerical backend
+    """
+    dtype = to_backend_dtype(dtype_name, like=backend)
+    x = anp.array([[0.0, 1.0], [1.0, 2.0]], dtype=dtype, like=backend)
+    assert not _is_compiling(
+        x
+    ), f"_is_compiling has a false positive with backend {backend}"
+
+    def check_compiling(x):
+        assert _is_compiling(
+            x
+        ), f"_is_compiling has a false negative with backend {backend}"
+        return x
+
+    if backend == "jax":
+        import jax
+
+        jax.jit(check_compiling)(x)
+    elif backend == "torch":
+        import torch
+
+        torch.jit.trace(check_compiling, (x,), check_trace=False)(x)
+    elif backend == "tensorflow":
+        import tensorflow as tf
+
+        tf.function(check_compiling, jit_compile=True)(x)
+        tf.function(check_compiling, jit_compile=False)(x)
+
+
+def test_is_compiling():
+    """Test _is_compiling with all possible configurations"""
+    _run_tests_with_all_backends(_run_is_compiling_tests)
+
+
 if __name__ == "__main__":
     try:
         # used to run this test individually
         test_linspace_with_grads()
         test_add_at_indices()
         test_setup_integration_domain()
+        test_is_compiling()
     except KeyboardInterrupt:
         pass
