@@ -55,9 +55,9 @@ def set_precision(data_type="float32", backend="torch"):
         )
         torch.set_default_tensor_type(tensor_dtype)
     elif backend == "jax":
-        from jax.config import config
+        from jax import config
 
-        config.update("jax_enable_x64", data_type == "float64")
+        config.update("jax_enable_x64", True)
         logger.info(f"JAX data type set to {data_type}")
     elif backend in ["numpy", "tensorflow"]:
         os.environ[f"TORCHQUAD_DTYPE_{backend.upper()}"] = data_type
