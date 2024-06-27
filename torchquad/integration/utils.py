@@ -2,6 +2,7 @@
 Utility functions for the integrator implementations including extensions for
 autoray, which are registered when importing this file
 """
+
 import sys
 from pathlib import Path
 
