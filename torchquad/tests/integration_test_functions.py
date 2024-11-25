@@ -44,7 +44,7 @@ class IntegrationTestFunction:
         """
         self.integration_dim = integration_dim
         self.expected_result = expected_result
-        if type(integrand_dims) == int or hasattr(integrand_dims, "__len__"):
+        if type(integrand_dims) is int or hasattr(integrand_dims, "__len__"):
             self.integrand_dims = integrand_dims
         else:
             ValueError(
@@ -214,7 +214,7 @@ class Polynomial(IntegrationTestFunction):
                 # Tensorflow does not automatically cast float32 to complex128,
                 # so we do it here explicitly.
                 assert self.is_complex
-                exponentials = anp.cast(exponentials, self.coeffs.dtype)
+                exponentials = exponentials.astype(self.coeffs.dtype)
 
         # multiply by coefficients
         exponentials = anp.multiply(exponentials, self.coeffs)

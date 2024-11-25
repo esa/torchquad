@@ -6,7 +6,6 @@ from .newton_cotes import NewtonCotes
 
 
 class Simpson(NewtonCotes):
-
     """Simpson's rule. See https://en.wikipedia.org/wiki/Newton%E2%80%93Cotes_formulas#Closed_Newton%E2%80%93Cotes_formulas ."""
 
     def __init__(self):

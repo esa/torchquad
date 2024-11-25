@@ -7,6 +7,7 @@ from .utils import (
     _linspace_with_grads,
     expand_func_values_and_squeeze_integral,
     _setup_integration_domain,
+    _torch_trace_without_warnings,
 )
 
 
@@ -208,8 +209,6 @@ class GridIntegrator(BaseIntegrator):
         elif backend == "torch":
             # Torch requires explicit tracing with example inputs.
             def do_compile(example_integrand):
-                import torch
-
                 # Define traceable first and third steps
                 def step1(integration_domain):
                     grid_points, hs, n_per_dim = self.calculate_grid(
@@ -218,7 +217,7 @@ class GridIntegrator(BaseIntegrator):
                     return (
                         grid_points,
                         hs,
-                        torch.Tensor([n_per_dim]),
+                        anp.array([n_per_dim], like="torch"),
                     )  # n_per_dim is constant
 
                 dim = int(integration_domain.shape[0])
@@ -229,7 +228,7 @@ class GridIntegrator(BaseIntegrator):
                     )
 
                 # Trace the first step
-                step1 = torch.jit.trace(step1, (integration_domain,))
+                step1 = _torch_trace_without_warnings(step1, (integration_domain,))
 
                 # Get example input for the third step
                 grid_points, hs, n_per_dim = step1(integration_domain)
@@ -241,15 +240,7 @@ class GridIntegrator(BaseIntegrator):
                 )
 
                 # Trace the third step
-                # Avoid the warnings about a .grad attribute access of a
-                # non-leaf Tensor
-                if hs.requires_grad:
-                    hs = hs.detach()
-                    hs.requires_grad = True
-                if function_values.requires_grad:
-                    function_values = function_values.detach()
-                    function_values.requires_grad = True
-                step3 = torch.jit.trace(
+                step3 = _torch_trace_without_warnings(
                     step3, (function_values, hs, integration_domain)
                 )
 

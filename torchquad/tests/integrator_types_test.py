@@ -56,7 +56,9 @@ def _run_simple_integrations(backend):
             ("jax", "float64", "float32"),
         ]:
             continue
+
         integrator_name = type(integrator).__name__
+
         # VEGAS supports only numpy and torch
         if integrator_name == "VEGAS" and backend in ["jax", "tensorflow"]:
             continue
@@ -64,6 +66,15 @@ def _run_simple_integrations(backend):
         # Set the global precision
         set_precision(dtype_global, backend=backend)
 
+        # Determine expected dtype
+        if backend == "tensorflow":
+            import tensorflow as tf
+
+            expected_dtype_name = dtype_arg if dtype_arg else tf.keras.backend.floatx()
+        else:
+            expected_dtype_name = dtype_arg if dtype_arg else dtype_global
+
+        # Set integration domain
         integration_domain = [[0.0, 1.0], [-2.0, 0.0]]
         if dtype_arg is not None:
             # Set the integration_domain dtype which should have higher priority
@@ -75,18 +86,18 @@ def _run_simple_integrations(backend):
             )
             assert infer_backend(integration_domain) == backend
             assert get_dtype_name(integration_domain) == dtype_arg
-            expected_dtype_name = dtype_arg
-        else:
-            expected_dtype_name = dtype_global
 
         print(
-            f"[2mTesting {integrator_name} with {backend}, argument dtype"
-            f" {dtype_arg}, global/default dtype {dtype_global}[m"
+            f"Testing {integrator_name} with {backend}, argument dtype"
+            f" {dtype_arg}, global/default dtype {dtype_global}"
         )
+
+        # Integration
         if integrator_name in ["MonteCarlo", "VEGAS"]:
             extra_kwargs = {"seed": 0}
         else:
             extra_kwargs = {}
+
         result = integrator.integrate(
             fn=fn_const,
             dim=2,
@@ -95,8 +106,12 @@ def _run_simple_integrations(backend):
             backend=backend,
             **extra_kwargs,
         )
+
         assert infer_backend(result) == backend
-        assert get_dtype_name(result) == expected_dtype_name
+        assert (
+            get_dtype_name(result) == expected_dtype_name
+        ), f"Expected dtype {expected_dtype_name}, got {get_dtype_name(result)}"
+
         # VEGAS seems to be bad at integrating constant functions currently
         max_error = 0.03 if integrator_name == "VEGAS" else 1e-5
         assert anp.abs(result - (-4.0)) < max_error
