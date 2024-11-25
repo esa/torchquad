@@ -214,7 +214,7 @@ class Polynomial(IntegrationTestFunction):
                 # Tensorflow does not automatically cast float32 to complex128,
                 # so we do it here explicitly.
                 assert self.is_complex
-                exponentials = anp.cast(exponentials, self.coeffs.dtype)
+                exponentials = exponentials.astype(self.coeffs.dtype)
 
         # multiply by coefficients
         exponentials = anp.multiply(exponentials, self.coeffs)

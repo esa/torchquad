@@ -15,16 +15,17 @@ def _get_precision(backend):
 
 
 def set_precision(data_type="float32", backend="torch"):
-    """This function allows the user to set the default precision for floating point numbers for the given numerical backend.
+    """Set the default precision for floating-point numbers for the given numerical backend.
     Call before declaring your variables.
-    NumPy and Tensorflow don't have global dtypes:
+
+    NumPy and doesn't have global dtypes:
     https://github.com/numpy/numpy/issues/6860
-    https://github.com/tensorflow/tensorflow/issues/26033
-    Therefore, torchquad sets the dtype argument for these two when initialising the integration domain.
+
+    Therefore, torchquad sets the dtype argument for these it when initialising the integration domain.
 
     Args:
-        data_type (string, optional): Data type to use, either "float32" or "float64". Defaults to "float32".
-        backend (string, optional): Numerical backend for which the data type is changed. Defaults to "torch".
+        data_type (str, optional): Data type to use, either "float32" or "float64". Defaults to "float32".
+        backend (str, optional): Numerical backend for which the data type is changed. Defaults to "torch".
     """
     # Backwards-compatibility: allow "float" and "double", optionally with
     # upper-case letters
@@ -55,14 +56,19 @@ def set_precision(data_type="float32", backend="torch"):
         )
         torch.set_default_tensor_type(tensor_dtype)
     elif backend == "jax":
-        from jax.config import config
+        from jax import config
 
         config.update("jax_enable_x64", data_type == "float64")
         logger.info(f"JAX data type set to {data_type}")
-    elif backend in ["numpy", "tensorflow"]:
-        os.environ[f"TORCHQUAD_DTYPE_{backend.upper()}"] = data_type
-        logger.info(
-            f"Default dtype config for backend {backend} set to {_get_precision(backend)}"
-        )
+    elif backend == "tensorflow":
+        import tensorflow as tf
+
+        # Set TensorFlow global precision
+        tf.keras.backend.set_floatx(data_type)
+        logger.info(f"TensorFlow default floatx set to {tf.keras.backend.floatx()}")
+    elif backend == "numpy":
+        # NumPy still lacks global dtype support
+        os.environ["TORCHQUAD_DTYPE_NUMPY"] = data_type
+        logger.info(f"NumPy default dtype set to {_get_precision('numpy')}")
     else:
         logger.error(f"Changing the data type is not supported for backend {backend}")
