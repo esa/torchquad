@@ -141,6 +141,7 @@ def _setup_integration_domain(dim, integration_domain, backend):
         dtype_arg = _get_precision(backend)
         if backend == "tensorflow":
             import tensorflow as tf
+
             dtype_arg = dtype_arg or tf.keras.backend.floatx()
 
         integration_domain = anp.array(

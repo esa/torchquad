@@ -13,6 +13,7 @@ def _get_precision(backend):
     """
     return os.environ.get(f"TORCHQUAD_DTYPE_{backend.upper()}", None)
 
+
 def set_precision(data_type="float32", backend="torch"):
     """Set the default precision for floating-point numbers for the given numerical backend.
     Call before declaring your variables.
