@@ -68,7 +68,7 @@ def set_precision(data_type="float32", backend="torch"):
         logger.info(f"TensorFlow default floatx set to {tf.keras.backend.floatx()}")
     elif backend == "numpy":
         # NumPy still lacks global dtype support
-        os.environ[f"TORCHQUAD_DTYPE_NUMPY"] = data_type
+        os.environ["TORCHQUAD_DTYPE_NUMPY"] = data_type
         logger.info(f"NumPy default dtype set to {_get_precision('numpy')}")
     else:
         logger.error(f"Changing the data type is not supported for backend {backend}")
