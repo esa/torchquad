@@ -83,8 +83,10 @@ class BaseIntegrator:
                 len(result.shape) > 1
             ):  # if the the integrand is multi-dimensional, we need to reshape/repeat weights so they can be broadcast in the *=
                 integrand_shape = anp.array(
-                    result.shape[1:], like=infer_backend(points)
+                    [dim if isinstance(dim, int) else dim.as_list() for dim in result.shape[1:]],
+                    like=infer_backend(points)
                 )
+
                 weights = anp.repeat(
                     anp.expand_dims(weights, axis=1), anp.prod(integrand_shape)
                 ).reshape((weights.shape[0], *(integrand_shape)))
