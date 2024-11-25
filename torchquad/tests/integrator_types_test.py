@@ -69,9 +69,8 @@ def _run_simple_integrations(backend):
         # Determine expected dtype
         if backend == "tensorflow":
             import tensorflow as tf
-            expected_dtype_name = (
-                dtype_arg if dtype_arg else tf.keras.backend.floatx()
-            )
+
+            expected_dtype_name = dtype_arg if dtype_arg else tf.keras.backend.floatx()
         else:
             expected_dtype_name = dtype_arg if dtype_arg else dtype_global
 
@@ -109,14 +108,13 @@ def _run_simple_integrations(backend):
         )
 
         assert infer_backend(result) == backend
-        assert get_dtype_name(result) == expected_dtype_name, (
-            f"Expected dtype {expected_dtype_name}, got {get_dtype_name(result)}"
-        )
+        assert (
+            get_dtype_name(result) == expected_dtype_name
+        ), f"Expected dtype {expected_dtype_name}, got {get_dtype_name(result)}"
 
         # VEGAS seems to be bad at integrating constant functions currently
         max_error = 0.03 if integrator_name == "VEGAS" else 1e-5
         assert anp.abs(result - (-4.0)) < max_error
-
 
 
 test_integrate_numpy = setup_test_for_backend(_run_simple_integrations, "numpy", None)
