@@ -9,7 +9,7 @@ from setuptools import setup
 
 setup(
     name="torchquad",
-    version="0.4.0",
+    version="0.4.1",
     description="Package providing torch-based numerical integration methods.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
