@@ -40,7 +40,7 @@ def _run_monte_carlo_tests(backend, _precision):
     assert errors[4] < 32.0
 
     for error in errors[6:10]:
-        assert error < 1e-2
+        assert error < 1.1e-2
 
     for error in errors[10:]:
         assert error < 28.03

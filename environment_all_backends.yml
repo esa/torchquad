@@ -7,7 +7,7 @@ dependencies:
   - loguru>=0.5.3
   - matplotlib>=3.3.3
   - pytest>=6.2.1
-  - python>=3.8
+  - python==3.12
   - scipy>=1.6.0
   - sphinx>=3.4.3
   - sphinx_rtd_theme>=0.5.1
@@ -16,9 +16,9 @@ dependencies:
   - numpy>=1.19.5
   - cudatoolkit>=11.1
   - pytorch>=1.9 # CPU version
-  - tensorflow>=2.10.0 # CPU version
   # jaxlib with CUDA support is not available for conda
   - pip:
       - --find-links https://storage.googleapis.com/jax-releases/jax_releases.html
-      - jax[cpu]>=0.2.22 # this will only work on linux. for win see e.g. https://github.com/cloudhan/jax-windows-builder
+      - tensorflow>=2.18.0 # CPU version
+      - jax[cpu]>=0.4.17 # this will only work on linux. for win see e.g. https://github.com/cloudhan/jax-windows-builder
         # CPU version

@@ -139,20 +139,21 @@ def _setup_integration_domain(dim, integration_domain, backend):
             # Get a globally default backend
             backend = _get_default_backend()
         dtype_arg = _get_precision(backend)
-        if dtype_arg is not None:
-            # For NumPy and Tensorflow there is no global dtype, so set the
-            # configured default dtype here
-            integration_domain = anp.array(
-                integration_domain, like=backend, dtype=dtype_arg
-            )
-        else:
-            integration_domain = anp.array(integration_domain, like=backend)
+        if backend == "tensorflow":
+            import tensorflow as tf
+
+            dtype_arg = dtype_arg or tf.keras.backend.floatx()
+
+        integration_domain = anp.array(
+            integration_domain, like=backend, dtype=dtype_arg
+        )
 
     if integration_domain.shape != (dim, 2):
         raise ValueError(
             "The integration domain has an unexpected shape. "
             f"Expected {(dim, 2)}, got {integration_domain.shape}"
         )
+
     return integration_domain
 
 
