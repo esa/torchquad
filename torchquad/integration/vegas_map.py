@@ -30,6 +30,7 @@ class VEGASMap:
 
         # Boundary locations x_edges and subdomain stepsizes dx_edges
         # Subdivide the domain [0,1]^dim equally spaced in N-d, EQ 8
+
         self.dx_edges = (
             anp.ones((self.dim, self.N_intervals), dtype=self.dtype, like=self.backend)
             / self.N_intervals
@@ -195,7 +196,8 @@ class VEGASMap:
 
     def update_map(self):
         """Update the adaptive map, Section II C."""
-        smoothed_weights = self._smooth_map(self.weights, self.counts, self.alpha)
+        #smoothed_weights = self._smooth_map(self.weights, self.counts, self.alpha)
+        smoothed_weights = None
         if smoothed_weights is None:
             logger.warning(
                 "Cannot update the VEGASMap. This can happen with an integrand "

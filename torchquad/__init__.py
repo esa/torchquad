@@ -1,7 +1,5 @@
 import os
 from loguru import logger
-#Called to prevent library logs from being mixed with thoes of the user.
-logger.disable("torchquad") 
 
 # TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
