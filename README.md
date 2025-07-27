@@ -148,9 +148,10 @@ import torchquad
 torchquad._deployment_test()
 ```
 
-After cloning the repository, developers can check the functionality of `torchquad` by running the following command in the `torchquad/tests` directory:
+After cloning the repository, developers can check the functionality of `torchquad` by running
 
 ```sh
+pip install -e .
 pytest
 ```
 
