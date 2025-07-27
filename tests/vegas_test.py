@@ -186,7 +186,7 @@ def _run_vegas_special_case_checks(backend, dtype_name):
     print("Testing VEGAS with random numbers which are 0.0 and 1.0")
     # This test may be helpful to detect rounding and indexing errors which
     # would happen with a low probability with the usual RNG
-    with patch("integration.vegas.RNG", ModifiedRNG):
+    with patch("torchquad.integration.vegas.RNG", ModifiedRNG):
         integral = integrator.integrate(
             lambda x: anp.sum(x, axis=1),
             2,
