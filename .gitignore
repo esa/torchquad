@@ -134,3 +134,4 @@ pytest-coverage.txt
 pytest.xml
 CLAUDE.md
 claude_docs
+.claude/
