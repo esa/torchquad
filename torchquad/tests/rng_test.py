@@ -51,12 +51,8 @@ test_rng_numpy_f32 = setup_test_for_backend(_run_RNG_tests, "numpy", "float32")
 test_rng_numpy_f64 = setup_test_for_backend(_run_RNG_tests, "numpy", "float64")
 test_rng_torch_f32 = setup_test_for_backend(_run_RNG_tests, "torch", "float32")
 test_rng_torch_f64 = setup_test_for_backend(_run_RNG_tests, "torch", "float64")
-test_rng_tensorflow_f32 = setup_test_for_backend(
-    _run_RNG_tests, "tensorflow", "float32"
-)
-test_rng_tensorflow_f64 = setup_test_for_backend(
-    _run_RNG_tests, "tensorflow", "float64"
-)
+test_rng_tensorflow_f32 = setup_test_for_backend(_run_RNG_tests, "tensorflow", "float32")
+test_rng_tensorflow_f64 = setup_test_for_backend(_run_RNG_tests, "tensorflow", "float64")
 
 
 if __name__ == "__main__":

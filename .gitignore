@@ -132,3 +132,5 @@ my_notebooks
 .vscode
 pytest-coverage.txt
 pytest.xml
+CLAUDE.md
+claude_docs

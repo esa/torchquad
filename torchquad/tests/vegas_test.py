@@ -79,9 +79,7 @@ def _run_vegas_accuracy_checks(backend, dtype_name):
     integrator = VEGAS()
 
     print("Integrating a function with a single peak")
-    integration_domain = anp.array(
-        [[1.0, 5.0], [-4.0, 4.0], [2.0, 6.0]], dtype=dtype, like=backend
-    )
+    integration_domain = anp.array([[1.0, 5.0], [-4.0, 4.0], [2.0, 6.0]], dtype=dtype, like=backend)
     dim = integration_domain.shape[0]
 
     def integrand_hypercube_peak(x):
@@ -92,9 +90,7 @@ def _run_vegas_accuracy_checks(backend, dtype_name):
         # to zero for all passed points
         return astype(in_cube, dtype_name) + 0.001
 
-    reference_integral = (
-        anp.prod(integration_domain[:, 1] - integration_domain[:, 0]) * 0.001 + 1.0
-    )
+    reference_integral = anp.prod(integration_domain[:, 1] - integration_domain[:, 0]) * 0.001 + 1.0
 
     # Use multiple seeds to reduce luck
     for seed in [0, 1, 2, 3, 41317]:
@@ -154,18 +150,14 @@ class ModifiedRNG(RNG):
     def __init__(self, *args, **kargs):
         super().__init__(*args, **kargs)
         rng_uniform = self.uniform
-        self.uniform = lambda *args, **kargs: self.modify_numbers(
-            rng_uniform(*args, **kargs)
-        )
+        self.uniform = lambda *args, **kargs: self.modify_numbers(rng_uniform(*args, **kargs))
 
     def modify_numbers(self, numbers):
         """Change the randomly generated numbers"""
         zeros = anp.zeros(numbers.shape, dtype=numbers.dtype, like=numbers)
         ones = anp.ones(numbers.shape, dtype=numbers.dtype, like=numbers)
         # Replace half of the random values randomly with 0.0 or 1.0
-        return anp.where(
-            numbers < 0.5, numbers * 2.0, anp.where(numbers < 0.75, zeros, ones)
-        )
+        return anp.where(numbers < 0.5, numbers * 2.0, anp.where(numbers < 0.75, zeros, ones))
 
 
 def _run_vegas_special_case_checks(backend, dtype_name):

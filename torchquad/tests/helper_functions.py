@@ -19,12 +19,8 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
     if integration_dim == 1:
         res = [
             # Real numbers
-            Polynomial(
-                4.0, [2.0], is_complex=False, backend=backend, integrand_dims=1
-            ),  # y = 2
-            Polynomial(
-                0, [0, 1], is_complex=False, backend=backend, integrand_dims=1
-            ),  # y = x
+            Polynomial(4.0, [2.0], is_complex=False, backend=backend, integrand_dims=1),  # y = 2
+            Polynomial(0, [0, 1], is_complex=False, backend=backend, integrand_dims=1),  # y = x
             Polynomial(
                 2 / 3,
                 [0, 0, 2],
@@ -83,12 +79,8 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
             ),
             #
             # Complex numbers
-            Polynomial(
-                4.0j, [2.0j], is_complex=True, backend=backend, integrand_dims=1
-            ),  # y = 2j
-            Polynomial(
-                0, [0, 1j], is_complex=True, backend=backend, integrand_dims=1
-            ),  # y = xj
+            Polynomial(4.0j, [2.0j], is_complex=True, backend=backend, integrand_dims=1),  # y = 2j
+            Polynomial(0, [0, 1j], is_complex=True, backend=backend, integrand_dims=1),  # y = xj
             # y=7x^4-3jx^3+2x^2-jx+3
             Polynomial(
                 44648.0 / 15.0,
@@ -264,9 +256,7 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
                 ),  # f(x,y,z) = x + y + z
                 # Over 3 integrand dims
                 Polynomial(  # MC tests fail here with default float32 precision, so need float64
-                    np.array(
-                        [[[0.0, 48.0], [96.0, 144.0]], [[192.0, 240.0], [288.0, 336.0]]]
-                    ),
+                    np.array([[[0.0, 48.0], [96.0, 144.0]], [[192.0, 240.0], [288.0, 336.0]]]),
                     integration_dim=3,
                     domain=anp.array(
                         [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]],
@@ -312,8 +302,7 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
         ]
     else:
         raise ValueError(
-            "Not testing functions implemented for integration_dim "
-            + str(integration_dim)
+            "Not testing functions implemented for integration_dim " + str(integration_dim)
         )
 
 
@@ -353,16 +342,12 @@ def compute_integration_test_errors(
             continue
         if backend == "torch":
             diff = np.abs(
-                test_function.evaluate(integrator, integrator_args)
-                .cpu()
-                .detach()
-                .numpy()
+                test_function.evaluate(integrator, integrator_args).cpu().detach().numpy()
                 - test_function.expected_result
             )
         else:
             diff = np.abs(
-                test_function.evaluate(integrator, integrator_args)
-                - test_function.expected_result
+                test_function.evaluate(integrator, integrator_args) - test_function.expected_result
             )
         if test_function.is_integrand_1d:
             errors.append(diff)

@@ -34,12 +34,8 @@ class VEGASMap:
             anp.ones((self.dim, self.N_intervals), dtype=self.dtype, like=self.backend)
             / self.N_intervals
         )
-        x_edges_per_dim = anp.linspace(
-            0.0, 1.0, N_edges, dtype=self.dtype, like=self.backend
-        )
-        self.x_edges = anp.repeat(
-            anp.reshape(x_edges_per_dim, [1, N_edges]), self.dim, axis=0
-        )
+        x_edges_per_dim = anp.linspace(0.0, 1.0, N_edges, dtype=self.dtype, like=self.backend)
+        self.x_edges = anp.repeat(anp.reshape(x_edges_per_dim, [1, N_edges]), self.dim, axis=0)
 
         # Initialize self.weights and self.counts
         self._reset_weight()
@@ -132,14 +128,10 @@ class VEGASMap:
             # their nearest neighbouring intervals
             # (up to a distance of 10 indices).
             for _ in range(10):
-                weights[:, :-1] = anp.where(
-                    z_idx[:, :-1], weights[:, 1:], weights[:, :-1]
-                )
+                weights[:, :-1] = anp.where(z_idx[:, :-1], weights[:, 1:], weights[:, :-1])
                 # The asterisk corresponds to a logical And here
                 z_idx[:, :-1] = z_idx[:, :-1] * z_idx[:, 1:]
-                weights[:, 1:] = anp.where(
-                    z_idx[:, 1:], weights[:, :-1], weights[:, 1:]
-                )
+                weights[:, 1:] = anp.where(z_idx[:, 1:], weights[:, :-1], weights[:, 1:])
                 z_idx[:, 1:] = z_idx[:, 1:] * z_idx[:, :-1]
                 logger.opt(lazy=True).debug(
                     "  remaining intervals: {z_idx_sum}",
@@ -174,18 +166,14 @@ class VEGASMap:
 
         # Range compression
         # EQ 19
-        d_tmp[d_tmp != 0] = (
-            (d_tmp[d_tmp != 0] - 1.0) / anp.log(d_tmp[d_tmp != 0])
-        ) ** alpha
+        d_tmp[d_tmp != 0] = ((d_tmp[d_tmp != 0] - 1.0) / anp.log(d_tmp[d_tmp != 0])) ** alpha
 
         return d_tmp
 
     def _reset_weight(self):
         """Reset or initialize weights and counts."""
         # weights in each intervall
-        self.weights = anp.zeros(
-            (self.dim, self.N_intervals), dtype=self.dtype, like=self.backend
-        )
+        self.weights = anp.zeros((self.dim, self.N_intervals), dtype=self.dtype, like=self.backend)
         # numbers of random samples in specific interval
         self.counts = anp.zeros(
             (self.dim, self.N_intervals),
@@ -217,29 +205,22 @@ class VEGASMap:
             # with float32 precision is too inaccurate which leads to wrong
             # indices, so cast to float64 here.
             delta_d_multiples = astype(
-                anp.cumsum(astype(smoothed_weights[i, :-1], "float64"), axis=0)
-                / delta_d,
+                anp.cumsum(astype(smoothed_weights[i, :-1], "float64"), axis=0) / delta_d,
                 "int64",
             )
             # For each number of delta_d multiples in {0, 1, …, N_intervals},
             # determine how many intervals belong to it (num_sw_per_dw)
             # and the sum of smoothed weights in these intervals (val_sw_per_dw)
             dtype_int = delta_d_multiples.dtype
-            num_sw_per_dw = anp.zeros(
-                [self.N_intervals + 1], dtype=dtype_int, like=delta_d
-            )
+            num_sw_per_dw = anp.zeros([self.N_intervals + 1], dtype=dtype_int, like=delta_d)
             _add_at_indices(
                 num_sw_per_dw,
                 delta_d_multiples,
                 anp.ones(delta_d_multiples.shape, dtype=dtype_int, like=delta_d),
                 is_sorted=True,
             )
-            val_sw_per_dw = anp.zeros(
-                [self.N_intervals + 1], dtype=self.dtype, like=delta_d
-            )
-            _add_at_indices(
-                val_sw_per_dw, delta_d_multiples, smoothed_weights[i], is_sorted=True
-            )
+            val_sw_per_dw = anp.zeros([self.N_intervals + 1], dtype=self.dtype, like=delta_d)
+            _add_at_indices(val_sw_per_dw, delta_d_multiples, smoothed_weights[i], is_sorted=True)
             # The cumulative sum of the number of smoothed weights per delta_d
             # multiple determines the old inner edges indices for the new inner
             # edges calculation

@@ -87,9 +87,7 @@ class IntegrationTestFunction:
             )
             return self.integrand_scaling(self.f(x))
 
-        return integrator(
-            fn=integrand, integration_domain=self.domain, **integration_args
-        )
+        return integrator(fn=integrand, integration_domain=self.domain, **integration_args)
 
     def get_order(self):
         """Get the order (polynomial degree) of the function
@@ -113,9 +111,7 @@ class IntegrationTestFunction:
         if self.is_integrand_1d:
             return integrand_scaling * integrand
         if self._is_integrand_tensor:
-            scaling_einsum = "".join(
-                [chr(i + 65) for i in range(len(self.integrand_dims))]
-            )
+            scaling_einsum = "".join([chr(i + 65) for i in range(len(self.integrand_dims))])
             return anp.einsum(
                 f"i,{scaling_einsum}->i{scaling_einsum}", integrand, integrand_scaling
             )

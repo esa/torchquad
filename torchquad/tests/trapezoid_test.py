@@ -96,9 +96,7 @@ def _run_trapezoid_tests(backend, _precision):
             # which is then re-used on all other integrations (as is the point of JIT).
             nonlocal jit_integrate
             if jit_integrate is None:
-                jit_integrate = tp.get_jit_compiled_integrate(
-                    dim=1, N=N, backend=backend
-                )
+                jit_integrate = tp.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
             return jit_integrate(*args, **kwargs)
 
         errors, funcs = compute_integration_test_errors(
@@ -120,9 +118,7 @@ def _run_trapezoid_tests(backend, _precision):
         for error in errors:
             assert error < 1e-5
 
-        jit_integrate = (
-            None  # set to None again so can be re-used with new integrand shape
-        )
+        jit_integrate = None  # set to None again so can be re-used with new integrand shape
 
         errors, funcs = compute_integration_test_errors(
             integrate,
@@ -146,9 +142,7 @@ def _run_trapezoid_tests(backend, _precision):
 test_integrate_numpy = setup_test_for_backend(_run_trapezoid_tests, "numpy", "float64")
 test_integrate_torch = setup_test_for_backend(_run_trapezoid_tests, "torch", "float64")
 test_integrate_jax = setup_test_for_backend(_run_trapezoid_tests, "jax", "float64")
-test_integrate_tensorflow = setup_test_for_backend(
-    _run_trapezoid_tests, "tensorflow", "float64"
-)
+test_integrate_tensorflow = setup_test_for_backend(_run_trapezoid_tests, "tensorflow", "float64")
 
 
 if __name__ == "__main__":

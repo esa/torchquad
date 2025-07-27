@@ -52,9 +52,7 @@ class GridIntegrator(BaseIntegrator):
         )
         self._nr_of_fevals = num_points
 
-        return self.calculate_result(
-            function_values, dim, n_per_dim, hs, integration_domain
-        )
+        return self.calculate_result(function_values, dim, n_per_dim, hs, integration_domain)
 
     @expand_func_values_and_squeeze_integral
     def calculate_result(self, function_values, dim, n_per_dim, hs, integration_domain):
@@ -80,22 +78,16 @@ class GridIntegrator(BaseIntegrator):
         einsum = "".join(
             [chr(i + 65) for i in range(len(function_values.shape))]
         )  # chr(i + 65) generates an alphabetical character
-        reshaped_function_values = anp.einsum(
-            f"{einsum}->{einsum[1:]}{einsum[0]}", function_values
-        )
+        reshaped_function_values = anp.einsum(f"{einsum}->{einsum[1:]}{einsum[0]}", function_values)
         reshaped_function_values = reshaped_function_values.reshape(new_shape)
         assert new_shape == list(
             reshaped_function_values.shape
         ), f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
         logger.debug("Computing areas.")
 
-        result = self._apply_composite_rule(
-            reshaped_function_values, dim, hs, integration_domain
-        )
+        result = self._apply_composite_rule(reshaped_function_values, dim, hs, integration_domain)
 
-        logger.opt(lazy=True).info(
-            "Computed integral: {result}", result=lambda: str(result)
-        )
+        logger.opt(lazy=True).info("Computed integral: {result}", result=lambda: str(result))
         return result
 
     def calculate_grid(
@@ -139,9 +131,7 @@ class GridIntegrator(BaseIntegrator):
         # Nothing to do by default
         return N
 
-    def get_jit_compiled_integrate(
-        self, dim, N=None, integration_domain=None, backend=None
-    ):
+    def get_jit_compiled_integrate(self, dim, N=None, integration_domain=None, backend=None):
         """Create an integrate function where the performance-relevant steps except the integrand evaluation are JIT compiled.
         Use this method only if the integrand cannot be compiled.
         The compilation happens when the function is executed the first time.
@@ -170,9 +160,7 @@ class GridIntegrator(BaseIntegrator):
                 if not hasattr(self, "_tf_jit_calculate_grid"):
                     import tensorflow as tf
 
-                    self._tf_jit_calculate_grid = tf.function(
-                        self.calculate_grid, jit_compile=True
-                    )
+                    self._tf_jit_calculate_grid = tf.function(self.calculate_grid, jit_compile=True)
                     self._tf_jit_calculate_result = tf.function(
                         self.calculate_result, jit_compile=True
                     )
@@ -211,9 +199,7 @@ class GridIntegrator(BaseIntegrator):
             def do_compile(example_integrand):
                 # Define traceable first and third steps
                 def step1(integration_domain):
-                    grid_points, hs, n_per_dim = self.calculate_grid(
-                        N, integration_domain
-                    )
+                    grid_points, hs, n_per_dim = self.calculate_grid(N, integration_domain)
                     return (
                         grid_points,
                         hs,

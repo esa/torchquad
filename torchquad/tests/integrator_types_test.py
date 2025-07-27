@@ -120,9 +120,7 @@ def _run_simple_integrations(backend):
 test_integrate_numpy = setup_test_for_backend(_run_simple_integrations, "numpy", None)
 test_integrate_torch = setup_test_for_backend(_run_simple_integrations, "torch", None)
 test_integrate_jax = setup_test_for_backend(_run_simple_integrations, "jax", None)
-test_integrate_tensorflow = setup_test_for_backend(
-    _run_simple_integrations, "tensorflow", None
-)
+test_integrate_tensorflow = setup_test_for_backend(_run_simple_integrations, "tensorflow", None)
 
 
 if __name__ == "__main__":

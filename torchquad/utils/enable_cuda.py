@@ -20,6 +20,4 @@ def enable_cuda(data_type="float32"):
         if data_type is not None:
             set_precision(data_type)
     else:
-        logger.warning(
-            "Error enabling CUDA. cuda.is_available() returned False. CPU will be used."
-        )
+        logger.warning("Error enabling CUDA. cuda.is_available() returned False. CPU will be used.")
