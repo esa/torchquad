@@ -1,12 +1,8 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import to_backend_dtype
 
-from integration.rng import RNG
-from integration.vegas_stratification import VEGASStratification
+from torchquad.integration.rng import RNG
+from torchquad.integration.vegas_stratification import VEGASStratification
 
 from helper_functions import setup_test_for_backend
 

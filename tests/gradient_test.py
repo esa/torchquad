@@ -1,17 +1,13 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import to_numpy, to_backend_dtype, get_dtype_name
 import numpy as np
 
-from integration.vegas import VEGAS
-from integration.monte_carlo import MonteCarlo
-from integration.trapezoid import Trapezoid
-from integration.simpson import Simpson
-from integration.boole import Boole
-from integration.gaussian import GaussLegendre
+from torchquad.integration.vegas import VEGAS
+from torchquad.integration.monte_carlo import MonteCarlo
+from torchquad.integration.trapezoid import Trapezoid
+from torchquad.integration.simpson import Simpson
+from torchquad.integration.boole import Boole
+from torchquad.integration.gaussian import GaussLegendre
 
 from helper_functions import setup_test_for_backend
 

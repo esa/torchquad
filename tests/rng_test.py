@@ -1,11 +1,7 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name, to_backend_dtype, to_numpy
 
-from integration.rng import RNG
+from torchquad.integration.rng import RNG
 
 from helper_functions import setup_test_for_backend
 

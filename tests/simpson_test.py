@@ -1,10 +1,6 @@
-import sys
-
-sys.path.append("../")
-
 import warnings
 
-from integration.simpson import Simpson
+from torchquad.integration.simpson import Simpson
 from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,

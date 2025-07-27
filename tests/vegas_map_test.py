@@ -1,11 +1,7 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import to_backend_dtype
 
-from integration.vegas_map import VEGASMap
+from torchquad.integration.vegas_map import VEGASMap
 
 from helper_functions import setup_test_for_backend
 

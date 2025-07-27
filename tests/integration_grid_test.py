@@ -7,9 +7,9 @@ sys.path.append("../")
 from autoray import numpy as anp
 from autoray import to_backend_dtype
 import autoray as ar
-from integration.integration_grid import IntegrationGrid
-from integration.grid_integrator import GridIntegrator
-from integration.utils import _linspace_with_grads
+from torchquad.integration.integration_grid import IntegrationGrid
+from torchquad.integration.grid_integrator import GridIntegrator
+from torchquad.integration.utils import _linspace_with_grads
 from helper_functions import setup_test_for_backend
 
 

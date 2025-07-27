@@ -4,8 +4,8 @@ from autoray import numpy as anp
 import autoray as ar
 
 from integration_test_functions import Polynomial, Exponential, Sinusoid
-from utils.set_up_backend import set_up_backend
-from utils.set_log_level import set_log_level
+from torchquad.utils.set_up_backend import set_up_backend
+from torchquad.utils.set_log_level import set_log_level
 
 
 def get_test_functions(integration_dim, backend, use_multi_dim_integrand):

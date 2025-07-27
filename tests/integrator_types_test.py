@@ -3,20 +3,16 @@
 Additional integration tests to check if dtypes, shapes and similar
 backend-specific properties
 """
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name, to_backend_dtype
 from itertools import product
 
-from integration.trapezoid import Trapezoid
-from integration.simpson import Simpson
-from integration.boole import Boole
-from integration.monte_carlo import MonteCarlo
-from integration.vegas import VEGAS
-from utils.set_precision import set_precision
+from torchquad.integration.trapezoid import Trapezoid
+from torchquad.integration.simpson import Simpson
+from torchquad.integration.boole import Boole
+from torchquad.integration.monte_carlo import MonteCarlo
+from torchquad.integration.vegas import VEGAS
+from torchquad.utils.set_precision import set_precision
 from helper_functions import setup_test_for_backend
 
 

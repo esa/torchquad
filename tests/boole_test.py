@@ -1,10 +1,6 @@
-import sys
-
-sys.path.append("../")
-
 import warnings
 
-from integration.boole import Boole
+from torchquad.integration.boole import Boole
 from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,

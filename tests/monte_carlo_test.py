@@ -1,8 +1,4 @@
-import sys
-
-sys.path.append("../")
-
-from integration.monte_carlo import MonteCarlo
+from torchquad.integration.monte_carlo import MonteCarlo
 from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,

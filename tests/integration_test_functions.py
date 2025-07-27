@@ -1,13 +1,9 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import infer_backend
 from numpy import inf
 from loguru import logger
 
-from integration.utils import _setup_integration_domain
+from torchquad.integration.utils import _setup_integration_domain
 
 
 class IntegrationTestFunction:

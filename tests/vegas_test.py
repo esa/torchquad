@@ -1,7 +1,3 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import to_backend_dtype, astype
 import timeit
@@ -9,8 +5,8 @@ import cProfile
 import pstats
 from unittest.mock import patch
 
-from integration.vegas import VEGAS
-from integration.rng import RNG
+from torchquad.integration.vegas import VEGAS
+from torchquad.integration.rng import RNG
 
 from helper_functions import (
     compute_integration_test_errors,

@@ -1,21 +1,17 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name, to_backend_dtype
 import importlib
 import pytest
 import warnings
 
-from integration.utils import (
+from torchquad.integration.utils import (
     _linspace_with_grads,
     _add_at_indices,
     _setup_integration_domain,
     _is_compiling,
 )
-from utils.set_precision import set_precision
-from utils.enable_cuda import enable_cuda
+from torchquad.utils.set_precision import set_precision
+from torchquad.utils.enable_cuda import enable_cuda
 
 
 def _run_tests_with_all_backends(func, func_extra_args=[{}]):
