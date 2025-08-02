@@ -37,7 +37,7 @@ except ImportError:
     toml = None
 
 # torchquad imports
-from torchquad import Simpson, GaussLegendre, MonteCarlo, VEGAS, enable_cuda
+from torchquad import Simpson, GaussLegendre, MonteCarlo, VEGAS, enable_cuda, Boole
 from torchquad.utils.set_precision import set_precision
 
 
@@ -248,19 +248,24 @@ class ModularBenchmark:
 
         start_time = time.perf_counter()
         try:
-            mc_ref = MonteCarlo()
-            ref_points_key = f"reference_points_{dim}d"
-            ref_points = self.config["convergence"].get(ref_points_key, 1000000)
+            if dim <= 3:
+                ref = Boole()
+                ref_points = self.config["convergence"].get(f"reference_points_{dim}d", 1000000)
+                ref_result = ref.integrate(func, dim=dim, N=ref_points, integration_domain=domain)
+                self.logger.info(
+                    f"Boole's rule reference ({ref_points} pts): {ref_result.item():.8e}"
+                )
+            elif dim > 3:
+                vegas_ref = VEGAS()
+                ref_points_key = f"reference_points_{dim}d"
+                ref_points = self.config["convergence"].get(ref_points_key, 1000000)
 
-            ref_result = mc_ref.integrate(
-                func, dim=dim, N=ref_points, integration_domain=domain, seed=12345
-            )
+                ref_result = vegas_ref.integrate(
+                    func, dim=dim, N=ref_points, integration_domain=domain, seed=12345
+                )
+                self.logger.info(f"VEGAS reference ({ref_points} pts): {ref_result.item():.8e}")
             reference = ref_result.item()
-            elapsed = time.perf_counter() - start_time
 
-            self.logger.info(
-                f"Reference ({ref_points} MC pts): {reference:.8e} (took {elapsed:.2f}s)"
-            )
             return reference
 
         except Exception as e:
@@ -324,6 +329,7 @@ class ModularBenchmark:
                 errors.append(error)
                 times.append(end_time - start_time)
                 actual_n.append(n)
+                torch.cuda.empty_cache()
 
                 # Log progress
                 if i % 2 == 0 or n >= 100000:
@@ -338,7 +344,6 @@ class ModularBenchmark:
 
         total_time = time.perf_counter() - method_start
         self.logger.info(f"{method_name} completed in {total_time:.2f}s")
-
         return {"n_points": actual_n, "errors": errors, "times": times, "total_time": total_time}
 
     def benchmark_scipy_methods(self, func_np, dim: int, reference: float) -> Dict:
@@ -357,7 +362,13 @@ class ModularBenchmark:
             elif dim <= 7:
                 limit_key = f"nquad_limit_{dim}d"
                 limit = self.config["scipy"].get(limit_key, 20)
-                scipy_result, _ = nquad(func_np, [(0, 1)] * dim, opts={"limit": limit})
+                epsabs = self.config["scipy"]["nquad_epsabs"]
+                epsrel = self.config["scipy"]["nquad_epsrel"]
+                scipy_result, _ = nquad(
+                    func_np,
+                    [(0, 1)] * dim,
+                    opts={"limit": limit, "epsabs": epsabs, "epsrel": epsrel},
+                )
             elif dim == 15:
                 # Attempt 15D with loose tolerances
                 epsabs = self.config["scipy"]["nquad_epsabs_15d"]
@@ -369,7 +380,7 @@ class ModularBenchmark:
                     [(0, 1)] * dim,
                     opts={"limit": limit, "epsabs": epsabs, "epsrel": epsrel},
                 )
-                self.logger.info(f"15D nquad succeeded with loose tolerances")
+                self.logger.info("15D nquad succeeded with loose tolerances")
 
             end_time = time.perf_counter()
             scipy_error = max(abs(scipy_result - reference), 1e-16)
@@ -379,7 +390,7 @@ class ModularBenchmark:
                 "time": end_time - start_time,
             }
             self.logger.info(
-                f"SciPy nquad: error={scipy_error:.2e}, time={end_time-start_time:.4f}s"
+                f"SciPy nquad: error={scipy_error:.2e}, time={end_time - start_time:.4f}s"
             )
 
         except Exception as e:
@@ -436,9 +447,9 @@ class ModularBenchmark:
             self.logger.info(f"Skipping {dim}D convergence (disabled in config)")
             return None
 
-        self.logger.info(f"=" * 60)
+        self.logger.info("=" * 60)
         self.logger.info(f"BENCHMARKING {dim}D CONVERGENCE")
-        self.logger.info(f"=" * 60)
+        self.logger.info("=" * 60)
 
         # Get function and configuration
         func_map = {
@@ -483,10 +494,10 @@ class ModularBenchmark:
 
         # Benchmark torchquad methods
         integrators = {
-            "simpson": Simpson(), 
-            "gauss_legendre": GaussLegendre(), 
-            "monte_carlo": MonteCarlo(), 
-            "vegas": VEGAS()
+            "simpson": Simpson(),
+            "gauss_legendre": GaussLegendre(),
+            "monte_carlo": MonteCarlo(),
+            "vegas": VEGAS(),
         }
 
         results = {"dim": dim, "function": name, "description": description, "reference": reference}
@@ -504,7 +515,7 @@ class ModularBenchmark:
             )
 
         # Benchmark scipy methods
-        if func_np:
+        if func_np and dim < 7:
             results["scipy"] = self.benchmark_scipy_methods(func_np, dim, reference)
 
         # Store timing information
@@ -590,63 +601,79 @@ class ModularBenchmark:
         except Exception as e:
             self.logger.error(f"Failed to load results: {e}")
             return {}
-    
+
     def benchmark_scaling_analysis(self) -> tuple:
         """Scaling analysis with multiple runs and error bars."""
         self.logger.info("Scaling analysis with error bars...")
-        
+
         def test_integrand(x):
             """Simple quadratic function for scaling tests."""
             return torch.sum(x**2, dim=1)
-        
+
         # Strong scaling - multiple runs for error estimation
         strong_results = {}
-        num_runs = self.config.get('scaling', {}).get('num_runs', 3)
-        
-        batch_sizes = self.config.get('scaling', {}).get('strong_batch_sizes', [50000, 100000, 250000])
+        num_runs = self.config.get("scaling", {}).get("num_runs", 3)
+
+        batch_sizes = self.config.get("scaling", {}).get(
+            "strong_batch_sizes", [50000, 100000, 250000]
+        )
         test_cases = [
-            {'dim': 1, 'total_work': self.config.get('scaling', {}).get('strong_total_work_1d', 1000000), 'name': '1D: 1M points'},
-            {'dim': 3, 'total_work': self.config.get('scaling', {}).get('strong_total_work_3d', 1000000), 'name': '3D: 1M points'},
+            {
+                "dim": 1,
+                "total_work": self.config.get("scaling", {}).get("strong_total_work_1d", 1000000),
+                "name": "1D: 1M points",
+            },
+            {
+                "dim": 3,
+                "total_work": self.config.get("scaling", {}).get("strong_total_work_3d", 1000000),
+                "name": "3D: 1M points",
+            },
         ]
-        
+
         for case in test_cases:
             self.logger.info(f"  Strong scaling: {case['name']}")
-            case_results = {'batch_sizes': [], 'times_mean': [], 'times_std': [], 'efficiency_mean': [], 'efficiency_std': []}
-            
+            case_results = {
+                "batch_sizes": [],
+                "times_mean": [],
+                "times_std": [],
+                "efficiency_mean": [],
+                "efficiency_std": [],
+            }
+
             reference_time = None
-            
+
             for batch_size in batch_sizes:
-                if batch_size > case['total_work']:
+                if batch_size > case["total_work"]:
                     break
-                
+
                 self.logger.info(f"    Batch size {batch_size}: ")
-                
+
                 run_times = []
                 run_efficiencies = []
-                
+
                 for run in range(num_runs):
                     try:
-                        domain = [[0, 1]] * case['dim']
+                        domain = [[0, 1]] * case["dim"]
                         integrator = Simpson()
-                        
-                        num_batches = case['total_work'] // batch_size
-                        
+
+                        num_batches = case["total_work"] // batch_size
+
                         start_time = time.perf_counter()
-                        
+
                         # Run a sample of batches for timing
                         sample_batches = min(1, num_batches)
                         for i in range(sample_batches):
                             result = integrator.integrate(
-                                test_integrand, 
-                                dim=case['dim'], 
+                                test_integrand,
+                                dim=case["dim"],
                                 N=batch_size,
-                                integration_domain=domain
+                                integration_domain=domain,
                             )
-                        
+
                         elapsed = time.perf_counter() - start_time
                         estimated_total_time = elapsed * (num_batches / sample_batches)
                         run_times.append(estimated_total_time)
-                        
+
                         if reference_time is None:
                             run_efficiencies.append(1.0)
                         else:
@@ -654,149 +681,165 @@ class ModularBenchmark:
                             theoretical_time = reference_time / effective_parallelism
                             efficiency = min(1.0, theoretical_time / estimated_total_time)
                             run_efficiencies.append(efficiency)
-                            
+
                     except Exception as e:
                         self.logger.warning(f"Run {run} failed: {e}")
                         continue
-                
+
                 if run_times:
                     import statistics
+
                     mean_time = statistics.mean(run_times)
                     std_time = statistics.stdev(run_times) if len(run_times) > 1 else 0
-                    
+
                     if reference_time is None:
                         reference_time = mean_time
                         mean_eff = 1.0
                         std_eff = 0.0
                     else:
                         mean_eff = statistics.mean(run_efficiencies)
-                        std_eff = statistics.stdev(run_efficiencies) if len(run_efficiencies) > 1 else 0
-                    
-                    case_results['batch_sizes'].append(batch_size)
-                    case_results['times_mean'].append(mean_time)
-                    case_results['times_std'].append(std_time)
-                    case_results['efficiency_mean'].append(mean_eff)
-                    case_results['efficiency_std'].append(std_eff)
-                    
+                        std_eff = (
+                            statistics.stdev(run_efficiencies) if len(run_efficiencies) > 1 else 0
+                        )
+
+                    case_results["batch_sizes"].append(batch_size)
+                    case_results["times_mean"].append(mean_time)
+                    case_results["times_std"].append(std_time)
+                    case_results["efficiency_mean"].append(mean_eff)
+                    case_results["efficiency_std"].append(std_eff)
+
                     self.logger.info(f"efficiency={mean_eff:.3f}±{std_eff:.3f}")
                 else:
                     self.logger.warning("All runs failed")
                     break
-            
-            strong_results[case['name']] = case_results
-        
+
+            strong_results[case["name"]] = case_results
+
         # Weak scaling - corrected with constant work for MC
         weak_results = {}
-        
-        work_per_dim = self.config.get('scaling', {}).get('weak_work_per_dim', [1000000, 100000, 5000])
-        mc_constant_work = self.config.get('scaling', {}).get('weak_mc_constant_work', 1000000)
-        
+
+        work_per_dim = self.config.get("scaling", {}).get(
+            "weak_work_per_dim", [1000000, 100000, 5000]
+        )
+        mc_constant_work = self.config.get("scaling", {}).get("weak_mc_constant_work", 1000000)
+
         test_cases = [
-            {'dim': 1, 'work_per_dim': work_per_dim[0], 'mc_work': mc_constant_work},
-            {'dim': 3, 'work_per_dim': work_per_dim[1], 'mc_work': mc_constant_work},
-            {'dim': 7, 'work_per_dim': work_per_dim[2], 'mc_work': mc_constant_work},
+            {"dim": 1, "work_per_dim": work_per_dim[0], "mc_work": mc_constant_work},
+            {"dim": 3, "work_per_dim": work_per_dim[1], "mc_work": mc_constant_work},
+            {"dim": 7, "work_per_dim": work_per_dim[2], "mc_work": mc_constant_work},
         ]
-        
-        for method_name in ['simpson', 'monte_carlo']:
+
+        for method_name in ["simpson", "monte_carlo"]:
             self.logger.info(f"  Weak scaling: {method_name}")
-            method_results = {'dimensions': [], 'times_mean': [], 'times_std': [], 'efficiency_mean': [], 'efficiency_std': []}
+            method_results = {
+                "dimensions": [],
+                "times_mean": [],
+                "times_std": [],
+                "efficiency_mean": [],
+                "efficiency_std": [],
+            }
             reference_time = None
-            
+
             for i, case in enumerate(test_cases):
                 self.logger.info(f"    {case['dim']}D: ")
-                
+
                 run_times = []
                 run_efficiencies = []
-                
+
                 for run in range(num_runs):
                     try:
-                        domain = [[0, 1]] * case['dim']
-                        
-                        if method_name == 'simpson':
+                        domain = [[0, 1]] * case["dim"]
+
+                        if method_name == "simpson":
                             integrator = Simpson()
                             # Scale work appropriately for grid methods
-                            actual_N = case['work_per_dim'] ** case['dim']
+                            actual_N = case["work_per_dim"] ** case["dim"]
                         else:
                             integrator = MonteCarlo()
                             # Keep work constant for MC (true weak scaling)
-                            actual_N = case['mc_work']
-                        
+                            actual_N = case["mc_work"]
+
                         start_time = time.perf_counter()
-                        
-                        if method_name == 'monte_carlo':
+
+                        if method_name == "monte_carlo":
                             result = integrator.integrate(
                                 test_integrand,
-                                dim=case['dim'],
+                                dim=case["dim"],
                                 N=actual_N,
                                 integration_domain=domain,
-                                seed=42 + run
+                                seed=42 + run,
                             )
                         else:
                             result = integrator.integrate(
                                 test_integrand,
-                                dim=case['dim'],
+                                dim=case["dim"],
                                 N=actual_N,
-                                integration_domain=domain
+                                integration_domain=domain,
                             )
-                        
+
                         elapsed = time.perf_counter() - start_time
                         run_times.append(elapsed)
-                        
+
                         if i == 0:  # First dimension
                             run_efficiencies.append(1.0)
                         else:
                             efficiency = min(1.0, reference_time / elapsed)
                             run_efficiencies.append(efficiency)
-                            
+
                     except Exception as e:
                         self.logger.warning(f"Run {run} failed: {e}")
                         continue
-                
+
                 if run_times:
                     import statistics
+
                     mean_time = statistics.mean(run_times)
                     std_time = statistics.stdev(run_times) if len(run_times) > 1 else 0
-                    
+
                     if i == 0:
                         reference_time = mean_time
                         mean_eff = 1.0
                         std_eff = 0.0
                     else:
                         mean_eff = statistics.mean(run_efficiencies)
-                        std_eff = statistics.stdev(run_efficiencies) if len(run_efficiencies) > 1 else 0
-                    
-                    method_results['dimensions'].append(case['dim'])
-                    method_results['times_mean'].append(mean_time)
-                    method_results['times_std'].append(std_time)
-                    method_results['efficiency_mean'].append(mean_eff)
-                    method_results['efficiency_std'].append(std_eff)
-                    
-                    self.logger.info(f"N={actual_N}, time={mean_time:.4f}±{std_time:.4f}s, efficiency={mean_eff:.3f}±{std_eff:.3f}")
+                        std_eff = (
+                            statistics.stdev(run_efficiencies) if len(run_efficiencies) > 1 else 0
+                        )
+
+                    method_results["dimensions"].append(case["dim"])
+                    method_results["times_mean"].append(mean_time)
+                    method_results["times_std"].append(std_time)
+                    method_results["efficiency_mean"].append(mean_eff)
+                    method_results["efficiency_std"].append(std_eff)
+
+                    self.logger.info(
+                        f"N={actual_N}, time={mean_time:.4f}±{std_time:.4f}s, efficiency={mean_eff:.3f}±{std_eff:.3f}"
+                    )
                 else:
                     self.logger.warning("All runs failed")
                     continue
-            
+
             weak_results[method_name] = method_results
-        
+
         return strong_results, weak_results
-    
+
     def benchmark_vectorized_analysis(self) -> Dict:
         """Vectorized integrand test with configurable scaling."""
         self.logger.info("Vectorized integrands analysis...")
-        
+
         integrator = Simpson()
         domain = [[0, 1]]
-        N = self.config.get('vectorized', {}).get('integration_points', 1001)
-        
-        grid_sizes = self.config.get('vectorized', {}).get('grid_sizes', [5, 20, 50, 100, 200])
-        num_runs = self.config.get('vectorized', {}).get('num_runs', 2)
-        results = {'grid_sizes': [], 'loop_times': [], 'vectorized_times': [], 'speedups': []}
-        
+        N = self.config.get("vectorized", {}).get("integration_points", 1001)
+
+        grid_sizes = self.config.get("vectorized", {}).get("grid_sizes", [5, 20, 50, 100, 200])
+        num_runs = self.config.get("vectorized", {}).get("num_runs", 2)
+        results = {"grid_sizes": [], "loop_times": [], "vectorized_times": [], "speedups": []}
+
         for grid_size in grid_sizes:
             self.logger.info(f"  Grid size {grid_size}:")
-            
+
             params = torch.linspace(1, 5, grid_size)
-            
+
             try:
                 # Method 1: Loop-based (multiple runs for stability)
                 loop_times = []
@@ -804,40 +847,48 @@ class ModularBenchmark:
                     start_time = time.perf_counter()
                     loop_results = []
                     for param in params:
+
                         def single_integrand(x):
                             return torch.sqrt(torch.cos(torch.sin(param * x[:, 0])))
-                        
-                        result = integrator.integrate(single_integrand, dim=1, N=N, integration_domain=domain)
+
+                        result = integrator.integrate(
+                            single_integrand, dim=1, N=N, integration_domain=domain
+                        )
                         loop_results.append(result.item())
                     loop_times.append(time.perf_counter() - start_time)
-                
+
                 loop_time = sum(loop_times) / len(loop_times)
-                
+
                 # Method 2: Vectorized (multiple runs for stability)
                 vectorized_times = []
                 for run in range(num_runs):
                     start_time = time.perf_counter()
+
                     def vectorized_integrand(x):
                         x_vals = x[:, 0]
                         return torch.sqrt(torch.cos(torch.sin(torch.outer(x_vals, params))))
-                    
-                    vectorized_result = integrator.integrate(vectorized_integrand, dim=1, N=N, integration_domain=domain)
+
+                    vectorized_result = integrator.integrate(
+                        vectorized_integrand, dim=1, N=N, integration_domain=domain
+                    )
                     vectorized_times.append(time.perf_counter() - start_time)
-                
+
                 vectorized_time = sum(vectorized_times) / len(vectorized_times)
                 speedup = loop_time / vectorized_time
-                
-                results['grid_sizes'].append(grid_size)
-                results['loop_times'].append(loop_time)
-                results['vectorized_times'].append(vectorized_time)
-                results['speedups'].append(speedup)
-                
-                self.logger.info(f"    Loop: {loop_time:.4f}s, Vectorized: {vectorized_time:.4f}s, Speedup: {speedup:.2f}x")
-                
+
+                results["grid_sizes"].append(grid_size)
+                results["loop_times"].append(loop_time)
+                results["vectorized_times"].append(vectorized_time)
+                results["speedups"].append(speedup)
+
+                self.logger.info(
+                    f"    Loop: {loop_time:.4f}s, Vectorized: {vectorized_time:.4f}s, Speedup: {speedup:.2f}x"
+                )
+
             except Exception as e:
                 self.logger.warning(f"    Failed: {e}")
                 break
-        
+
         return results
 
 
@@ -872,18 +923,20 @@ def main():
 
     scaling_results = None
     vectorized_results = None
-    
+
     if not args.convergence_only:
         # Run scaling benchmarks
         benchmark.logger.info("Running scaling analysis...")
         strong_scaling, weak_scaling = benchmark.benchmark_scaling_analysis()
         scaling_results = (strong_scaling, weak_scaling)
-        benchmark.save_results({'strong': strong_scaling, 'weak': weak_scaling}, 'scaling_results.json')
-        
+        benchmark.save_results(
+            {"strong": strong_scaling, "weak": weak_scaling}, "scaling_results.json"
+        )
+
         # Run vectorized benchmarks
         benchmark.logger.info("Running vectorized analysis...")
         vectorized_results = benchmark.benchmark_vectorized_analysis()
-        benchmark.save_results(vectorized_results, 'vectorized_results.json')
+        benchmark.save_results(vectorized_results, "vectorized_results.json")
 
     benchmark.logger.info("Benchmark session completed successfully!")
 
