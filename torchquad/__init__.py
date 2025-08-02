@@ -14,6 +14,9 @@ from .integration.gaussian import Gaussian
 from .integration.grid_integrator import GridIntegrator
 from .integration.base_integrator import BaseIntegrator
 
+# QUADPACK algorithms
+from .integration.quadpack import QNG, QAG, QAGS, QAGI, QAWC
+
 from .integration.rng import RNG
 
 from .plots.plot_convergence import plot_convergence
@@ -36,6 +39,12 @@ __all__ = [
     "VEGAS",
     "GaussLegendre",
     "Gaussian",
+    # QUADPACK algorithms
+    "QNG",
+    "QAG", 
+    "QAGS",
+    "QAGI",
+    "QAWC",
     "RNG",
     "plot_convergence",
     "plot_runtime",
