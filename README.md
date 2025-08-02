@@ -207,13 +207,44 @@ See the [open issues](https://github.com/esa/torchquad/issues) for a list of pro
 <!-- PERFORMANCE -->
 ## Performance
 
-Using GPUs torchquad scales particularly well with integration methods that offer easy parallelization. For example, below you see error and runtime results for integrating the function `f(x,y,z) = sin(x * (y+1)²) * (z+1)` on a consumer-grade desktop PC.
+Using GPUs, torchquad scales particularly well with integration methods that offer easy parallelization. The benchmarks below demonstrate performance across challenging functions from 1D to 15D, comparing torchquad's GPU-accelerated methods against scipy's CPU implementations.
 
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime.png?raw=true)
-*Runtime results of the integration. Note the far superior scaling on the GPU (solid line) in comparison to the CPU (dashed and dotted) for both methods.*
-
+### Convergence Analysis
 ![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence.png?raw=true)
-*Convergence results of the integration. Note that Simpson quickly reaches floating point precision. Monte Carlo is not competitive here given the low dimensionality of the problem.*
+*Convergence comparison using challenging test functions including discontinuous oscillatory (1D), multi-peak with ridges (3D), and high-dimensional problems. Note the superior scaling of GPU-accelerated methods for large evaluation counts.*
+
+### Runtime vs Error Efficiency  
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime_vs_error.png?raw=true)
+*Runtime vs error trade-offs showing torchquad's efficiency advantage. Lower-left positions indicate better performance (faster computation with lower error).*
+
+### Scaling Performance
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_scaling_analysis.png?raw=true)
+*Strong and weak scaling analysis demonstrating parallel efficiency across problem sizes and dimensions.*
+
+### Vectorized Integration Speedup
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
+*Performance benefits of vectorized integrand evaluation for parameter sweeps, showing significant speedups for batch computations.*
+
+### Running Benchmarks
+
+To reproduce these benchmarks or test performance on your hardware:
+
+```bash
+# Run modular benchmark for specific dimensions
+python benchmarking/modular_benchmark.py --dimensions 1,3,7,15
+
+# Generate plots from results
+python benchmarking/plot_results.py
+
+# Configure benchmark parameters
+# Edit benchmarking/benchmarking_cfg.toml to adjust:
+# - Evaluation point ranges
+# - Timeout limits  
+# - Method selection
+# - scipy integration tolerances
+```
+
+**Hardware:** RTX 4060 Ti 16GB, i5-13400F, Precision: float32
 
 <!-- CONTRIBUTING -->
 ## Contributing

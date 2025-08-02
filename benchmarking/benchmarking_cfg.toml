@@ -1,0 +1,81 @@
+# Benchmarking configuration for torchquad
+# Adjust these parameters to control benchmark execution time and detail
+
+[general]
+device_info = "RTX 4060 Ti 16GB, i5-13400F"
+precision = "float32"
+save_path = "resources"
+log_level = "INFO"
+
+[convergence]
+# Enable/disable specific dimensions
+enable_1d = true
+enable_3d = false
+enable_7d = false
+enable_15d = false
+
+# Reference calculation points (for MC reference)
+reference_points_1d = 10_000_000
+reference_points_3d = 5_000_000
+reference_points_7d = 1_000_000
+reference_points_15d = 500_000
+
+# Evaluation points for each dimension
+# Adjust these to control execution time
+[convergence.points_1d]
+simpson = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000]
+gauss_legendre = [10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000]
+monte_carlo = [100, 1000, 10000, 50000, 100000, 500000, 1000000]
+vegas = [100, 1000, 10000, 50000, 100000, 500000]
+scipy_grids = [51, 251, 1001, 5001]
+
+[convergence.points_3d]
+simpson = [27, 125, 512, 1000, 4096, 15625]
+gauss_legendre = [27, 125, 512, 1000, 4096, 15625]
+monte_carlo = [1000, 10000, 50000, 100000, 500000, 1000000]
+vegas = [1000, 10000, 50000, 100000, 500000]
+
+[convergence.points_7d]
+simpson = [128, 1024, 4096]                                 # Limited for grid methods
+gauss_legendre = [128, 1024, 4096]                          # Limited for grid methods
+monte_carlo = [1000, 10000, 50000, 100000, 500000, 1000000]
+vegas = [1000, 10000, 50000, 100000, 500000]
+
+[convergence.points_15d]
+simpson = []                                          # Skip for 15D - too expensive
+gauss_legendre = []                                   # Skip for 15D - too expensive
+monte_carlo = [10000, 50000, 100000, 500000, 1000000]
+vegas = [10000, 50000, 100000, 500000]
+
+[scaling]
+# Strong scaling configuration
+strong_batch_sizes = [10000, 25000, 50000, 100000, 150000, 250000, 500000]
+strong_total_work_1d = 1_000_000
+strong_total_work_3d = 1_000_000
+
+# Weak scaling configuration  
+weak_work_per_dim = [1_000_000, 100_000, 5_000] # For 1D, 3D, 7D
+weak_mc_constant_work = 1_000_000
+
+# Number of runs for error estimation
+num_runs = 3
+warmup_runs = 1
+
+[vectorized]
+grid_sizes = [5, 20, 50, 100, 200]
+num_runs = 3
+integration_points = 10001
+
+[scipy]
+# scipy integration tolerances for high dimensions
+nquad_limit_1d = 200
+nquad_limit_3d = 20
+nquad_limit_7d = 10
+nquad_limit_15d = 5
+nquad_epsabs_15d = 1e-3
+nquad_epsrel_15d = 1e-3
+
+[timeouts]
+# Maximum time in seconds for each benchmark component
+max_time_per_method = 300 # 5 minutes per method
+max_time_total = 1800     # 30 minutes total
