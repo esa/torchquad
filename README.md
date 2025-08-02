@@ -209,20 +209,21 @@ See the [open issues](https://github.com/esa/torchquad/issues) for a list of pro
 
 Using GPUs, torchquad scales particularly well with integration methods that offer easy parallelization. The benchmarks below demonstrate performance across challenging functions from 1D to 15D, comparing torchquad's GPU-accelerated methods against scipy's CPU implementations.
 
+<!-- TODO Update plot links -->
 ### Convergence Analysis
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence.png?raw=true)
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_convergence.png?raw=true)
 *Convergence comparison using challenging test functions including discontinuous oscillatory (1D), multi-peak with ridges (3D), and high-dimensional problems. Note the superior scaling of GPU-accelerated methods for large evaluation counts.*
 
 ### Runtime vs Error Efficiency  
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime_vs_error.png?raw=true)
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_runtime_vs_error.png?raw=true)
 *Runtime vs error trade-offs showing torchquad's efficiency advantage. Lower-left positions indicate better performance (faster computation with lower error).*
 
 ### Scaling Performance
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_scaling_analysis.png?raw=true)
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_scaling_analysis.png?raw=true)
 *Strong and weak scaling analysis demonstrating parallel efficiency across problem sizes and dimensions.*
 
 ### Vectorized Integration Speedup
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_vectorized_speedup.png?raw=true)
 *Performance benefits of vectorized integrand evaluation for parameter sweeps, showing significant speedups for batch computations.*
 
 ### Running Benchmarks
