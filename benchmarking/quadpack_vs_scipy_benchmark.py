@@ -18,7 +18,7 @@ import os
 # Add torchquad to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from torchquad.integration.quadpack import QAGS
+from torchquad.integration.quadpack import QNG, QAG, QAGS, QAGI, QAWC
 from torchquad.utils.set_up_backend import set_up_backend
 from autoray import numpy as anp
 
@@ -228,6 +228,126 @@ def get_reference_value(scipy_func, domain, name):
     except Exception as e:
         print(f"  Reference calculation failed: {e}")
         return None
+
+
+def benchmark_all_quadpack_methods():
+    """Benchmark all QUADPACK methods on various test functions."""
+    
+    # Use FP32 for torchquad
+    set_up_backend("torch", data_type="float32")
+    
+    # Simple test functions for method comparison (avoid extremely challenging ones)
+    def simple_poly_scipy(x):
+        return x**2
+    
+    def simple_poly_torch(x):
+        x_val = x[:, 0]
+        return x_val**2
+    
+    def moderate_osc_scipy(x):
+        return np.sin(50 * x) * np.exp(-2 * x)
+    
+    def moderate_osc_torch(x):
+        x_val = x[:, 0]
+        return anp.sin(50 * x_val) * anp.exp(-2 * x_val)
+    
+    def near_singular_scipy(x):
+        return 1.0 / np.sqrt(x + 0.01)
+    
+    def near_singular_torch(x):
+        x_val = x[:, 0]
+        return 1.0 / anp.sqrt(x_val + 0.01)
+    
+    # Test functions for different methods
+    test_functions = {
+        "Simple Polynomial": (simple_poly_scipy, simple_poly_torch, [0, 1], 1/3),
+        "Moderate Oscillatory": (moderate_osc_scipy, moderate_osc_torch, [0, 1], None),
+        "Near Singular": (near_singular_scipy, near_singular_torch, [0, 1], None),
+    }
+    
+    # QUADPACK methods to compare
+    methods = {
+        "QNG": QNG(),
+        "QAG": QAG(), 
+        "QAGS": QAGS(),
+        # Skip QAGI and QAWC for now due to different interface requirements
+    }
+    
+    # Tolerance levels for convergence study
+    tolerance_levels = [1e-1, 5e-2, 1e-2, 5e-3, 1e-3, 5e-4, 1e-4]
+    
+    method_results = {}
+    
+    for method_name, method in methods.items():
+        print(f"\n{'='*50}")
+        print(f"Benchmarking {method_name}")
+        print(f"{'='*50}")
+        
+        method_results[method_name] = {}
+        
+        for func_name, (scipy_func, tq_func, domain, analytical) in test_functions.items():
+            print(f"\n  Testing {func_name}")
+            
+            # Get reference value
+            if analytical is None:
+                try:
+                    reference, _ = integrate.quad(scipy_func, domain[0], domain[1], 
+                                                epsabs=1e-12, epsrel=1e-12)
+                except:
+                    reference = None
+            else:
+                reference = analytical
+            
+            function_results = []
+            
+            for tol in tolerance_levels:
+                try:
+                    # Reset evaluation counter
+                    if hasattr(method, '_nr_of_fevals'):
+                        method._nr_of_fevals = 0
+                    
+                    start_time = time.perf_counter()
+                    result = method.integrate(
+                        lambda x: tq_func(x), dim=1, 
+                        integration_domain=[domain],
+                        epsabs=tol, epsrel=tol,
+                        backend="torch"
+                    )
+                    elapsed_time = time.perf_counter() - start_time
+                    
+                    evals = getattr(method, '_nr_of_fevals', 0)
+                    
+                    if reference is not None:
+                        error = abs(float(result) - reference)
+                    else:
+                        error = tol  # Use tolerance as proxy
+                    
+                    function_results.append({
+                        'tolerance': tol,
+                        'result': float(result),
+                        'error': error,
+                        'time': elapsed_time,
+                        'evals': evals,
+                        'reference': reference
+                    })
+                    
+                    print(f"    tol={tol:.0e}: result={float(result):.6e}, error={error:.3e}, time={elapsed_time:.3f}s, evals={evals}")
+                    
+                    # Stop if taking too long or method fails
+                    if elapsed_time > 10.0:
+                        print(f"    Time limit reached")
+                        break
+                        
+                except Exception as e:
+                    print(f"    tol={tol:.0e}: FAILED - {e}")
+                    # For QNG, failures at tight tolerances are expected
+                    if method_name == "QNG" and tol < 1e-3:
+                        break
+                    continue
+            
+            method_results[method_name][func_name] = function_results
+    
+    return method_results
 
 
 def run_benchmarks():
@@ -548,15 +668,88 @@ def create_plots(results, save_path="../resources"):
     # plt.show()
 
 
+def create_quadpack_convergence_plots(method_results, save_path="../resources"):
+    """Create convergence plots for all QUADPACK methods."""
+    
+    # Ensure save directory exists
+    os.makedirs(save_path, exist_ok=True)
+    
+    # Set matplotlib style
+    plt.style.use('default')
+    plt.rcParams['font.size'] = 10
+    plt.rcParams['axes.grid'] = True
+    plt.rcParams['grid.alpha'] = 0.3
+    
+    # Number of methods and functions
+    methods = list(method_results.keys())
+    functions = list(next(iter(method_results.values())).keys())
+    n_methods = len(methods)
+    n_functions = len(functions)
+    
+    # Create subplots: one for each method-function combination
+    fig, axes = plt.subplots(n_methods, n_functions, figsize=(5*n_functions, 4*n_methods))
+    if n_methods == 1:
+        axes = axes.reshape(1, -1)
+    if n_functions == 1:
+        axes = axes.reshape(-1, 1)
+    
+    colors = ['blue', 'red', 'green', 'orange', 'purple']
+    
+    for i, method_name in enumerate(methods):
+        for j, func_name in enumerate(functions):
+            ax = axes[i, j]
+            
+            data = method_results[method_name].get(func_name, [])
+            if not data:
+                ax.text(0.5, 0.5, 'No Data', ha='center', va='center', transform=ax.transAxes)
+                ax.set_title(f'{method_name} - {func_name}')
+                continue
+            
+            # Extract data
+            evals = [d['evals'] for d in data if d['evals'] > 0]
+            errors = [d['error'] for d in data if d['evals'] > 0 and d['error'] > 0]
+            
+            if evals and errors and len(evals) == len(errors):
+                ax.loglog(evals, errors, 'o-', color=colors[i % len(colors)], 
+                         markersize=6, linewidth=2, alpha=0.8)
+                ax.set_xlabel('Function Evaluations')
+                ax.set_ylabel('Absolute Error')
+                ax.set_title(f'{method_name} - {func_name}\nConvergence vs Function Evaluations')
+                ax.grid(True, alpha=0.3)
+            else:
+                ax.text(0.5, 0.5, 'Insufficient Data', ha='center', va='center', transform=ax.transAxes)
+                ax.set_title(f'{method_name} - {func_name}')
+    
+    plt.tight_layout()
+    
+    # Save plot
+    plot_path = os.path.join(save_path, 'quadpack_convergence_comparison.png')
+    plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+    print(f"\nConvergence plot saved to: {plot_path}")
+    
+    # Save data
+    data_path = os.path.join(save_path, 'quadpack_convergence_results.json')
+    with open(data_path, 'w') as f:
+        json.dump(method_results, f, indent=2, default=lambda x: float(x) if isinstance(x, np.number) else x)
+    print(f"Convergence results saved to: {data_path}")
+
+
 if __name__ == "__main__":
     print("Running QUADPACK benchmarks: torchquad vs scipy")
     print("Using FP32 precision for fair comparison")
-    print("Testing with challenging functions requiring high function evaluation counts")
+    print("Testing with moderately challenging functions (avoiding infinite loops)")
     
     try:
-        results = run_benchmarks()
-        create_plots(results)
-        print("\nBenchmark completed successfully!")
+        # Run convergence study for all methods (skip the extreme benchmark for now)
+        print("\n" + "="*60)
+        print("Running convergence study for all QUADPACK methods")
+        print("="*60)
+        method_results = benchmark_all_quadpack_methods()
+        create_quadpack_convergence_plots(method_results)
+        print("\nConvergence study completed successfully!")
+        
+        print("\nNote: Extreme oscillatory benchmark disabled to prevent hanging.")
+        print("Use working_quadpack_benchmark.py for performance testing.")
         
     except Exception as e:
         print(f"Benchmark failed: {e}")

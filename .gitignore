@@ -134,3 +134,5 @@ pytest-coverage.txt
 pytest.xml
 CLAUDE.md
 .claude/
+quadpack
+resources/*.json
