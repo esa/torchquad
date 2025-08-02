@@ -137,7 +137,10 @@ class QAGS(BaseQuadpack):
             
             # Check convergence with extrapolation
             if accept_extrap:
-                extrap_tolerance = anp.maximum(epsabs, epsrel * anp.abs(extrap_result))
+                # Ensure tolerance parameters are tensors with same type as result
+                epsabs_tensor = anp.array(epsabs, like=extrap_result)
+                epsrel_tensor = anp.array(epsrel, like=extrap_result)
+                extrap_tolerance = anp.maximum(epsabs_tensor, epsrel_tensor * anp.abs(extrap_result))
                 if extrap_error <= extrap_tolerance:
                     logger.debug(f"QAGS converged with extrapolation after {iteration+1} subdivisions: result={extrap_result}, error={extrap_error}")
                     return extrap_result
@@ -174,7 +177,9 @@ class QAGS(BaseQuadpack):
             final_error = total_error
         
         # Check if we achieved tolerance
-        tolerance = anp.maximum(epsabs, epsrel * anp.abs(final_result))
+        epsabs_tensor = anp.array(epsabs, like=final_result)
+        epsrel_tensor = anp.array(epsrel, like=final_result)
+        tolerance = anp.maximum(epsabs_tensor, epsrel_tensor * anp.abs(final_result))
         if final_error > tolerance:
             logger.warning(f"QAGS failed to converge: result={final_result}, error={final_error}, tolerance={tolerance}")
             warnings.warn(f"QAGS did not achieve requested tolerance. "

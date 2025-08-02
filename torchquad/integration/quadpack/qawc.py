@@ -1,6 +1,7 @@
 """QAWC - Adaptive quadrature for Cauchy principal values."""
 
 import warnings
+from autoray import numpy as anp
 from loguru import logger
 
 from .base_quadpack import BaseQuadpack
@@ -24,14 +25,11 @@ class QAWC(BaseQuadpack):
     Requirements:
     - a < c < b (singularity must be interior to interval)
     - f(x) should be well-behaved except at x = c
-    
-    Note: This is currently a placeholder implementation.
-    Full Cauchy principal value computation will be implemented in a later phase.
     """
 
     def __init__(self):
         super().__init__()
-        self._qags_fallback = QAGS()  # Use QAGS as fallback
+        self._qags = QAGS()  # Use QAGS for subintervals
 
     def _integrate_1d(self, domain_1d, epsabs, epsrel, c=None, **kwargs):
         """Perform 1D QAWC integration.
@@ -45,8 +43,6 @@ class QAWC(BaseQuadpack):
         Returns:
             backend tensor: Cauchy principal value
         """
-        from autoray import numpy as anp
-        
         a, b = domain_1d[0], domain_1d[1]
         
         if c is None:
@@ -56,18 +52,87 @@ class QAWC(BaseQuadpack):
         if not (a < c < b):
             raise ValueError(f"Singularity c={c} must be in interval ({a}, {b})")
         
-        # TODO: Implement Cauchy principal value computation
-        # The full algorithm would:
-        # 1. Split integral at singularity: ∫[a,c-ε] + ∫[c+ε,b]
-        # 2. Use special quadrature rules near the singularity
-        # 3. Apply Clenshaw-Curtis integration on problematic subintervals
-        # 4. Handle the 1/(x-c) singularity analytically
+        logger.debug(f"QAWC: Computing Cauchy principal value at c={c}")
         
-        logger.debug(f"QAWC: Cauchy principal value at c={c} not yet implemented")
+        # For Cauchy principal value, we use the fact that:
+        # P.V. ∫[a,b] f(x)/(x-c) dx = ∫[a,b] [f(x) - f(c)]/(x-c) dx + f(c) * log|(b-c)/(c-a)|
+        #
+        # The first integral is regular (no singularity) and the second is analytical.
         
-        # For now, raise an error
-        raise NotImplementedError("QAWC Cauchy principal value integration not yet implemented. "
-                                 "This will be added in a future phase.")
+        # Store original function and evaluate at c
+        original_fn = self._fn
+        c_expanded = anp.expand_dims(anp.array([c], like=a), axis=-1)
+        f_c = original_fn(c_expanded)[0]
+        
+        # Create regularized function: [f(x) - f(c)]/(x-c)
+        def regularized_fn(x_batch):
+            x = x_batch[:, 0]
+            f_x = original_fn(x_batch)
+            if len(f_x.shape) > 1:
+                f_x = f_x[:, 0]
+            
+            # Compute [f(x) - f(c)]/(x-c), handling x near c
+            diff = x - c
+            mask = anp.abs(diff) > self._epmach
+            
+            # For points away from c: [f(x) - f(c)]/(x-c)
+            result = anp.where(mask, (f_x - f_c) / diff, 0.0)
+            
+            # For points very close to c, use derivative approximation
+            # f'(c) ≈ [f(c+h) - f(c-h)]/(2h)
+            h = anp.sqrt(self._epmach) * max(anp.abs(c), 1.0)
+            close_mask = ~mask
+            
+            if anp.any(close_mask):
+                # Estimate derivative at c
+                c_plus_h = anp.expand_dims(anp.array([c + h], like=a), axis=-1)
+                c_minus_h = anp.expand_dims(anp.array([c - h], like=a), axis=-1)
+                f_plus = original_fn(c_plus_h)[0]
+                f_minus = original_fn(c_minus_h)[0]
+                f_prime_c = (f_plus - f_minus) / (2 * h)
+                
+                # For x very close to c: f'(c)
+                result = anp.where(close_mask, f_prime_c, result)
+            
+            return result
+        
+        # Split integral at c to avoid the singularity
+        # ∫[a,b] = ∫[a,c-δ] + ∫[c+δ,b] where δ is small
+        delta = anp.sqrt(self._epmach) * max(b - a, 1.0)
+        
+        # Set up QAGS with regularized function
+        self._qags._fn = regularized_fn
+        self._qags._dim = self._dim
+        self._qags._backend = self._backend
+        self._qags._setup_machine_constants(self._backend)
+        
+        # Integrate left part [a, c-δ]
+        if c - a > delta:
+            result_left = self._qags._integrate_1d(
+                anp.array([a, c - delta], like=a), 
+                epsabs/2, epsrel, **kwargs
+            )
+        else:
+            result_left = anp.array(0.0, like=a)
+        
+        # Integrate right part [c+δ, b]
+        if b - c > delta:
+            result_right = self._qags._integrate_1d(
+                anp.array([c + delta, b], like=a), 
+                epsabs/2, epsrel, **kwargs
+            )
+        else:
+            result_right = anp.array(0.0, like=a)
+        
+        # Add analytical part: f(c) * log|(b-c)/(c-a)|
+        analytical_part = f_c * anp.log(anp.abs((b - c) / (c - a)))
+        
+        # Total Cauchy principal value
+        result = result_left + result_right + analytical_part
+        
+        logger.debug(f"QAWC result: {result} (left: {result_left}, right: {result_right}, analytical: {analytical_part})")
+        
+        return result
 
     def integrate(self, fn, dim, integration_domain=None, backend=None,
                   epsabs=1.49e-8, epsrel=1.49e-8, c=None, **kwargs):
