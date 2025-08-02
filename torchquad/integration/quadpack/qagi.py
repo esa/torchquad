@@ -30,7 +30,7 @@ class QAGI(BaseQuadpack):
         super().__init__()
         self._qags = QAGS()  # Use QAGS for transformed integral
 
-    def _integrate_1d(self, domain_1d, epsabs, epsrel, **kwargs):
+    def _integrate_1d(self, domain_1d, epsabs, epsrel, max_fevals, **kwargs):
         """Perform 1D QAGI integration.
         
         Args:
@@ -38,6 +38,7 @@ class QAGI(BaseQuadpack):
                                        where a and/or b may be infinite
             epsabs (float): Absolute error tolerance
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             
         Returns:
             backend tensor: Integral approximation
@@ -57,7 +58,13 @@ class QAGI(BaseQuadpack):
             self._qags._integration_domain = self._integration_domain
             self._qags._backend = self._backend
             self._qags._setup_machine_constants(self._backend)
-            return self._qags._integrate_1d(domain_1d, epsabs, epsrel, **kwargs)
+            # Set up max_fevals tracking for QAGS
+            self._qags._max_fevals = max_fevals
+            self._qags._nr_of_fevals = 0
+            result = self._qags._integrate_1d(domain_1d, epsabs, epsrel, max_fevals, **kwargs)
+            # Update our own evaluation count
+            self._nr_of_fevals += self._qags._nr_of_fevals
+            return result
         
         # Store original function
         original_fn = self._fn
@@ -105,16 +112,39 @@ class QAGI(BaseQuadpack):
             self._qags._fn = transformed_fn_neg
             self._qags._backend = self._backend
             self._qags._setup_machine_constants(self._backend)
+            
+            # Split max_fevals between the two parts if specified
+            max_fevals_part = max_fevals // 2 if max_fevals is not None else None
+            
+            # Set up max_fevals tracking for first part
+            self._qags._max_fevals = max_fevals_part
+            self._qags._nr_of_fevals = 0
+            
             result_neg = self._qags._integrate_1d(
                 anp.array([self._epmach, 1.0], like=a), 
-                epsabs/2, epsrel, **kwargs
+                epsabs/2, epsrel, max_fevals_part, **kwargs
             )
             
+            # Update our evaluation count
+            self._nr_of_fevals += self._qags._nr_of_fevals
+            
+            # Check max_fevals after first part
+            if self._check_max_fevals():
+                logger.warning(f"QAGI: Maximum function evaluations ({max_fevals}) exceeded after negative part")
+                return result_neg  # Return partial result
+            
             self._qags._fn = transformed_fn_pos
+            # Set up max_fevals tracking for second part
+            self._qags._max_fevals = max_fevals_part
+            self._qags._nr_of_fevals = 0
+            
             result_pos = self._qags._integrate_1d(
                 anp.array([self._epmach, 1.0], like=a), 
-                epsabs/2, epsrel, **kwargs
+                epsabs/2, epsrel, max_fevals_part, **kwargs
             )
+            
+            # Update our evaluation count
+            self._nr_of_fevals += self._qags._nr_of_fevals
             
             return result_neg + result_pos
             
@@ -139,10 +169,16 @@ class QAGI(BaseQuadpack):
             self._qags._fn = transformed_fn
             self._qags._backend = self._backend
             self._qags._setup_machine_constants(self._backend)
-            return self._qags._integrate_1d(
+            # Set up max_fevals tracking for QAGS
+            self._qags._max_fevals = max_fevals
+            self._qags._nr_of_fevals = 0
+            result = self._qags._integrate_1d(
                 anp.array([self._epmach, 1.0], like=a), 
-                epsabs, epsrel, **kwargs
+                epsabs, epsrel, max_fevals, **kwargs
             )
+            # Update our evaluation count
+            self._nr_of_fevals += self._qags._nr_of_fevals
+            return result
             
         else:
             # Case 3: [a, +∞)
@@ -165,13 +201,19 @@ class QAGI(BaseQuadpack):
             self._qags._fn = transformed_fn
             self._qags._backend = self._backend
             self._qags._setup_machine_constants(self._backend)
-            return self._qags._integrate_1d(
+            # Set up max_fevals tracking for QAGS
+            self._qags._max_fevals = max_fevals
+            self._qags._nr_of_fevals = 0
+            result = self._qags._integrate_1d(
                 anp.array([self._epmach, 1.0], like=a), 
-                epsabs, epsrel, **kwargs
+                epsabs, epsrel, max_fevals, **kwargs
             )
+            # Update our evaluation count
+            self._nr_of_fevals += self._qags._nr_of_fevals
+            return result
 
     def integrate(self, fn, dim, integration_domain=None, backend=None,
-                  epsabs=1.49e-8, epsrel=1.49e-8, **kwargs):
+                  epsabs=1.49e-8, epsrel=1.49e-8, max_fevals=None, **kwargs):
         """Integrate function using QAGI algorithm.
         
         Args:
@@ -181,6 +223,7 @@ class QAGI(BaseQuadpack):
             backend (str, optional): Numerical backend
             epsabs (float): Absolute error tolerance  
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             
         Returns:
             backend tensor: Integral approximation
@@ -190,4 +233,4 @@ class QAGI(BaseQuadpack):
                          "Multi-dimensional infinite domains are not well-supported.")
         
         return super().integrate(fn, dim, integration_domain, backend,
-                               epsabs, epsrel, **kwargs)
+                               epsabs, epsrel, max_fevals, **kwargs)

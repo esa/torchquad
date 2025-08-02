@@ -22,13 +22,14 @@ class QNG(BaseQuadpack):
     def __init__(self):
         super().__init__()
 
-    def _integrate_1d(self, domain_1d, epsabs, epsrel, **kwargs):
+    def _integrate_1d(self, domain_1d, epsabs, epsrel, max_fevals, **kwargs):
         """Perform 1D QNG integration.
         
         Args:
             domain_1d (backend tensor): Integration bounds [a, b]
             epsabs (float): Absolute error tolerance
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             
         Returns:
             backend tensor: Integral approximation
@@ -65,6 +66,11 @@ class QNG(BaseQuadpack):
             result, abserr, neval, ier = GaussKronrodRule.qng(f_1d, a, b, epsabs, epsrel, backend)
             self._nr_of_fevals += neval
             
+            # Check max_fevals limit (for QNG this happens after evaluation since it's non-adaptive)
+            if self._check_max_fevals():
+                logger.warning(f"QNG: Maximum function evaluations ({max_fevals}) exceeded with {neval} evaluations")
+                # Still return the result since QNG completes the evaluation
+            
             if ier != 0:
                 logger.warning(f"QNG failed to converge: result={result}, abserr={abserr}, epsabs={epsabs}, epsrel={epsrel}")
                 # Handle CUDA tensors and complex numbers for warning message
@@ -93,7 +99,7 @@ class QNG(BaseQuadpack):
             raise RuntimeError(f"QNG failed: {e}")
 
     def integrate(self, fn, dim, integration_domain=None, backend=None,
-                  epsabs=1.49e-8, epsrel=1.49e-8, **kwargs):
+                  epsabs=1.49e-8, epsrel=1.49e-8, max_fevals=None, **kwargs):
         """Integrate function using QNG algorithm.
         
         Args:
@@ -103,6 +109,7 @@ class QNG(BaseQuadpack):
             backend (str, optional): Numerical backend
             epsabs (float): Absolute error tolerance
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             
         Returns:
             backend tensor: Integral approximation
@@ -113,4 +120,4 @@ class QNG(BaseQuadpack):
             logger.debug(f"QNG ignoring unsupported parameters: {list(kwargs.keys())}")
         
         return super().integrate(fn, dim, integration_domain, backend, 
-                               epsabs, epsrel, **supported_kwargs)
+                               epsabs, epsrel, max_fevals, **supported_kwargs)

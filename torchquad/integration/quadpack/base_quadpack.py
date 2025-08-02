@@ -27,9 +27,12 @@ class BaseQuadpack(BaseIntegrator):
         self._epmach = None  # Will be set based on backend
         self._uflow = None   # Underflow threshold
         self._oflow = None   # Overflow threshold
+        
+        # Function evaluation counter
+        self._nr_of_fevals = 0
 
     def integrate(self, fn, dim, integration_domain=None, backend=None, 
-                  epsabs=1.49e-8, epsrel=1.49e-8, **kwargs):
+                  epsabs=1.49e-8, epsrel=1.49e-8, max_fevals=None, **kwargs):
         """Integrate function using QUADPACK algorithm.
         
         Args:
@@ -41,6 +44,7 @@ class BaseQuadpack(BaseIntegrator):
             backend (str, optional): Numerical backend ('torch', 'jax', 'tensorflow', 'numpy')
             epsabs (float): Absolute error tolerance (default: ~1.5e-8)
             epsrel (float): Relative error tolerance (default: ~1.5e-8)
+            max_fevals (int, optional): Maximum number of function evaluations. Defaults to None (no limit)
             **kwargs: Algorithm-specific parameters
             
         Returns:
@@ -52,6 +56,14 @@ class BaseQuadpack(BaseIntegrator):
         """
         # Validate inputs
         self._check_inputs(dim=dim, integration_domain=integration_domain)
+        
+        # Validate max_fevals parameter
+        if max_fevals is not None and max_fevals <= 0:
+            raise ValueError("max_fevals must be positive if specified")
+        
+        # Reset function evaluation counter
+        self._nr_of_fevals = 0
+        self._max_fevals = max_fevals
         
         # Setup domain and backend first
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)
@@ -69,10 +81,10 @@ class BaseQuadpack(BaseIntegrator):
         
         if dim == 1:
             # Direct 1D integration
-            return self._integrate_1d(integration_domain[0], epsabs, epsrel, **kwargs)
+            return self._integrate_1d(integration_domain[0], epsabs, epsrel, max_fevals, **kwargs)
         else:
             # Multi-dimensional via tensor product
-            return self._integrate_nd_tensor_product(integration_domain, epsabs, epsrel, **kwargs)
+            return self._integrate_nd_tensor_product(integration_domain, epsabs, epsrel, max_fevals, **kwargs)
     
     def _validate_tolerances(self, epsabs, epsrel):
         """Validate error tolerances."""
@@ -110,14 +122,25 @@ class BaseQuadpack(BaseIntegrator):
             self._uflow = float(np.finfo(np.float64).tiny)
             self._oflow = float(np.finfo(np.float64).max)
     
+    def _check_max_fevals(self):
+        """Check if maximum function evaluations exceeded.
+        
+        Returns:
+            bool: True if max_fevals exceeded, False otherwise
+        """
+        if self._max_fevals is not None and self._nr_of_fevals >= self._max_fevals:
+            return True
+        return False
+    
     @abstractmethod
-    def _integrate_1d(self, domain_1d, epsabs, epsrel, **kwargs):
+    def _integrate_1d(self, domain_1d, epsabs, epsrel, max_fevals, **kwargs):
         """Perform 1D integration on interval [a, b].
         
         Args:
             domain_1d (backend tensor): Integration bounds [a, b]
             epsabs (float): Absolute error tolerance
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             **kwargs: Algorithm-specific parameters
             
         Returns:
@@ -125,7 +148,7 @@ class BaseQuadpack(BaseIntegrator):
         """
         pass
     
-    def _integrate_nd_tensor_product(self, integration_domain, epsabs, epsrel, **kwargs):
+    def _integrate_nd_tensor_product(self, integration_domain, epsabs, epsrel, max_fevals, **kwargs):
         """Proper tensor product integration for n-D problems.
         
         Implements the mathematical tensor product formula:
@@ -183,7 +206,7 @@ class BaseQuadpack(BaseIntegrator):
             self._fn = integrand_1d
             
             try:
-                result = self._integrate_1d(current_domain, epsabs, epsrel, **kwargs)
+                result = self._integrate_1d(current_domain, epsabs, epsrel, max_fevals, **kwargs)
                 return result
             finally:
                 self._fn = old_fn

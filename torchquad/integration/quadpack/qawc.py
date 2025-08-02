@@ -31,13 +31,14 @@ class QAWC(BaseQuadpack):
         super().__init__()
         self._qags = QAGS()  # Use QAGS for subintervals
 
-    def _integrate_1d(self, domain_1d, epsabs, epsrel, c=None, **kwargs):
+    def _integrate_1d(self, domain_1d, epsabs, epsrel, max_fevals, c=None, **kwargs):
         """Perform 1D QAWC integration.
         
         Args:
             domain_1d (backend tensor): Integration bounds [a, b]
             epsabs (float): Absolute error tolerance
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             c (float): Location of Cauchy singularity (must satisfy a < c < b)
             
         Returns:
@@ -106,21 +107,45 @@ class QAWC(BaseQuadpack):
         self._qags._backend = self._backend
         self._qags._setup_machine_constants(self._backend)
         
+        # Split max_fevals between the two parts if specified
+        max_fevals_part = max_fevals // 2 if max_fevals is not None else None
+        
         # Integrate left part [a, c-δ]
         if c - a > delta:
+            # Set up max_fevals tracking for left part
+            self._qags._max_fevals = max_fevals_part
+            self._qags._nr_of_fevals = 0
+            
             result_left = self._qags._integrate_1d(
                 anp.array([a, c - delta], like=a), 
-                epsabs/2, epsrel, **kwargs
+                epsabs/2, epsrel, max_fevals_part, **kwargs
             )
+            
+            # Update our evaluation count
+            self._nr_of_fevals += self._qags._nr_of_fevals
+            
+            # Check max_fevals after left part
+            if self._check_max_fevals():
+                logger.warning(f"QAWC: Maximum function evaluations ({max_fevals}) exceeded after left part")
+                # Still compute analytical part and return partial result
+                analytical_part = f_c * anp.log(anp.abs((b - c) / (c - a)))
+                return result_left + analytical_part
         else:
             result_left = anp.array(0.0, like=a)
         
         # Integrate right part [c+δ, b]
         if b - c > delta:
+            # Set up max_fevals tracking for right part
+            self._qags._max_fevals = max_fevals_part
+            self._qags._nr_of_fevals = 0
+            
             result_right = self._qags._integrate_1d(
                 anp.array([c + delta, b], like=a), 
-                epsabs/2, epsrel, **kwargs
+                epsabs/2, epsrel, max_fevals_part, **kwargs
             )
+            
+            # Update our evaluation count
+            self._nr_of_fevals += self._qags._nr_of_fevals
         else:
             result_right = anp.array(0.0, like=a)
         
@@ -135,7 +160,7 @@ class QAWC(BaseQuadpack):
         return result
 
     def integrate(self, fn, dim, integration_domain=None, backend=None,
-                  epsabs=1.49e-8, epsrel=1.49e-8, c=None, **kwargs):
+                  epsabs=1.49e-8, epsrel=1.49e-8, max_fevals=None, c=None, **kwargs):
         """Integrate function using QAWC algorithm.
         
         Args:
@@ -146,6 +171,7 @@ class QAWC(BaseQuadpack):
             backend (str, optional): Numerical backend
             epsabs (float): Absolute error tolerance
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             c (float): Location of Cauchy singularity
             
         Returns:
@@ -162,4 +188,4 @@ class QAWC(BaseQuadpack):
         qawc_kwargs.update(kwargs)
         
         return super().integrate(fn, dim, integration_domain, backend,
-                               epsabs, epsrel, **qawc_kwargs)
+                               epsabs, epsrel, max_fevals, **qawc_kwargs)

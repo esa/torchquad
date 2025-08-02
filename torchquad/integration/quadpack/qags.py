@@ -34,13 +34,14 @@ class QAGS(BaseQuadpack):
     def __init__(self):
         super().__init__()
 
-    def _integrate_1d(self, domain_1d, epsabs, epsrel, limit=50, **kwargs):
+    def _integrate_1d(self, domain_1d, epsabs, epsrel, max_fevals, limit=50, **kwargs):
         """Perform 1D QAGS integration.
         
         Args:
             domain_1d (backend tensor): Integration bounds [a, b]
             epsabs (float): Absolute error tolerance
-            epsrel (float): Relative error tolerance  
+            epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             limit (int): Maximum number of subdivisions
             
         Returns:
@@ -92,6 +93,11 @@ class QAGS(BaseQuadpack):
         # Check initial convergence
         if subdivision.converged(epsabs, epsrel):
             logger.debug(f"QAGS converged immediately: result={result}, error={abserr}")
+            return result
+        
+        # Check max_fevals after initial evaluation
+        if self._check_max_fevals():
+            logger.warning(f"QAGS: Maximum function evaluations ({max_fevals}) exceeded after initial evaluation")
             return result
         
         # Add initial result to extrapolation
@@ -151,6 +157,11 @@ class QAGS(BaseQuadpack):
                 logger.debug(f"QAGS converged after {iteration+1} subdivisions: result={total_result}, error={total_error}")
                 return total_result
             
+            # Check max_fevals before next iteration
+            if self._check_max_fevals():
+                logger.warning(f"QAGS: Maximum function evaluations ({max_fevals}) exceeded after {iteration+1} subdivisions")
+                break
+            
             # Check for lack of progress
             if iteration > 10:
                 progress = abs(current_result - last_result) / max(abs(current_result), abs(last_result), 1e-15)
@@ -190,7 +201,7 @@ class QAGS(BaseQuadpack):
         return final_result
 
     def integrate(self, fn, dim, integration_domain=None, backend=None,
-                  epsabs=1.49e-8, epsrel=1.49e-8, limit=50, **kwargs):
+                  epsabs=1.49e-8, epsrel=1.49e-8, max_fevals=None, limit=50, **kwargs):
         """Integrate function using QAGS algorithm.
         
         Args:
@@ -200,6 +211,7 @@ class QAGS(BaseQuadpack):
             backend (str, optional): Numerical backend  
             epsabs (float): Absolute error tolerance
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             limit (int): Maximum number of subdivisions
             
         Returns:
@@ -210,4 +222,4 @@ class QAGS(BaseQuadpack):
         qags_kwargs.update(kwargs)
         
         return super().integrate(fn, dim, integration_domain, backend,
-                               epsabs, epsrel, **qags_kwargs)
+                               epsabs, epsrel, max_fevals, **qags_kwargs)

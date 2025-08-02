@@ -26,13 +26,14 @@ class QAG(BaseQuadpack):
     def __init__(self):
         super().__init__()
 
-    def _integrate_1d(self, domain_1d, epsabs, epsrel, limit=50, key=2, **kwargs):
+    def _integrate_1d(self, domain_1d, epsabs, epsrel, max_fevals, limit=50, key=2, **kwargs):
         """Perform 1D QAG integration.
 
         Args:
             domain_1d (backend tensor): Integration bounds [a, b]
             epsabs (float): Absolute error tolerance
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             limit (int): Maximum number of subdivisions
             key (int): Choice of Gauss-Kronrod rule (1-6)
 
@@ -83,6 +84,11 @@ class QAG(BaseQuadpack):
         if subdivision.converged(epsabs, epsrel):
             logger.debug(f"QAG converged immediately: result={result}, error={abserr}")
             return result
+        
+        # Check max_fevals after initial evaluation
+        if self._check_max_fevals():
+            logger.warning(f"QAG: Maximum function evaluations ({max_fevals}) exceeded after initial evaluation")
+            return result
 
         # Adaptive subdivision loop
         iteration = 0
@@ -128,6 +134,11 @@ class QAG(BaseQuadpack):
                     f"QAG converged after {iteration+1} subdivisions: result={total_result}, error={total_error}"
                 )
                 return total_result
+            
+            # Check max_fevals before next iteration
+            if self._check_max_fevals():
+                logger.warning(f"QAG: Maximum function evaluations ({max_fevals}) exceeded after {iteration+1} subdivisions")
+                break
 
             iteration += 1
 
@@ -168,6 +179,7 @@ class QAG(BaseQuadpack):
         backend=None,
         epsabs=1.49e-8,
         epsrel=1.49e-8,
+        max_fevals=None,
         limit=50,
         key=2,
         **kwargs,
@@ -181,6 +193,7 @@ class QAG(BaseQuadpack):
             backend (str, optional): Numerical backend
             epsabs (float): Absolute error tolerance
             epsrel (float): Relative error tolerance
+            max_fevals (int, optional): Maximum number of function evaluations
             limit (int): Maximum number of subdivisions
             key (int): Choice of Gauss-Kronrod rule
 
@@ -191,4 +204,4 @@ class QAG(BaseQuadpack):
         qag_kwargs = {"limit": limit, "key": key}
         qag_kwargs.update(kwargs)
 
-        return super().integrate(fn, dim, integration_domain, backend, epsabs, epsrel, **qag_kwargs)
+        return super().integrate(fn, dim, integration_domain, backend, epsabs, epsrel, max_fevals, **qag_kwargs)
