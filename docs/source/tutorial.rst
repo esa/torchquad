@@ -106,7 +106,9 @@ the following way:
 4.  Information on how to select a numerical backend
 5.  Example showing how gradients can be obtained w.r.t. the integration domain with PyTorch
 6.  Methods to speed up the integration
-7.  Custom Integrators
+7.  Multidimensional/Vectorized Integrands
+8.  Parametric Integration with Variable Domains
+9.  Custom Integrators
 
 Feel free to test the code on your own computer as we go along.
 
@@ -768,6 +770,218 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
 
 .. note::
     VEGAS does not support multi-dimensional integrands.  If you would like this, please consider opening an issue or PR.
+
+Parametric Integration with Variable Domains
+--------------------------------------------
+
+Sometimes you need to perform multiple integrations where both the integrand and the integration domain depend on parameters. This is particularly useful in applications where you need to compute integrals for many different parameter values simultaneously.
+
+For example, you might want to compute:
+
+.. math::
+
+    I(a, b) = \\int_{a}^{b} f(x, a, b) dx
+
+for multiple values of :math:`a` and :math:`b` simultaneously.
+
+Currently, torchquad doesn't have built-in support for parametric domains, but you can extend the existing integrators to handle this case. Below is an example of how to create a custom integrator that supports batch 1D integration with variable domains:
+
+.. code:: ipython3
+
+    import torch
+    from loguru import logger
+    from autoray import numpy as anp
+    from autoray import infer_backend
+    from torchquad import Gaussian
+
+
+    class Batch1DIntegrator(Gaussian):
+        """Custom integrator for batch 1D integration with variable domains.
+        
+        This integrator can compute multiple integrals with different domains
+        in a single call, providing significant speedup over sequential computation.
+        """
+        
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.disable_integration_domain_check = True
+            
+        def _resize_roots(self, integration_domain, roots):
+            """Resize roots for batched integration domains.
+            
+            Args:
+                integration_domain: Shape [batch_size, 2] for multiple domains
+                roots: Shape [N] - the Gaussian quadrature nodes
+                
+            Returns:
+                Resized roots with shape [batch_size, N]
+            """
+            if integration_domain.ndim == 1:
+                # Single domain case - use parent implementation
+                return super()._resize_roots(integration_domain, roots)
+                
+            # Batch case
+            assert roots.ndim == 1
+            assert integration_domain.ndim == 2
+            assert integration_domain.shape[-1] == 2
+            
+            roots = roots.to(integration_domain.device)
+            
+            # Extract bounds for all domains
+            a = integration_domain[:, 0:1]  # Shape [batch_size, 1]
+            b = integration_domain[:, 1:2]  # Shape [batch_size, 1]
+            
+            # Broadcast and transform roots for each domain
+            roots_expanded = roots.unsqueeze(0)  # [1, N]
+            
+            # Transform from [-1, 1] to [a, b] for each domain
+            out = ((b - a) / 2) * roots_expanded + ((a + b) / 2)  # [batch_size, N]
+            
+            return out
+            
+        def integrate(self, fn, dim, N, integration_domain=None, backend="torch"):
+            """Integrate function over multiple domains in a single call.
+            
+            Args:
+                fn: Function to integrate
+                dim: Must be 1 for this implementation
+                N: Number of quadrature points
+                integration_domain: Shape [batch_size, 2] for batch integration
+                backend: Must be "torch"
+                
+            Returns:
+                Tensor of shape [batch_size] with integral results
+            """
+            assert dim == 1
+            assert backend == "torch"
+            
+            if integration_domain.ndim == 1:
+                integration_domain = integration_domain.reshape(1, 2)
+                
+            batch_size = integration_domain.shape[0]
+            
+            # Get Gaussian quadrature points and weights
+            N = self._adjust_N(dim=1, N=N)
+            roots = self._roots(N, backend, integration_domain.requires_grad)
+            weights = self._weights(N, dim, backend)
+            
+            # Resize roots for all domains at once
+            grid_points = self._resize_roots(integration_domain, roots)  # [batch_size, N]
+            
+            # Evaluate integrand at all points
+            # Flatten for function evaluation: [batch_size * N, 1]
+            points_flat = grid_points.reshape(-1, 1)
+            function_values = fn(points_flat)  # [batch_size * N]
+            
+            # Reshape back to [batch_size, N]
+            function_values = function_values.reshape(batch_size, N)
+            
+            # Apply weights and sum for each domain
+            weighted_values = function_values * weights.unsqueeze(0)
+            
+            # Scale by domain width and sum
+            domain_widths = (integration_domain[:, 1] - integration_domain[:, 0]) / 2
+            results = domain_widths * weighted_values.sum(dim=1)
+            
+            return results
+
+Now let's see a concrete example of using this for parametric integration:
+
+.. code:: ipython3
+
+    # Example 1: Compute multiple integrals in ONE call
+    # I(a) = integral from 0 to a of x^2 dx = a^3/3
+    # for a = 1, 2, 3, 4, 5
+    
+    def integrand(x):
+        # x has shape [batch_size * N, 1] where N is the number of quadrature points
+        return x[:, 0] ** 2
+    
+    # Create multiple integration domains
+    upper_bounds = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0])
+    domains = torch.stack([torch.zeros_like(upper_bounds), upper_bounds], dim=1)
+    print(f"Integration domains shape: {domains.shape}")
+    print(f"Domains:\n{domains}")
+    
+    # Initialize the batch integrator
+    batch_integrator = Batch1DIntegrator()
+    
+    # Compute ALL integrals in ONE call - this is the key difference!
+    results = batch_integrator.integrate(integrand, dim=1, N=50, integration_domain=domains)
+    
+    # Analytical solution: a^3/3
+    analytical = upper_bounds ** 3 / 3
+    
+    print(f"\nResults shape: {results.shape}")
+    print(f"Numerical results: {results}")
+    print(f"Analytical results: {analytical}")
+    print(f"Absolute errors: {torch.abs(results - analytical)}")
+
+Output:
+
+.. parsed-literal::
+
+    Integration domains shape: torch.Size([5, 2])
+    Domains:
+    tensor([[0., 1.],
+            [0., 2.],
+            [0., 3.],
+            [0., 4.],
+            [0., 5.]])
+    
+    Results shape: torch.Size([5])
+    Numerical results: tensor([ 0.3333,  2.6667,  9.0000, 21.3333, 41.6667])
+    Analytical results: tensor([ 0.3333,  2.6667,  9.0000, 21.3333, 41.6667])
+    Absolute errors: tensor([9.9341e-09, 7.9473e-08, 1.7764e-14, 6.3578e-07, 1.2716e-06])
+
+The key advantage of this approach is that all integrals are computed in a single vectorized operation, which can provide significant speedups:
+
+.. code:: ipython3
+
+    # Performance comparison - batch vs sequential
+    import time
+    from torchquad import GaussLegendre
+    
+    # Many domains
+    n_domains = 500
+    many_upper_bounds = torch.linspace(0.1, 5.0, n_domains)
+    many_domains = torch.stack([torch.zeros(n_domains), many_upper_bounds], dim=1)
+    
+    # Batch computation
+    start = time.time()
+    batch_results = batch_integrator.integrate(integrand, dim=1, N=50, integration_domain=many_domains)
+    batch_time = time.time() - start
+    
+    # Sequential computation for comparison
+    standard_integrator = GaussLegendre()
+    start = time.time()
+    sequential_results = []
+    for i in range(n_domains):
+        result = standard_integrator.integrate(
+            integrand, dim=1, N=50, 
+            integration_domain=[[0.0, many_upper_bounds[i].item()]]
+        )
+        sequential_results.append(result)
+    sequential_time = time.time() - start
+    
+    print(f"Computed {n_domains} integrals:")
+    print(f"Batch time: {batch_time:.4f} seconds")
+    print(f"Sequential time: {sequential_time:.4f} seconds")
+    print(f"Speedup: {sequential_time/batch_time:.2f}x")
+
+Output:
+
+.. parsed-literal::
+
+    Computed 500 integrals:
+    Batch time: 0.0010 seconds
+    Sequential time: 0.2289 seconds
+    Speedup: 228.90x
+
+This approach can be extended to more complex scenarios where both the integrand and the domain depend on parameters. The key insight is that by properly vectorizing the computation, we can achieve significant performance improvements over sequential integration.
+
+.. note::
+    This implementation is specifically for 1D integrals. Extending it to higher dimensions would require more careful handling of the grid generation and result calculation.
 
 Custom Integrators
 ------------------
