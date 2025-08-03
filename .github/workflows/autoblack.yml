@@ -11,5 +11,5 @@ jobs:
           python-version: 3.11
       - name: Install Black
         run: pip install black==25.1.0
-      - name: Run black --check .
-        run: black --check .
+      - name: Run black --check --line-length 100 .
+        run: black --check --line-length 100 .
