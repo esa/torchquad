@@ -54,6 +54,7 @@ jobs:
         shell: bash -l {0}
         run: |
           micromamba activate torchquad
+          pip install -e .
           cd tests/
           pip install pytest
           pip install pytest-error-for-skips
