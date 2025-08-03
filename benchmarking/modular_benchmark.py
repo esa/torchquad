@@ -766,12 +766,15 @@ class ModularBenchmark:
                 return True
             elif backend_name == "tensorflow":
                 import tensorflow as tf  # noqa: F401
+
                 return True
             elif backend_name == "jax":
                 import jax  # noqa: F401
+
                 return True
             elif backend_name == "numpy":
                 import numpy  # noqa: F401
+
                 return True
             else:
                 return False
