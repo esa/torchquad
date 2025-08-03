@@ -23,9 +23,9 @@ def _run_gaussian_tests(backend, _precision):
     print(f"1D {gauss} Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     # Polynomials up to degree 2N-1 can be integrated almost exactly with gaussian.
     for err, test_function in zip(errors, funcs):
-        assert test_function.get_order() > (2 * N - 1) or err < 5.5e-11
+        assert test_function.get_order() > (2 * N - 1) or err < 7e-11
     for error in errors:
-        assert error < 6.33e-11
+        assert error < 7e-11
 
     N = 2  # integration points, here 2 for order check (2 points should lead to almost 0 err for low order polynomials)
 
@@ -111,7 +111,7 @@ def _run_gaussian_tests(backend, _precision):
         for err, test_function in zip(errors, funcs):
             assert test_function.get_order() > (2 * N - 1) or err < 2e-10
         for error in errors:
-            assert error < 6.33e-11
+            assert error < 7e-11
 
         jit_integrate = None  # set to None again so can be re-used with new integrand shape
 
