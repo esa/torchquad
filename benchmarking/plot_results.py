@@ -527,7 +527,7 @@ class ResultsPlotter:
         x_pos = np.arange(len(vectorized_results["grid_sizes"]))
         width = 0.35
 
-        bars1 = ax1.bar(
+        _ = ax1.bar(
             x_pos - width / 2,
             vectorized_results["loop_times"],
             width,
@@ -535,7 +535,7 @@ class ResultsPlotter:
             alpha=0.8,
             color="lightcoral",
         )
-        bars2 = ax1.bar(
+        _ = ax1.bar(
             x_pos + width / 2,
             vectorized_results["vectorized_times"],
             width,

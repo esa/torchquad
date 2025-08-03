@@ -333,7 +333,7 @@ class ModularBenchmark:
                 # Log progress
                 if i % 2 == 0 or n >= 100000:
                     self.logger.info(
-                        f"  N={n:>8}: error={error:.2e}, time={end_time-start_time:.4f}s"
+                        f"  N={n:>8}: error={error:.2e}, time={end_time - start_time:.4f}s"
                     )
 
             except Exception as e:
