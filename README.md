@@ -251,23 +251,23 @@ Using GPUs, torchquad scales particularly well with integration methods that off
 
 <!-- TODO Update plot links -->
 ### Convergence Analysis
-![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_convergence.png?raw=true)
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence.png?raw=true)
 *Convergence comparison across challenging test functions from 1D to 15D. GPU-accelerated torchquad methods demonstrate great performance, particularly for high-dimensional integration where scipy's nquad becomes computationally infeasible. Beyond 1D, torchquad significantly outperforms scipy in efficiency.*
 
 ### Runtime vs Error Efficiency  
-![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_runtime_vs_error.png?raw=true)
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime_vs_error.png?raw=true)
 *Runtime-error trade-offs across dimensions. Lower-left positions indicate better performance. While scipy's traditional methods are competitive for simple 1D problems, torchquad's GPU acceleration provides orders of magnitude better performance for multi-dimensional integration, achieving both faster computation and lower errors.*
 
 ### Scaling Performance
-![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_scaling_analysis.png?raw=true)
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_scaling_analysis.png?raw=true)
 *Scaling investigation across problem sizes and dimensions of the different methods in torchquad.*
 
 ### Vectorized Integration Speedup
-![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_vectorized_speedup.png?raw=true)
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
 *Strong performance gains when evaluating multiple integrands simultaneously. The vectorized approach shows exponential speedup (up to 200x) compared to sequential evaluation, making torchquad ideal for parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration.*
 
 ### Framework Comparison  
-![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_framework_comparison.png?raw=true)
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_framework_comparison.png?raw=true)
 *Cross-framework performance comparison for 1D integration using Monte Carlo and Simpson methods. Demonstrates torchquad's consistent API across PyTorch, TensorFlow, JAX, and NumPy backends, with GPU acceleration providing significant performance advantages for large number of function evaluations. All frameworks achieve similar accuracy while showcasing the computational benefits of GPU acceleration for parallel integration methods.*
 
 ### Running Benchmarks
