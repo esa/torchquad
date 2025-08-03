@@ -46,5 +46,6 @@ TORCHQUAD_RELEASE_BUILD = os.environ.get("TORCHQUAD_RELEASE_BUILD", "False").low
 
 if not TORCHQUAD_RELEASE_BUILD:
     from loguru import logger
+
     set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
     logger.info("Initializing torchquad.")
