@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "torchquad"
+version = "0.5.0"
+description = "Package providing numerical integration methods for PyTorch, jax, TensorFlow and numpy."
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.8, <4"
+license = { text = "GPL-3.0" }
+authors = [
+    { name = "ESA Advanced Concepts Team", email = "pablo.gomez@esa.int" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3.8",
+]
+dependencies = [
+    "loguru>=0.5.3",
+    "matplotlib>=3.3.3",
+    "scipy>=1.6.0",
+    "tqdm>=4.56.1",
+    "autoray>=0.5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/esa/torchquad"
+Source = "https://github.com/esa/torchquad/"
+
+[tool.setuptools]
+packages = ["torchquad", "torchquad.integration", "torchquad.utils"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::UserWarning:torchquad.integration.utils:256",                                       # Our own deprecation warning
+    "ignore:torch.meshgrid:UserWarning",                                                         # PyTorch meshgrid warning 
+    "ignore:Explicitly requested dtype.*truncated:UserWarning",                                  # JAX dtype warnings
+    "ignore:In the next release:UserWarning",                                                    # TensorFlow warnings
+    "ignore:DEPRECATION WARNING.*In future versions of torchquad:UserWarning",                   # Our deprecation warnings in TF autograph
+    "ignore:integration_domain should be a list:RuntimeWarning",                                 # Intentional warning for conflicting backend arguments
+    "ignore:To copy construct from a tensor.*recommended to use sourceTensor.clone:UserWarning", # PyTorch tensor copy warnings
+    "ignore:Cannot update the VEGASMap.*integrand which evaluates to zero:RuntimeWarning",       # VEGAS warning for zero integrands
+]

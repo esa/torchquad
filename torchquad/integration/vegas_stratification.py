@@ -38,11 +38,7 @@ class VEGASStratification:
         self.JF2 = anp.zeros([self.N_cubes], dtype=self.dtype, like=backend)
 
         # dampened counts
-        self.dh = (
-            anp.ones([self.N_cubes], dtype=self.dtype, like=backend)
-            * 1.0
-            / self.N_cubes
-        )
+        self.dh = anp.ones([self.N_cubes], dtype=self.dtype, like=backend) * 1.0 / self.N_cubes
 
         # current index counts as floating point numbers
         self.strat_counts = anp.zeros([self.N_cubes], dtype=self.dtype, like=backend)
@@ -81,8 +77,7 @@ class VEGASStratification:
         # EQ 42
         V2 = self.V_cubes * self.V_cubes
         d_tmp = (
-            V2 * self.JF2 / self.strat_counts
-            - (self.V_cubes * self.JF / self.strat_counts) ** 2
+            V2 * self.JF2 / self.strat_counts - (self.V_cubes * self.JF / self.strat_counts) ** 2
         )
         # Sometimes rounding errors produce negative values very close to 0
         d_tmp[d_tmp < 0.0] = 0.0
@@ -162,9 +157,7 @@ class VEGASStratification:
         # Convert the positions to float, add random offsets to them and scale
         # the result so that each point is in [0, 1)^dim
         positions = astype(positions, self.dtype)
-        random_uni = self.rng.uniform(
-            size=[positions.shape[0], self.dim], dtype=self.dtype
-        )
+        random_uni = self.rng.uniform(size=[positions.shape[0], self.dim], dtype=self.dtype)
         positions = (positions + random_uni) / self.N_strat
         # Due to rounding errors points are sometimes 1.0; replace them with
         # a value close to 1

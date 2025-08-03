@@ -175,9 +175,7 @@ class VEGAS(BaseIntegrator):
         err = self._get_error()
         chi2 = self._get_chisq()
         logger.debug(f"Iteration {self.it},Chi2={chi2:.4e}")
-        if (
-            err <= self._eps_rel * res_abs or err <= self._eps_abs
-        ) and chi2 / 5.0 < 1.0:
+        if (err <= self._eps_rel * res_abs or err <= self._eps_abs) and chi2 / 5.0 < 1.0:
             return True
 
         # Adjust number of evals if Chi square indicates instability
@@ -217,9 +215,7 @@ class VEGAS(BaseIntegrator):
             warmup_N_it (int, optional): Number of warmup iterations. Defaults to 5.
             N_samples (int, optional): Number of samples per warmup iteration. Defaults to 1000.
         """
-        logger.debug(
-            f"Running Map Warmup with warmup_N_it={warmup_N_it}, N_samples={N_samples}..."
-        )
+        logger.debug(f"Running Map Warmup with warmup_N_it={warmup_N_it}, N_samples={N_samples}...")
 
         alpha_start = 0.5  # initial alpha value
         # TODO in the original paper this is adjusted over time
@@ -237,10 +233,7 @@ class VEGAS(BaseIntegrator):
 
             # Sample points yrnd and transformed sample points x
             # Multiplying by 0.99999999 as the edge case of y=1 leads to an error
-            yrnd = (
-                self.rng.uniform(size=[N_samples, self._dim], dtype=self.dtype)
-                * 0.999999
-            )
+            yrnd = self.rng.uniform(size=[N_samples, self._dim], dtype=self.dtype) * 0.999999
             x = self.map.get_X(yrnd)
             f_eval = self._eval(x).squeeze()
             jac = self.map.get_Jac(yrnd)

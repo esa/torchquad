@@ -1,11 +1,7 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import to_backend_dtype
 
-from integration.vegas_map import VEGASMap
+from torchquad.integration.vegas_map import VEGASMap
 
 from helper_functions import setup_test_for_backend
 
@@ -58,7 +54,7 @@ def _run_vegas_map_checks(backend, dtype_name):
     # Get example point and function values
     N_per_dim = 100
     y = anp.linspace(0.0, 0.99999, N_per_dim, dtype=dtype_float, like=backend)
-    y = anp.meshgrid(*([y] * dim))
+    y = anp.meshgrid(*([y] * dim), indexing="ij")
     y = anp.stack([mg.ravel() for mg in y], axis=1, like=backend)
     # Use exp to get a peak in a corner
     f_eval = anp.prod(anp.exp(y), axis=1)
@@ -101,18 +97,14 @@ def _run_vegas_map_checks(backend, dtype_name):
         like=backend,
     )
     smoothed_weights = VEGASMap._smooth_map(weights, counts, alpha)
-    _check_tensor_similarity(
-        smoothed_weights, smoothed_weights_expected, 3e-7, dtype_float
-    )
+    _check_tensor_similarity(smoothed_weights, smoothed_weights_expected, 3e-7, dtype_float)
 
     # Test if vegasmap.update_map changes the edge locations and distances
     # correctly
     vegasmap.update_map()
     # The outermost edge locations must match the domain [0,1]^dim
     unit_domain = anp.array([[0.0, 1.0]] * dim, dtype=dtype_float, like=backend)
-    _check_tensor_similarity(
-        vegasmap.x_edges[:, [0, -1]], unit_domain, 0.0, dtype_float
-    )
+    _check_tensor_similarity(vegasmap.x_edges[:, [0, -1]], unit_domain, 0.0, dtype_float)
     assert vegasmap.x_edges.shape == (dim, N_intervals + 1), "Invalid number of edges"
     assert vegasmap.dx_edges.shape == (
         dim,
@@ -136,18 +128,10 @@ def _run_vegas_map_checks(backend, dtype_name):
     assert anp.max(anp.abs(x[0])) == 0.0, "Boundary point was remapped"
 
 
-test_vegas_map_numpy_f32 = setup_test_for_backend(
-    _run_vegas_map_checks, "numpy", "float32"
-)
-test_vegas_map_numpy_f64 = setup_test_for_backend(
-    _run_vegas_map_checks, "numpy", "float64"
-)
-test_vegas_map_torch_f32 = setup_test_for_backend(
-    _run_vegas_map_checks, "torch", "float32"
-)
-test_vegas_map_torch_f64 = setup_test_for_backend(
-    _run_vegas_map_checks, "torch", "float64"
-)
+test_vegas_map_numpy_f32 = setup_test_for_backend(_run_vegas_map_checks, "numpy", "float32")
+test_vegas_map_numpy_f64 = setup_test_for_backend(_run_vegas_map_checks, "numpy", "float64")
+test_vegas_map_torch_f32 = setup_test_for_backend(_run_vegas_map_checks, "torch", "float32")
+test_vegas_map_torch_f64 = setup_test_for_backend(_run_vegas_map_checks, "torch", "float64")
 
 
 if __name__ == "__main__":

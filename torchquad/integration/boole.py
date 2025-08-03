@@ -64,16 +64,13 @@ class Boole(NewtonCotes):
             int: An N satisfying N^(1/dim) - 1 % 4 == 0.
         """
         n_per_dim = int(N ** (1.0 / dim) + 1e-8)
-        logger.debug(
-            "Checking if N per dim is >=5 and N = 1 + 4n, where n is a positive integer."
-        )
+        logger.debug("Checking if N per dim is >=5 and N = 1 + 4n, where n is a positive integer.")
 
         # Boole's rule requires N per dim >=5 and N = 1 + 4n,
         # where n is a positive integer, for correctness.
         if n_per_dim < 5:
             warnings.warn(
-                "N per dimension cannot be lower than 5. "
-                "N per dim will now be changed to 5."
+                "N per dimension cannot be lower than 5. " "N per dim will now be changed to 5."
             )
             N = 5**dim
         elif (n_per_dim - 1) % 4 != 0:

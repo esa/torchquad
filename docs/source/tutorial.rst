@@ -47,6 +47,8 @@ environment variable; for example ``export TORCHQUAD_LOG_LEVEL=DEBUG``.
 A :ref:`later section <tutorial_backend_selection>` in this tutorial shows how
 to choose a different numerical backend.
 
+For information on using multiple GPUs, see the :ref:`Multi-GPU Usage <tutorial_multi_gpu>` section.
+
 
 Detailed Introduction
 ---------------------
@@ -106,7 +108,9 @@ the following way:
 4.  Information on how to select a numerical backend
 5.  Example showing how gradients can be obtained w.r.t. the integration domain with PyTorch
 6.  Methods to speed up the integration
-7.  Custom Integrators
+7.  Multidimensional/Vectorized Integrands
+8.  Parametric Integration with Variable Domains
+9.  Custom Integrators
 
 Feel free to test the code on your own computer as we go along.
 
@@ -768,6 +772,428 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
 
 .. note::
     VEGAS does not support multi-dimensional integrands.  If you would like this, please consider opening an issue or PR.
+
+Parametric Integration with Variable Domains
+--------------------------------------------
+
+Sometimes you need to perform multiple integrations where both the integrand and the integration domain depend on parameters. This is particularly useful in applications where you need to compute integrals for many different parameter values simultaneously.
+
+For example, you might want to compute:
+
+.. math::
+
+    I(a, b) = \\int_{a}^{b} f(x, a, b) dx
+
+for multiple values of :math:`a` and :math:`b` simultaneously.
+
+Currently, torchquad doesn't have built-in support for parametric domains, but you can extend the existing integrators to handle this case. Below is an example of how to create a custom integrator that supports batch 1D integration with variable domains:
+
+.. code:: ipython3
+
+    import torch
+    from loguru import logger
+    from autoray import numpy as anp
+    from autoray import infer_backend
+    from torchquad import Gaussian
+
+
+    class Batch1DIntegrator(Gaussian):
+        """Custom integrator for batch 1D integration with variable domains.
+        
+        This integrator can compute multiple integrals with different domains
+        in a single call, providing significant speedup over sequential computation.
+        """
+        
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.disable_integration_domain_check = True
+            
+        def _resize_roots(self, integration_domain, roots):
+            """Resize roots for batched integration domains.
+            
+            Args:
+                integration_domain: Shape [batch_size, 2] for multiple domains
+                roots: Shape [N] - the Gaussian quadrature nodes
+                
+            Returns:
+                Resized roots with shape [batch_size, N]
+            """
+            if integration_domain.ndim == 1:
+                # Single domain case - use parent implementation
+                return super()._resize_roots(integration_domain, roots)
+                
+            # Batch case
+            assert roots.ndim == 1
+            assert integration_domain.ndim == 2
+            assert integration_domain.shape[-1] == 2
+            
+            roots = roots.to(integration_domain.device)
+            
+            # Extract bounds for all domains
+            a = integration_domain[:, 0:1]  # Shape [batch_size, 1]
+            b = integration_domain[:, 1:2]  # Shape [batch_size, 1]
+            
+            # Broadcast and transform roots for each domain
+            roots_expanded = roots.unsqueeze(0)  # [1, N]
+            
+            # Transform from [-1, 1] to [a, b] for each domain
+            out = ((b - a) / 2) * roots_expanded + ((a + b) / 2)  # [batch_size, N]
+            
+            return out
+            
+        def integrate(self, fn, dim, N, integration_domain=None, backend="torch"):
+            """Integrate function over multiple domains in a single call.
+            
+            Args:
+                fn: Function to integrate
+                dim: Must be 1 for this implementation
+                N: Number of quadrature points
+                integration_domain: Shape [batch_size, 2] for batch integration
+                backend: Must be "torch"
+                
+            Returns:
+                Tensor of shape [batch_size] with integral results
+            """
+            assert dim == 1
+            assert backend == "torch"
+            
+            if integration_domain.ndim == 1:
+                integration_domain = integration_domain.reshape(1, 2)
+                
+            batch_size = integration_domain.shape[0]
+            
+            # Get Gaussian quadrature points and weights
+            N = self._adjust_N(dim=1, N=N)
+            roots = self._roots(N, backend, integration_domain.requires_grad)
+            weights = self._weights(N, dim, backend)
+            
+            # Resize roots for all domains at once
+            grid_points = self._resize_roots(integration_domain, roots)  # [batch_size, N]
+            
+            # Evaluate integrand at all points
+            # Flatten for function evaluation: [batch_size * N, 1]
+            points_flat = grid_points.reshape(-1, 1)
+            function_values = fn(points_flat)  # [batch_size * N]
+            
+            # Reshape back to [batch_size, N]
+            function_values = function_values.reshape(batch_size, N)
+            
+            # Apply weights and sum for each domain
+            weighted_values = function_values * weights.unsqueeze(0)
+            
+            # Scale by domain width and sum
+            domain_widths = (integration_domain[:, 1] - integration_domain[:, 0]) / 2
+            results = domain_widths * weighted_values.sum(dim=1)
+            
+            return results
+
+Now let's see a concrete example of using this for parametric integration:
+
+.. code:: ipython3
+
+    # Example 1: Compute multiple integrals in ONE call
+    # I(a) = integral from 0 to a of x^2 dx = a^3/3
+    # for a = 1, 2, 3, 4, 5
+    
+    def integrand(x):
+        # x has shape [batch_size * N, 1] where N is the number of quadrature points
+        return x[:, 0] ** 2
+    
+    # Create multiple integration domains
+    upper_bounds = torch.tensor([1.0, 2.0, 3.0, 4.0, 5.0])
+    domains = torch.stack([torch.zeros_like(upper_bounds), upper_bounds], dim=1)
+    print(f"Integration domains shape: {domains.shape}")
+    print(f"Domains:\n{domains}")
+    
+    # Initialize the batch integrator
+    batch_integrator = Batch1DIntegrator()
+    
+    # Compute ALL integrals in ONE call - this is the key difference!
+    results = batch_integrator.integrate(integrand, dim=1, N=50, integration_domain=domains)
+    
+    # Analytical solution: a^3/3
+    analytical = upper_bounds ** 3 / 3
+    
+    print(f"\nResults shape: {results.shape}")
+    print(f"Numerical results: {results}")
+    print(f"Analytical results: {analytical}")
+    print(f"Absolute errors: {torch.abs(results - analytical)}")
+
+Output:
+
+.. parsed-literal::
+
+    Integration domains shape: torch.Size([5, 2])
+    Domains:
+    tensor([[0., 1.],
+            [0., 2.],
+            [0., 3.],
+            [0., 4.],
+            [0., 5.]])
+    
+    Results shape: torch.Size([5])
+    Numerical results: tensor([ 0.3333,  2.6667,  9.0000, 21.3333, 41.6667])
+    Analytical results: tensor([ 0.3333,  2.6667,  9.0000, 21.3333, 41.6667])
+    Absolute errors: tensor([9.9341e-09, 7.9473e-08, 1.7764e-14, 6.3578e-07, 1.2716e-06])
+
+The key advantage of this approach is that all integrals are computed in a single vectorized operation, which can provide significant speedups:
+
+.. code:: ipython3
+
+    # Performance comparison - batch vs sequential
+    import time
+    from torchquad import GaussLegendre
+    
+    # Many domains
+    n_domains = 500
+    many_upper_bounds = torch.linspace(0.1, 5.0, n_domains)
+    many_domains = torch.stack([torch.zeros(n_domains), many_upper_bounds], dim=1)
+    
+    # Batch computation
+    start = time.time()
+    batch_results = batch_integrator.integrate(integrand, dim=1, N=50, integration_domain=many_domains)
+    batch_time = time.time() - start
+    
+    # Sequential computation for comparison
+    standard_integrator = GaussLegendre()
+    start = time.time()
+    sequential_results = []
+    for i in range(n_domains):
+        result = standard_integrator.integrate(
+            integrand, dim=1, N=50, 
+            integration_domain=[[0.0, many_upper_bounds[i].item()]]
+        )
+        sequential_results.append(result)
+    sequential_time = time.time() - start
+    
+    print(f"Computed {n_domains} integrals:")
+    print(f"Batch time: {batch_time:.4f} seconds")
+    print(f"Sequential time: {sequential_time:.4f} seconds")
+    print(f"Speedup: {sequential_time/batch_time:.2f}x")
+
+Output:
+
+.. parsed-literal::
+
+    Computed 500 integrals:
+    Batch time: 0.0010 seconds
+    Sequential time: 0.2289 seconds
+    Speedup: 228.90x
+
+This approach can be extended to more complex scenarios where both the integrand and the domain depend on parameters. The key insight is that by properly vectorizing the computation, we can achieve significant performance improvements over sequential integration.
+
+.. note::
+    This implementation is specifically for 1D integrals. Extending it to higher dimensions would require more careful handling of the grid generation and result calculation.
+
+.. _tutorial_multi_gpu:
+
+Multi-GPU Usage
+---------------
+
+While torchquad doesn't have a built-in device parameter for selecting specific GPUs, you can effectively use multiple GPUs using standard PyTorch practices and environment variables.
+
+Using CUDA_VISIBLE_DEVICES
+```````````````````````````
+
+The recommended way to control which GPU torchquad uses is through the ``CUDA_VISIBLE_DEVICES`` environment variable:
+
+.. code:: bash
+
+    # Use only GPU 0
+    export CUDA_VISIBLE_DEVICES=0
+    python your_integration_script.py
+
+    # Use only GPU 1
+    export CUDA_VISIBLE_DEVICES=1
+    python your_integration_script.py
+
+    # Use GPUs 0 and 2
+    export CUDA_VISIBLE_DEVICES=0,2
+    python your_integration_script.py
+
+This approach has several advantages:
+
+- **Clean separation**: Each process sees only the specified GPU(s)
+- **No code changes**: Your torchquad code remains unchanged
+- **Standard practice**: This is the recommended approach in the PyTorch community
+- **Process isolation**: Different processes can use different GPUs without interference
+
+Parallel Processing with Multiple GPUs
+```````````````````````````````````````
+
+For compute-intensive workloads that can be parallelized, you can spawn multiple processes, each using a different GPU:
+
+.. code:: ipython3
+
+    import multiprocessing as mp
+    import os
+    import torch
+    from torchquad import MonteCarlo, set_up_backend
+
+    def run_integration_on_gpu(gpu_id, integration_params, result_queue):
+        """Run integration on a specific GPU"""
+        # Set the GPU for this process
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id)
+        
+        # Initialize torchquad
+        set_up_backend("torch", data_type="float32")
+        
+        # Your integration code here
+        mc = MonteCarlo()
+        result = mc.integrate(
+            integration_params['fn'],
+            dim=integration_params['dim'],
+            N=integration_params['N'],
+            integration_domain=integration_params['domain'],
+            backend="torch"
+        )
+        
+        result_queue.put((gpu_id, result.item()))
+
+    def parallel_integration_example():
+        """Example of parallel integration across multiple GPUs"""
+        # Define your integration parameters
+        def integrand(x):
+            return torch.sin(x[:, 0]) + torch.exp(x[:, 1])
+            
+        integration_params = {
+            'fn': integrand,
+            'dim': 2,
+            'N': 100000,
+            'domain': [[0, 1], [-1, 1]]
+        }
+        
+        # Check available GPUs
+        available_gpus = list(range(torch.cuda.device_count()))
+        if not available_gpus:
+            print("No CUDA GPUs available")
+            return
+            
+        print(f"Using GPUs: {available_gpus}")
+        
+        # Create processes for each GPU
+        processes = []
+        result_queue = mp.Queue()
+        
+        for gpu_id in available_gpus:
+            p = mp.Process(
+                target=run_integration_on_gpu,
+                args=(gpu_id, integration_params, result_queue)
+            )
+            p.start()
+            processes.append(p)
+        
+        # Collect results
+        results = {}
+        for _ in available_gpus:
+            gpu_id, result = result_queue.get()
+            results[gpu_id] = result
+            
+        # Wait for all processes to complete
+        for p in processes:
+            p.join()
+            
+        print("Results from each GPU:")
+        for gpu_id, result in sorted(results.items()):
+            print(f"  GPU {gpu_id}: {result:.6f}")
+            
+        return results
+
+Use Cases for Multi-GPU Integration
+````````````````````````````````````
+
+1. **Parameter Sweeps**: Run the same integration with different parameters on different GPUs
+2. **Different Integration Methods**: Compare multiple integration methods simultaneously
+3. **Monte Carlo with Different Seeds**: Run multiple Monte Carlo integrations with different random seeds for error estimation
+4. **Batch Processing**: Process multiple independent integration problems in parallel
+
+Example: Monte Carlo Error Estimation
+``````````````````````````````````````
+
+.. code:: ipython3
+
+    import subprocess
+    import numpy as np
+    
+    def monte_carlo_error_estimation():
+        """Estimate integration error using multiple independent Monte Carlo runs"""
+        
+        # Script content for each GPU process
+        script_template = '''
+import os
+import torch
+from torchquad import MonteCarlo, set_up_backend
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '{gpu_id}'
+set_up_backend("torch", data_type="float32")
+
+def integrand(x):
+    return torch.sin(x[:, 0]) + torch.exp(x[:, 1])
+
+mc = MonteCarlo()
+result = mc.integrate(
+    integrand,
+    dim=2,
+    N=50000,
+    integration_domain=[[0, 1], [-1, 1]],
+    seed={seed},
+    backend="torch"
+)
+
+print(result.item())
+'''
+        
+        num_gpus = torch.cuda.device_count()
+        runs_per_gpu = 5
+        
+        results = []
+        processes = []
+        
+        for gpu_id in range(num_gpus):
+            for run in range(runs_per_gpu):
+                seed = gpu_id * runs_per_gpu + run + 1000
+                script = script_template.format(gpu_id=gpu_id, seed=seed)
+                
+                # Launch subprocess
+                process = subprocess.Popen(
+                    ['python', '-c', script],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                processes.append(process)
+        
+        # Collect results
+        for process in processes:
+            stdout, stderr = process.communicate()
+            if process.returncode == 0:
+                results.append(float(stdout.strip()))
+            else:
+                print(f"Error in subprocess: {stderr}")
+        
+        # Calculate statistics
+        results = np.array(results)
+        mean_result = np.mean(results)
+        std_error = np.std(results) / np.sqrt(len(results))
+        
+        print(f"Monte Carlo Results from {len(results)} runs:")
+        print(f"  Mean: {mean_result:.6f}")
+        print(f"  Standard Error: {std_error:.6f}")
+        print(f"  95% Confidence Interval: [{mean_result - 1.96*std_error:.6f}, {mean_result + 1.96*std_error:.6f}]")
+        
+        return mean_result, std_error
+
+Best Practices for Multi-GPU Usage
+```````````````````````````````````
+
+1. **Use CUDA_VISIBLE_DEVICES**: This is the cleanest way to control GPU selection
+2. **Process-based parallelism**: Use ``multiprocessing`` rather than threading for true parallelism
+3. **Memory management**: Each GPU process will have its own memory space
+4. **Load balancing**: Distribute work evenly across available GPUs
+5. **Error handling**: Handle cases where specific GPUs might be unavailable or busy
+
+.. warning::
+    Avoid using ``torch.cuda.set_device()`` within torchquad applications, as this can interfere with torchquad's internal device management. Always use ``CUDA_VISIBLE_DEVICES`` instead.
 
 Custom Integrators
 ------------------

@@ -25,9 +25,7 @@ class BaseIntegrator:
         self._nr_of_fevals = 0
 
     def integrate(self):
-        raise (
-            NotImplementedError("This is an abstract base class. Should not be called.")
-        )
+        raise (NotImplementedError("This is an abstract base class. Should not be called."))
 
     def _eval(self, points, weights=None, args=None):
         """Call evaluate_integrand to evaluate self._fn function at the passed points and update self._nr_of_evals
@@ -37,9 +35,7 @@ class BaseIntegrator:
             weights (backend tensor, optional): Integration weights. Defaults to None.
             args (list or tuple, optional): Any arguments required by the function. Defaults to None.
         """
-        result, num_points = self.evaluate_integrand(
-            self._fn, points, weights=weights, args=args
-        )
+        result, num_points = self.evaluate_integrand(self._fn, points, weights=weights, args=args)
         self._nr_of_fevals += num_points
         return result
 
@@ -83,10 +79,7 @@ class BaseIntegrator:
                 len(result.shape) > 1
             ):  # if the the integrand is multi-dimensional, we need to reshape/repeat weights so they can be broadcast in the *=
                 integrand_shape = anp.array(
-                    [
-                        dim if isinstance(dim, int) else dim.as_list()
-                        for dim in result.shape[1:]
-                    ],
+                    [dim if isinstance(dim, int) else dim.as_list() for dim in result.shape[1:]],
                     like=infer_backend(points),
                 )
 

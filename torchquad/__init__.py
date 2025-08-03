@@ -1,5 +1,9 @@
 import os
-from loguru import logger
+
+__version__ = "0.5.0"
+
+# Set for release builds
+TORCHQUAD_DISABLE_LOGGING = True
 
 # TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
@@ -16,8 +20,6 @@ from .integration.base_integrator import BaseIntegrator
 
 from .integration.rng import RNG
 
-from .plots.plot_convergence import plot_convergence
-from .plots.plot_runtime import plot_runtime
 
 from .utils.set_log_level import set_log_level
 from .utils.enable_cuda import enable_cuda
@@ -26,6 +28,7 @@ from .utils.set_up_backend import set_up_backend
 from .utils.deployment_test import _deployment_test
 
 __all__ = [
+    "__version__",
     "GridIntegrator",
     "BaseIntegrator",
     "IntegrationGrid",
@@ -37,8 +40,6 @@ __all__ = [
     "GaussLegendre",
     "Gaussian",
     "RNG",
-    "plot_convergence",
-    "plot_runtime",
     "enable_cuda",
     "set_precision",
     "set_log_level",
@@ -46,5 +47,8 @@ __all__ = [
     "_deployment_test",
 ]
 
-set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
-logger.info("Initializing torchquad.")
+if not TORCHQUAD_DISABLE_LOGGING:
+    from loguru import logger
+
+    set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
+    logger.info("Initializing torchquad.")
