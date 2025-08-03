@@ -34,7 +34,6 @@ setup(
     packages=[
         "torchquad",
         "torchquad.integration",
-        "torchquad.plots",
         "torchquad.utils",
     ],
     python_requires=">=3.8, <4",

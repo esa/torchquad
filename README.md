@@ -207,13 +207,60 @@ See the [open issues](https://github.com/esa/torchquad/issues) for a list of pro
 <!-- PERFORMANCE -->
 ## Performance
 
-Using GPUs torchquad scales particularly well with integration methods that offer easy parallelization. For example, below you see error and runtime results for integrating the function `f(x,y,z) = sin(x * (y+1)²) * (z+1)` on a consumer-grade desktop PC.
+Using GPUs, torchquad scales particularly well with integration methods that offer easy parallelization. The benchmarks below demonstrate performance across challenging functions from 1D to 15D, comparing torchquad's GPU-accelerated methods against scipy's CPU implementations.
 
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime.png?raw=true)
-*Runtime results of the integration. Note the far superior scaling on the GPU (solid line) in comparison to the CPU (dashed and dotted) for both methods.*
+<!-- TODO Update plot links -->
+### Convergence Analysis
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_convergence.png?raw=true)
+*Convergence comparison across challenging test functions from 1D to 15D. GPU-accelerated torchquad methods demonstrate great performance, particularly for high-dimensional integration where scipy's nquad becomes computationally infeasible. Beyond 1D, torchquad significantly outperforms scipy in efficiency.*
 
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence.png?raw=true)
-*Convergence results of the integration. Note that Simpson quickly reaches floating point precision. Monte Carlo is not competitive here given the low dimensionality of the problem.*
+### Runtime vs Error Efficiency  
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_runtime_vs_error.png?raw=true)
+*Runtime-error trade-offs across dimensions. Lower-left positions indicate better performance. While scipy's traditional methods are competitive for simple 1D problems, torchquad's GPU acceleration provides orders of magnitude better performance for multi-dimensional integration, achieving both faster computation and lower errors.*
+
+### Scaling Performance
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_scaling_analysis.png?raw=true)
+*Scaling investigation across problem sizes and dimensions of the different methods in torchquad.*
+
+### Vectorized Integration Speedup
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_vectorized_speedup.png?raw=true)
+*Strong performance gains when evaluating multiple integrands simultaneously. The vectorized approach shows exponential speedup (up to 200x) compared to sequential evaluation, making torchquad ideal for parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration.*
+
+### Framework Comparison  
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_framework_comparison.png?raw=true)
+*Cross-framework performance comparison for 1D integration using Monte Carlo and Simpson methods. Demonstrates torchquad's consistent API across PyTorch, TensorFlow, JAX, and NumPy backends, with GPU acceleration providing significant performance advantages for large number of function evaluations. All frameworks achieve similar accuracy while showcasing the computational benefits of GPU acceleration for parallel integration methods.*
+
+### Running Benchmarks
+
+To reproduce these benchmarks or test performance on your hardware:
+
+```bash
+# Run all benchmarks (convergence, framework comparison, scaling, vectorized)
+python benchmarking/modular_benchmark.py --dimensions 1,3,7,15
+
+# Run specific benchmark types
+python benchmarking/modular_benchmark.py --convergence-only --dimensions 1,3,7,15
+python benchmarking/modular_benchmark.py --scaling-only
+python benchmarking/modular_benchmark.py --framework-only
+
+# Generate all plots from results
+python benchmarking/plot_results.py
+
+# Configure benchmark parameters
+# Edit benchmarking/benchmarking_cfg.toml to adjust:
+# - Evaluation point ranges
+# - Framework backends to test
+# - Timeout limits  
+# - Method selection
+# - scipy integration tolerances
+```
+
+**New Features:**
+- **Analytic Reference Values**: Uses SymPy for exact analytic solutions where possible, providing highly accurate reference values for error calculations
+- **Enhanced Test Functions**: Analytically tractable but numerically challenging functions that better demonstrate convergence behavior
+- **Framework Comparison**: Cross-backend performance benchmarking across PyTorch, TensorFlow, JAX, and NumPy with GPU/CPU device comparisons
+
+**Hardware:** RTX 4060 Ti 16GB, i5-13400F, Precision: float32
 
 <!-- CONTRIBUTING -->
 ## Contributing
