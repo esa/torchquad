@@ -19,6 +19,9 @@ import time
 import warnings
 import logging
 import argparse
+import subprocess
+import sys
+import json
 from pathlib import Path
 from scipy.integrate import quad, nquad
 
@@ -39,6 +42,7 @@ except ImportError:
 # torchquad imports
 from torchquad import Simpson, GaussLegendre, MonteCarlo, VEGAS, enable_cuda, Boole, Trapezoid
 from torchquad.utils.set_precision import set_precision
+from torchquad.utils.set_up_backend import set_up_backend
 
 
 class ModularBenchmark:
@@ -615,6 +619,145 @@ class ModularBenchmark:
             self.logger.error(f"Failed to load results: {e}")
             return {}
 
+    def benchmark_framework_comparison(self) -> Dict:
+        """Framework comparison benchmark for 1D Monte Carlo and Simpson methods."""
+        framework_config = self.config.get("framework_comparison", {})
+        
+        if not framework_config.get("enable", False):
+            self.logger.info("Framework comparison disabled in config")
+            return {}
+
+        self.logger.info("=" * 60)
+        self.logger.info("FRAMEWORK COMPARISON BENCHMARK")
+        self.logger.info("=" * 60)
+
+        # Configuration
+        methods = framework_config.get("methods", ["monte_carlo", "simpson"])
+        backends = framework_config.get("backends", ["torch_gpu", "torch_cpu"])
+        num_runs = framework_config.get("num_runs", 3)
+        warmup_runs = framework_config.get("warmup_runs", 1)
+
+        # Use the 1D test function
+        func = self.challenging_1d
+        domain = [[0, 1]]
+        reference = 4.0422850545e-01  # 1D analytical reference
+
+        results = {
+            "methods": methods,
+            "backends": backends,
+            "reference": reference,
+            "function": "Discontinuous oscillatory 1D",
+            "results": {}
+        }
+
+        for method_name in methods:
+            if method_name not in results["results"]:
+                results["results"][method_name] = {}
+
+            # Get evaluation points for this method
+            points_key = f"points_{method_name}"
+            eval_points = framework_config.get(points_key, [1000, 10000, 100000])
+
+            self.logger.info(f"Benchmarking {method_name} across frameworks...")
+
+            for backend_spec in backends:
+                self.logger.info(f"  Testing {method_name} with {backend_spec}...")
+                
+                try:
+                    # Parse backend specification
+                    if "_" in backend_spec:
+                        backend_name, device = backend_spec.split("_", 1)
+                    else:
+                        backend_name, device = backend_spec, "cpu"
+
+                    # Skip unavailable backends gracefully
+                    if not self._is_backend_available(backend_name):
+                        self.logger.warning(f"  Backend {backend_name} not available, skipping...")
+                        continue
+
+                    # Benchmark this method-backend combination using subprocess isolation
+                    backend_results = self._benchmark_method_backend_subprocess(
+                        backend_name, device, method_name, eval_points, reference, num_runs, warmup_runs
+                    )
+
+                    if backend_results:
+                        results["results"][method_name][backend_spec] = backend_results
+
+                except Exception as e:
+                    self.logger.error(f"  Failed to benchmark {method_name} with {backend_spec}: {e}")
+                    continue
+
+        return results
+
+    def _benchmark_method_backend_subprocess(self, backend_name: str, device: str, method_name: str,
+                                           eval_points: list, reference: float, num_runs: int, warmup_runs: int):
+        """Benchmark method-backend combination using subprocess isolation."""
+        self.logger.info(f"    Using subprocess isolation for {backend_name}_{device}")
+        
+        # Prepare configuration for worker process
+        config = {
+            "backend_name": backend_name,
+            "device": device,
+            "method_name": method_name,
+            "eval_points": eval_points,
+            "reference": reference,
+            "num_runs": num_runs,
+            "warmup_runs": warmup_runs
+        }
+        
+        # Path to worker script
+        worker_script = Path(__file__).parent / "framework_worker.py"
+        
+        try:
+            # Run worker in subprocess
+            result = subprocess.run(
+                [sys.executable, str(worker_script), json.dumps(config)],
+                capture_output=True,
+                text=True,
+                timeout=300,  # 5 minute timeout per backend
+                cwd=Path(__file__).parent.parent  # Run from torchquad root
+            )
+            
+            if result.returncode != 0:
+                self.logger.error(f"    Worker process failed: {result.stderr}")
+                return None
+            
+            # Parse result
+            worker_result = json.loads(result.stdout.strip())
+            
+            if worker_result.get("success"):
+                return worker_result["results"]
+            else:
+                self.logger.error(f"    Worker failed: {worker_result.get('error', 'Unknown error')}")
+                return None
+                
+        except subprocess.TimeoutExpired:
+            self.logger.error(f"    Worker process timed out for {backend_name}_{device}")
+            return None
+        except Exception as e:
+            self.logger.error(f"    Subprocess error: {e}")
+            return None
+
+    def _is_backend_available(self, backend_name: str) -> bool:
+        """Check if a backend is available."""
+        try:
+            if backend_name == "torch":
+                import torch
+                return True
+            elif backend_name == "tensorflow":
+                import tensorflow as tf
+                return True
+            elif backend_name == "jax":
+                import jax
+                return True
+            elif backend_name == "numpy":
+                import numpy
+                return True
+            else:
+                return False
+        except ImportError:
+            return False
+
     def benchmark_scaling_analysis(self) -> Dict:
         """Runtime/feval scaling analysis from 10K to 100M function evaluations."""
         self.logger.info("Runtime/feval scaling analysis...")
@@ -858,6 +1001,7 @@ def main():
         "--convergence-only", action="store_true", help="Run only convergence benchmarks"
     )
     parser.add_argument("--scaling-only", action="store_true", help="Run only scaling benchmarks")
+    parser.add_argument("--framework-only", action="store_true", help="Run only framework comparison")
 
     args = parser.parse_args()
 
@@ -874,13 +1018,20 @@ def main():
 
     scaling_results = None
     vectorized_results = None
+    framework_results = None
 
     # Handle mutually exclusive flags
-    if args.convergence_only and args.scaling_only:
-        print("Error: Cannot use both --convergence-only and --scaling-only")
+    exclusive_flags = [args.convergence_only, args.scaling_only, args.framework_only]
+    if sum(exclusive_flags) > 1:
+        print("Error: Cannot use multiple exclusive flags together")
         return
 
-    if args.scaling_only:
+    if args.framework_only:
+        # Run only framework comparison
+        benchmark.logger.info("Running framework comparison only...")
+        framework_results = benchmark.benchmark_framework_comparison()
+        benchmark.save_results(framework_results, "framework_results.json")
+    elif args.scaling_only:
         # Run only scaling benchmarks
         benchmark.logger.info("Running scaling analysis only...")
         scaling_results = benchmark.benchmark_scaling_analysis()
@@ -902,6 +1053,11 @@ def main():
         benchmark.logger.info("Running vectorized analysis...")
         vectorized_results = benchmark.benchmark_vectorized_analysis()
         benchmark.save_results(vectorized_results, "vectorized_results.json")
+
+        # Run framework comparison
+        benchmark.logger.info("Running framework comparison...")
+        framework_results = benchmark.benchmark_framework_comparison()
+        benchmark.save_results(framework_results, "framework_results.json")
 
     benchmark.logger.info("Benchmark session completed successfully!")
 

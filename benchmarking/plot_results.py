@@ -623,6 +623,146 @@ class ResultsPlotter:
         plt.close()
         print(f"Vectorized plot saved to {self.results_dir / 'torchquad_vectorized_speedup.png'}")
 
+    def create_framework_comparison_plots(
+        self, framework_results: Dict, device_info: str = "Unknown GPU"
+    ):
+        """Create framework comparison plots for 1D Monte Carlo and Simpson methods."""
+        print("Creating framework comparison plots...")
+
+        if not framework_results or "results" not in framework_results:
+            print("No framework results to plot")
+            return
+
+        # Colors and markers for different backends
+        backend_colors = {
+            "torch_gpu": "#FF3333",
+            "torch_cpu": "#FF9999",
+            "tensorflow_gpu": "#FF8C00",
+            "tensorflow_cpu": "#FFB84D",
+            "numpy_cpu": "#0066CC",
+            "jax_cpu": "#00AA00",
+        }
+
+        backend_markers = {
+            "torch_gpu": "o",
+            "torch_cpu": "s",
+            "tensorflow_gpu": "D",
+            "tensorflow_cpu": "^",
+            "numpy_cpu": "v",
+            "jax_cpu": "p",
+        }
+
+        backend_labels = {
+            "torch_gpu": "PyTorch GPU",
+            "torch_cpu": "PyTorch CPU",
+            "tensorflow_gpu": "TensorFlow GPU",
+            "tensorflow_cpu": "TensorFlow CPU",
+            "numpy_cpu": "NumPy CPU",
+            "jax_cpu": "JAX CPU",
+        }
+
+        methods = framework_results.get("methods", ["monte_carlo", "simpson"])
+        n_methods = len(methods)
+
+        if n_methods == 0:
+            print("No methods to plot")
+            return
+
+        # Create subplots - 2 plots per method (convergence + runtime vs error)
+        fig, axes = plt.subplots(2, n_methods, figsize=(8 * n_methods, 12))
+
+        if n_methods == 1:
+            axes = axes.reshape(-1, 1)
+
+        for method_idx, method_name in enumerate(methods):
+            method_results = framework_results["results"].get(method_name, {})
+
+            if not method_results:
+                continue
+
+            # Convergence plot (top row)
+            ax_conv = axes[0, method_idx]
+
+            # Runtime vs Error plot (bottom row)
+            ax_runtime = axes[1, method_idx]
+
+            for backend_spec, backend_data in method_results.items():
+                if not backend_data.get("n_points") or not backend_data.get("errors"):
+                    continue
+
+                n_points = backend_data["n_points"]
+                errors = backend_data["errors"]
+                times = backend_data.get("times", [])
+
+                # Skip invalid data
+                valid_conv_data = [(n, e) for n, e in zip(n_points, errors) if e > 0]
+                valid_runtime_data = [(t, e) for t, e in zip(times, errors) if e > 0 and t > 0]
+
+                if not valid_conv_data:
+                    continue
+
+                label = backend_labels.get(backend_spec, backend_spec)
+                color = backend_colors.get(backend_spec, "black")
+                marker = backend_markers.get(backend_spec, "o")
+
+                # Convergence plot
+                conv_n, conv_errors = zip(*valid_conv_data)
+                ax_conv.loglog(
+                    conv_n,
+                    conv_errors,
+                    color=color,
+                    marker=marker,
+                    linewidth=2.5,
+                    markersize=8,
+                    label=label,
+                    alpha=0.85,
+                )
+
+                # Runtime vs Error plot
+                if valid_runtime_data:
+                    runtime_times, runtime_errors = zip(*valid_runtime_data)
+                    ax_runtime.loglog(
+                        runtime_times,
+                        runtime_errors,
+                        color=color,
+                        marker=marker,
+                        linewidth=2.5,
+                        markersize=8,
+                        label=label,
+                        alpha=0.85,
+                    )
+
+            # Format convergence plot
+            ax_conv.set_xlabel("Number of Function Evaluations", fontsize=12)
+            ax_conv.set_ylabel("Absolute Error", fontsize=12)
+            ax_conv.set_title(f"{method_name.replace('_', ' ').title()} - Convergence", fontsize=13)
+            ax_conv.grid(True, alpha=0.3)
+            ax_conv.legend(fontsize=10, loc="best")
+
+            # Format runtime vs error plot
+            ax_runtime.set_xlabel("Runtime (seconds)", fontsize=12)
+            ax_runtime.set_ylabel("Absolute Error", fontsize=12)
+            ax_runtime.set_title(
+                f"{method_name.replace('_', ' ').title()} - Runtime vs Error", fontsize=13
+            )
+            ax_runtime.grid(True, alpha=0.3)
+            ax_runtime.legend(fontsize=10, loc="best")
+
+        plt.suptitle(
+            f"Framework Comparison - 1D Integration \n"
+            f"Function: {framework_results.get('function', 'Unknown')} \n"
+            f"Hardware: {device_info}",
+            fontsize=16,
+        )
+        plt.tight_layout()
+        plt.savefig(
+            self.results_dir / "torchquad_framework_comparison.png", dpi=300, bbox_inches="tight"
+        )
+        plt.close()
+        print(
+            f"Framework comparison plot saved to {self.results_dir / 'torchquad_framework_comparison.png'}"
+        )
+
 
 def main():
     """Create plots from existing results."""
@@ -648,7 +788,12 @@ def main():
             vectorized_results, device_info, x_log_scale=True, y_log_scale=True
         )
 
-    if convergence_results or scaling_results or vectorized_results:
+    # Load framework comparison results
+    framework_results = plotter.load_results("framework_results.json")
+    if framework_results:
+        plotter.create_framework_comparison_plots(framework_results, device_info)
+
+    if convergence_results or scaling_results or vectorized_results or framework_results:
         print("All available plots created successfully!")
     else:
         print("No results available to plot. Run benchmark first.")

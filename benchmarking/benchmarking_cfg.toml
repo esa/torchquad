@@ -98,6 +98,49 @@ nquad_epsrel = 1e-2
 nquad_epsabs_15d = 1e-3
 nquad_epsrel_15d = 1e-3
 
+[framework_comparison]
+# Framework comparison benchmark configuration for 1D MC and Simpson
+enable = true
+dimension = 1
+methods = ["monte_carlo", "simpson"]
+
+# Backends to test (format: "backend_device")
+backends = [
+    "torch_gpu",
+    "torch_cpu",
+    "tensorflow_gpu",
+    "tensorflow_cpu",
+    "numpy_cpu",
+    "jax_cpu",
+]
+
+# Evaluation points for framework comparison (1D only)
+points_monte_carlo = [
+    10000,
+    50000,
+    100000,
+    500000,
+    1000000,
+    1_000_000,
+    10_000_000,
+    50_000_000,
+    100_000_000,
+]
+points_simpson = [
+    10000,
+    50000,
+    100000,
+    500000,
+    1_000_000,
+    10_000_000,
+    50_000_000,
+    100_000_000,
+]
+
+# Number of runs for timing stability
+num_runs = 3
+warmup_runs = 1
+
 [timeouts]
 # Maximum time in seconds for each benchmark component
 max_time_per_method = 300 # 5 minutes per method
