@@ -3,7 +3,7 @@ import pytest
 from autoray import numpy as anp
 import autoray as ar
 
-from integration_test_functions import Polynomial, Exponential, Sinusoid
+from integration_test_functions import Polynomial, Exponential, Sinusoid, ProductFunction
 from torchquad.utils.set_up_backend import set_up_backend
 from torchquad.utils.set_log_level import set_log_level
 
@@ -73,6 +73,22 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
             Sinusoid(
                 2 * np.sin(1) * np.sin(1),
                 domain=[[0, 2]],
+                is_complex=False,
+                backend=backend,
+                integrand_dims=1,
+            ),
+            # Product function: cos(x) from 0 to pi/2
+            ProductFunction(
+                1.0,  # integral of cos(x) from 0 to pi/2
+                domain=[[0, np.pi / 2]],
+                is_complex=False,
+                backend=backend,
+                integrand_dims=1,
+            ),
+            # More sinusoidal functions for better transcendental coverage
+            Sinusoid(
+                2.0,  # integral of sin(x) from 0 to pi = [-cos(x)]_0^pi = -(-1) - (-1) = 2
+                domain=[[0, np.pi]],
                 is_complex=False,
                 backend=backend,
                 integrand_dims=1,
@@ -190,6 +206,15 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
                 1.756,
                 integration_dim=3,
                 domain=[[-0.05, 0.1], [-0.25, 0.2], [-np.exp(1), np.exp(1)]],
+                is_complex=False,
+                backend=backend,
+                integrand_dims=1,
+            ),
+            # 3D Product function: cos(x)*cos(y)*cos(z) over [0, pi/2]^3
+            ProductFunction(
+                1.0,  # (sin(pi/2) - sin(0))^3 = 1
+                integration_dim=3,
+                domain=[[0, np.pi / 2], [0, np.pi / 2], [0, np.pi / 2]],
                 is_complex=False,
                 backend=backend,
                 integrand_dims=1,

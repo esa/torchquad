@@ -85,6 +85,12 @@ You can see the latest code at https://github.com/esa/torchquad.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Development:
+
+   ci_cd
+
+.. toctree::
+   :maxdepth: 1
    :caption: Contact:
 
    contact
