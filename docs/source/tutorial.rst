@@ -47,6 +47,8 @@ environment variable; for example ``export TORCHQUAD_LOG_LEVEL=DEBUG``.
 A :ref:`later section <tutorial_backend_selection>` in this tutorial shows how
 to choose a different numerical backend.
 
+For information on using multiple GPUs, see the :ref:`Multi-GPU Usage <tutorial_multi_gpu>` section.
+
 
 Detailed Introduction
 ---------------------
@@ -982,6 +984,216 @@ This approach can be extended to more complex scenarios where both the integrand
 
 .. note::
     This implementation is specifically for 1D integrals. Extending it to higher dimensions would require more careful handling of the grid generation and result calculation.
+
+.. _tutorial_multi_gpu:
+
+Multi-GPU Usage
+---------------
+
+While torchquad doesn't have a built-in device parameter for selecting specific GPUs, you can effectively use multiple GPUs using standard PyTorch practices and environment variables.
+
+Using CUDA_VISIBLE_DEVICES
+```````````````````````````
+
+The recommended way to control which GPU torchquad uses is through the ``CUDA_VISIBLE_DEVICES`` environment variable:
+
+.. code:: bash
+
+    # Use only GPU 0
+    export CUDA_VISIBLE_DEVICES=0
+    python your_integration_script.py
+
+    # Use only GPU 1
+    export CUDA_VISIBLE_DEVICES=1
+    python your_integration_script.py
+
+    # Use GPUs 0 and 2
+    export CUDA_VISIBLE_DEVICES=0,2
+    python your_integration_script.py
+
+This approach has several advantages:
+
+- **Clean separation**: Each process sees only the specified GPU(s)
+- **No code changes**: Your torchquad code remains unchanged
+- **Standard practice**: This is the recommended approach in the PyTorch community
+- **Process isolation**: Different processes can use different GPUs without interference
+
+Parallel Processing with Multiple GPUs
+```````````````````````````````````````
+
+For compute-intensive workloads that can be parallelized, you can spawn multiple processes, each using a different GPU:
+
+.. code:: ipython3
+
+    import multiprocessing as mp
+    import os
+    import torch
+    from torchquad import MonteCarlo, set_up_backend
+
+    def run_integration_on_gpu(gpu_id, integration_params, result_queue):
+        """Run integration on a specific GPU"""
+        # Set the GPU for this process
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_id)
+        
+        # Initialize torchquad
+        set_up_backend("torch", data_type="float32")
+        
+        # Your integration code here
+        mc = MonteCarlo()
+        result = mc.integrate(
+            integration_params['fn'],
+            dim=integration_params['dim'],
+            N=integration_params['N'],
+            integration_domain=integration_params['domain'],
+            backend="torch"
+        )
+        
+        result_queue.put((gpu_id, result.item()))
+
+    def parallel_integration_example():
+        """Example of parallel integration across multiple GPUs"""
+        # Define your integration parameters
+        def integrand(x):
+            return torch.sin(x[:, 0]) + torch.exp(x[:, 1])
+            
+        integration_params = {
+            'fn': integrand,
+            'dim': 2,
+            'N': 100000,
+            'domain': [[0, 1], [-1, 1]]
+        }
+        
+        # Check available GPUs
+        available_gpus = list(range(torch.cuda.device_count()))
+        if not available_gpus:
+            print("No CUDA GPUs available")
+            return
+            
+        print(f"Using GPUs: {available_gpus}")
+        
+        # Create processes for each GPU
+        processes = []
+        result_queue = mp.Queue()
+        
+        for gpu_id in available_gpus:
+            p = mp.Process(
+                target=run_integration_on_gpu,
+                args=(gpu_id, integration_params, result_queue)
+            )
+            p.start()
+            processes.append(p)
+        
+        # Collect results
+        results = {}
+        for _ in available_gpus:
+            gpu_id, result = result_queue.get()
+            results[gpu_id] = result
+            
+        # Wait for all processes to complete
+        for p in processes:
+            p.join()
+            
+        print("Results from each GPU:")
+        for gpu_id, result in sorted(results.items()):
+            print(f"  GPU {gpu_id}: {result:.6f}")
+            
+        return results
+
+Use Cases for Multi-GPU Integration
+````````````````````````````````````
+
+1. **Parameter Sweeps**: Run the same integration with different parameters on different GPUs
+2. **Different Integration Methods**: Compare multiple integration methods simultaneously
+3. **Monte Carlo with Different Seeds**: Run multiple Monte Carlo integrations with different random seeds for error estimation
+4. **Batch Processing**: Process multiple independent integration problems in parallel
+
+Example: Monte Carlo Error Estimation
+``````````````````````````````````````
+
+.. code:: ipython3
+
+    import subprocess
+    import numpy as np
+    
+    def monte_carlo_error_estimation():
+        """Estimate integration error using multiple independent Monte Carlo runs"""
+        
+        # Script content for each GPU process
+        script_template = '''
+import os
+import torch
+from torchquad import MonteCarlo, set_up_backend
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '{gpu_id}'
+set_up_backend("torch", data_type="float32")
+
+def integrand(x):
+    return torch.sin(x[:, 0]) + torch.exp(x[:, 1])
+
+mc = MonteCarlo()
+result = mc.integrate(
+    integrand,
+    dim=2,
+    N=50000,
+    integration_domain=[[0, 1], [-1, 1]],
+    seed={seed},
+    backend="torch"
+)
+
+print(result.item())
+'''
+        
+        num_gpus = torch.cuda.device_count()
+        runs_per_gpu = 5
+        
+        results = []
+        processes = []
+        
+        for gpu_id in range(num_gpus):
+            for run in range(runs_per_gpu):
+                seed = gpu_id * runs_per_gpu + run + 1000
+                script = script_template.format(gpu_id=gpu_id, seed=seed)
+                
+                # Launch subprocess
+                process = subprocess.Popen(
+                    ['python', '-c', script],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                processes.append(process)
+        
+        # Collect results
+        for process in processes:
+            stdout, stderr = process.communicate()
+            if process.returncode == 0:
+                results.append(float(stdout.strip()))
+            else:
+                print(f"Error in subprocess: {stderr}")
+        
+        # Calculate statistics
+        results = np.array(results)
+        mean_result = np.mean(results)
+        std_error = np.std(results) / np.sqrt(len(results))
+        
+        print(f"Monte Carlo Results from {len(results)} runs:")
+        print(f"  Mean: {mean_result:.6f}")
+        print(f"  Standard Error: {std_error:.6f}")
+        print(f"  95% Confidence Interval: [{mean_result - 1.96*std_error:.6f}, {mean_result + 1.96*std_error:.6f}]")
+        
+        return mean_result, std_error
+
+Best Practices for Multi-GPU Usage
+```````````````````````````````````
+
+1. **Use CUDA_VISIBLE_DEVICES**: This is the cleanest way to control GPU selection
+2. **Process-based parallelism**: Use ``multiprocessing`` rather than threading for true parallelism
+3. **Memory management**: Each GPU process will have its own memory space
+4. **Load balancing**: Distribute work evenly across available GPUs
+5. **Error handling**: Handle cases where specific GPUs might be unavailable or busy
+
+.. warning::
+    Avoid using ``torch.cuda.set_device()`` within torchquad applications, as this can interfere with torchquad's internal device management. Always use ``CUDA_VISIBLE_DEVICES`` instead.
 
 Custom Integrators
 ------------------

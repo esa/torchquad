@@ -1,4 +1,6 @@
 import warnings
+import torch
+import pytest
 
 from torchquad.integration.boole import Boole
 from helper_functions import (
@@ -107,6 +109,66 @@ def _run_boole_tests(backend, _precision):
             assert error < 6.33e-11
 
 
+def test_boole_calculate_result_kwargs():
+    """Test that Boole().calculate_result() works correctly with keyword arguments."""
+
+    def integrand1(x):
+        return torch.rand(x.shape, device=x.device)
+
+    integration_domain = torch.tensor([[0.0, 1.0]])
+    dim = 1
+    N = 125  # Must be 5^n for Boole's rule
+
+    integrator = Boole()
+    grid_points, hs, n_per_dim = integrator.calculate_grid(N, integration_domain)
+    function_values, _ = integrator.evaluate_integrand(integrand1, grid_points)
+
+    # Test with positional arguments (should work as before)
+    integral1 = integrator.calculate_result(function_values, dim, n_per_dim, hs, integration_domain)
+
+    # Test with keyword arguments (this was failing before the fix)
+    integral2 = integrator.calculate_result(
+        function_values=function_values,
+        dim=dim,
+        n_per_dim=n_per_dim,
+        hs=hs,
+        integration_domain=integration_domain,
+    )
+
+    # Test with mixed positional and keyword arguments
+    integral3 = integrator.calculate_result(
+        function_values, dim=dim, n_per_dim=n_per_dim, hs=hs, integration_domain=integration_domain
+    )
+
+    # All results should be approximately equal
+    assert torch.allclose(integral1, integral2, rtol=1e-10)
+    assert torch.allclose(integral1, integral3, rtol=1e-10)
+
+
+def test_boole_calculate_result_error_handling():
+    """Test that Boole().calculate_result() gives meaningful error messages for invalid inputs."""
+
+    integrator = Boole()
+
+    # Test missing function_values argument
+    with pytest.raises(ValueError) as exc_info:
+        integrator.calculate_result(
+            dim=1,
+            n_per_dim=5,
+            hs=torch.tensor([0.25]),
+            integration_domain=torch.tensor([[0.0, 1.0]]),
+        )
+
+    assert "function_values argument not found" in str(exc_info.value)
+    assert "Please provide function_values" in str(exc_info.value)
+
+    # Test with only self argument (no function_values)
+    with pytest.raises(ValueError) as exc_info:
+        integrator.calculate_result()
+
+    assert "function_values argument not found" in str(exc_info.value)
+
+
 test_integrate_numpy = setup_test_for_backend(_run_boole_tests, "numpy", "float64")
 test_integrate_torch = setup_test_for_backend(_run_boole_tests, "torch", "float64")
 test_integrate_jax = setup_test_for_backend(_run_boole_tests, "jax", "float64")
@@ -119,3 +181,8 @@ if __name__ == "__main__":
     test_integrate_torch()
     test_integrate_jax()
     test_integrate_tensorflow()
+
+    # Test the new keyword argument functionality
+    test_boole_calculate_result_kwargs()
+    test_boole_calculate_result_error_handling()
+    print("All Boole keyword argument tests passed!")

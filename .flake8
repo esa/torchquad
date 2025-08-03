@@ -1,4 +1,10 @@
 [flake8]
+exclude = 
+    .git,
+    __pycache__,
+    build,
+    dist,
+    my_notebooks
 extend-ignore =
 	# Allow whitespace before ':' because in some cases this whitespace
 	# avoids confusing the operator precedence,
