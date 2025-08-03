@@ -17,7 +17,7 @@ jobs:
           python-version: "3.10"
       - name: Install dependencies
         run: |
-          pip install setuptools wheel twine
+          pip install build twine
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Build and publish to Test PyPI
         env:
@@ -25,5 +25,5 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
           TORCHQUAD_RELEASE_BUILD: "True"
         run: |
-          python setup.py sdist bdist_wheel
+          python -m build
           twine upload -r testpypi dist/*
