@@ -354,120 +354,272 @@ class ResultsPlotter:
         )
 
     def create_scaling_plots(self, scaling_results: Dict, device_info: str = "Unknown GPU"):
-        """Create scaling analysis plots with error bars."""
+        """Create runtime/feval scaling analysis plots for 1D and 7D."""
         print("Creating scaling plots...")
-        
-        strong_scaling = scaling_results.get('strong', {})
-        weak_scaling = scaling_results.get('weak', {})
-        
-        if not strong_scaling and not weak_scaling:
+
+        import numpy as np
+
+        if not scaling_results or ("1d" not in scaling_results and "7d" not in scaling_results):
             print("No scaling results to plot")
             return
-        
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 7))
-        
-        # Strong scaling with error bars
-        for case_name, data in strong_scaling.items():
-            if data.get('batch_sizes'):
-                ax1.errorbar(data['batch_sizes'], data['efficiency_mean'], 
-                           yerr=data['efficiency_std'],
-                           marker='o', linewidth=2.5, markersize=8, 
-                           capsize=5, capthick=2, label=case_name)
-        
-        ax1.axhline(y=1.0, color='gray', linestyle='--', alpha=0.7, label='Ideal efficiency')
-        ax1.set_xlabel('Batch Size', fontsize=13)
-        ax1.set_ylabel('Parallel Efficiency', fontsize=13)
-        ax1.set_title('Strong Scaling Analysis \n (Fixed Problem Size, Multiple Runs)', fontsize=13)
-        ax1.set_ylim(0, 1.1)
-        ax1.set_xscale('log')
-        ax1.grid(True, alpha=0.3)
-        ax1.legend(fontsize=11)
-        
-        # Weak scaling with error bars
-        for method_name, data in weak_scaling.items():
-            if data.get('dimensions'):
-                ax2.errorbar(data['dimensions'], data['efficiency_mean'],
-                           yerr=data['efficiency_std'],
-                           marker='s', linewidth=2.5, markersize=8,
-                           capsize=5, capthick=2, 
-                           label=f"{method_name.replace('_', ' ').title()}")
-        
-        ax2.axhline(y=1.0, color='gray', linestyle='--', alpha=0.7, label='Ideal efficiency')
-        ax2.set_xlabel('Problem Dimension', fontsize=13)
-        ax2.set_ylabel('Parallel Efficiency', fontsize=13)
-        ax2.set_title('Weak Scaling Analysis \n (Proportional Problem Size, Multiple Runs)', fontsize=13)
-        ax2.set_ylim(0, 1.1)
-        ax2.grid(True, alpha=0.3)
-        ax2.legend(fontsize=11)
-        
-        plt.suptitle(f'Enhanced Scaling Performance Analysis \n '
-                    f'Hardware: {device_info}', fontsize=15)
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 8))
+
+        # Colors for different methods
+        method_colors = {
+            "trapezoid": "#8B4513",
+            "simpson": "#0066CC",
+            "boole": "#4B0082",
+            "gauss_legendre": "#00AA00",
+            "monte_carlo": "#FF3333",
+            "vegas": "#FF8C00",
+        }
+
+        # Markers for different methods
+        method_markers = {
+            "trapezoid": "v",
+            "simpson": "o",
+            "boole": "p",
+            "gauss_legendre": "s",
+            "monte_carlo": "D",
+            "vegas": "^",
+        }
+
+        # Plot 1D results
+        if "1d" in scaling_results:
+            ax = ax1
+            dim_data = scaling_results["1d"]
+
+            for method_name, method_data in dim_data.items():
+                if method_data.get("fevals") and method_data.get("times_per_eval_mean"):
+                    # Convert to fevals/second and scale to millions
+                    fevals_per_sec = [
+                        1.0 / time_per_eval for time_per_eval in method_data["times_per_eval_mean"]
+                    ]
+                    fevals_per_sec_std = [
+                        std / (time_per_eval**2)
+                        for time_per_eval, std in zip(
+                            method_data["times_per_eval_mean"], method_data["times_per_eval_std"]
+                        )
+                    ]
+
+                    # Scale to millions for better readability
+                    fevals_per_sec_millions = [fps / 1e6 for fps in fevals_per_sec]
+                    fevals_per_sec_std_millions = [std / 1e6 for std in fevals_per_sec_std]
+
+                    # Plot with error bars
+                    ax.errorbar(
+                        method_data["fevals"],
+                        fevals_per_sec_millions,
+                        yerr=fevals_per_sec_std_millions,
+                        color=method_colors.get(method_name, "black"),
+                        marker=method_markers.get(method_name, "o"),
+                        linewidth=2.5,
+                        markersize=8,
+                        capsize=5,
+                        capthick=2,
+                        label=method_name.replace("_", " ").title(),
+                        alpha=0.85,
+                    )
+
+            # Add linear scaling reference line
+            fevals_range = np.logspace(4, 8, 100)
+            reference_throughput = 100  # 100M fevals/sec reference
+            ax.plot(
+                fevals_range,
+                [reference_throughput] * len(fevals_range),
+                "k--",
+                alpha=0.5,
+                label="Linear scaling",
+            )
+
+            ax.set_xlabel("Number of Function Evaluations", fontsize=13)
+            ax.set_ylabel("Function Evaluations per Second (Millions)", fontsize=13)
+            ax.set_title("1D Scaling Analysis \n Function: f(x) = Σx²", fontsize=14)
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=10, loc="best")
+
+        # Plot 7D results
+        if "7d" in scaling_results:
+            ax = ax2
+            dim_data = scaling_results["7d"]
+
+            for method_name, method_data in dim_data.items():
+                if method_data.get("fevals") and method_data.get("times_per_eval_mean"):
+                    # Convert to fevals/second and scale to millions
+                    fevals_per_sec = [
+                        1.0 / time_per_eval for time_per_eval in method_data["times_per_eval_mean"]
+                    ]
+                    fevals_per_sec_std = [
+                        std / (time_per_eval**2)
+                        for time_per_eval, std in zip(
+                            method_data["times_per_eval_mean"], method_data["times_per_eval_std"]
+                        )
+                    ]
+
+                    # Scale to millions for better readability
+                    fevals_per_sec_millions = [fps / 1e6 for fps in fevals_per_sec]
+                    fevals_per_sec_std_millions = [std / 1e6 for std in fevals_per_sec_std]
+
+                    # Plot with error bars
+                    ax.errorbar(
+                        method_data["fevals"],
+                        fevals_per_sec_millions,
+                        yerr=fevals_per_sec_std_millions,
+                        color=method_colors.get(method_name, "black"),
+                        marker=method_markers.get(method_name, "o"),
+                        linewidth=2.5,
+                        markersize=8,
+                        capsize=5,
+                        capthick=2,
+                        label=method_name.replace("_", " ").title(),
+                        alpha=0.85,
+                    )
+
+            # Add linear scaling reference line
+            fevals_range = np.logspace(4, 8, 100)
+            reference_throughput = 10  # 10M fevals/sec reference (lower for 7D)
+            ax.plot(
+                fevals_range,
+                [reference_throughput] * len(fevals_range),
+                "k--",
+                alpha=0.5,
+                label="Linear scaling",
+            )
+
+            ax.set_xlabel("Number of Function Evaluations", fontsize=13)
+            ax.set_ylabel("Function Evaluations per Second (Millions)", fontsize=13)
+            ax.set_title("7D Scaling Analysis \n Function: f(x) = Σx²", fontsize=14)
+            ax.set_xscale("log")
+            ax.set_yscale("log")
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=10, loc="best")
+
+        plt.suptitle(f"Runtime/Evaluation Scaling Analysis\nHardware: {device_info}", fontsize=16)
         plt.tight_layout()
-        plt.savefig(self.results_dir / 'torchquad_scaling_analysis.png', dpi=300, bbox_inches='tight')
+        plt.savefig(
+            self.results_dir / "torchquad_scaling_analysis.png", dpi=300, bbox_inches="tight"
+        )
         plt.close()
         print(f"Scaling plot saved to {self.results_dir / 'torchquad_scaling_analysis.png'}")
-    
-    def create_vectorized_plots(self, vectorized_results: Dict, device_info: str = "Unknown GPU", 
-                              x_log_scale: bool = True, y_log_scale: bool = True):
+
+    def create_vectorized_plots(
+        self,
+        vectorized_results: Dict,
+        device_info: str = "Unknown GPU",
+        x_log_scale: bool = True,
+        y_log_scale: bool = True,
+    ):
         """Create vectorized speedup plots with configurable log-scale axes."""
         print("Creating vectorized plots...")
-        
-        if not vectorized_results.get('grid_sizes'):
+
+        if not vectorized_results.get("grid_sizes"):
             print("No vectorized results to plot")
             return
-        
+
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 7))
-        
+
         # Execution time comparison
         import numpy as np
-        x_pos = np.arange(len(vectorized_results['grid_sizes']))
+
+        x_pos = np.arange(len(vectorized_results["grid_sizes"]))
         width = 0.35
-        
-        bars1 = ax1.bar(x_pos - width/2, vectorized_results['loop_times'], width, 
-                       label='Loop-based', alpha=0.8, color='lightcoral')
-        bars2 = ax1.bar(x_pos + width/2, vectorized_results['vectorized_times'], width,
-                       label='Vectorized', alpha=0.8, color='lightblue')
-        
-        ax1.set_xlabel('Parameter Grid Size', fontsize=13)
-        ax1.set_ylabel('Execution Time (seconds)', fontsize=13)
-        ax1.set_title('Vectorized vs Loop-based Integration \n Function: sqrt(cos(sin(a*x)))', fontsize=13)
+
+        bars1 = ax1.bar(
+            x_pos - width / 2,
+            vectorized_results["loop_times"],
+            width,
+            label="Loop-based",
+            alpha=0.8,
+            color="lightcoral",
+        )
+        bars2 = ax1.bar(
+            x_pos + width / 2,
+            vectorized_results["vectorized_times"],
+            width,
+            label="Vectorized",
+            alpha=0.8,
+            color="lightblue",
+        )
+
+        ax1.set_xlabel("Parameter Grid Size", fontsize=13)
+        ax1.set_ylabel("Execution Time (seconds)", fontsize=13)
+        ax1.set_title(
+            "Vectorized vs Loop-based Integration \n Function: sqrt(cos(sin(a*x)))", fontsize=13
+        )
         ax1.set_xticks(x_pos)
-        ax1.set_xticklabels(vectorized_results['grid_sizes'])
-        
+        ax1.set_xticklabels(vectorized_results["grid_sizes"])
+
         if y_log_scale:
-            ax1.set_yscale('log')
-        
+            ax1.set_yscale("log")
+
         ax1.legend(fontsize=11)
         ax1.grid(True, alpha=0.3)
-        
+
         # Speedup factors
         if x_log_scale and y_log_scale:
-            ax2.loglog(vectorized_results['grid_sizes'], vectorized_results['speedups'],
-                      marker='o', linewidth=3, markersize=10, color='green', label='Speedup')
+            ax2.loglog(
+                vectorized_results["grid_sizes"],
+                vectorized_results["speedups"],
+                marker="o",
+                linewidth=3,
+                markersize=10,
+                color="green",
+                label="Speedup",
+            )
         elif x_log_scale:
-            ax2.semilogx(vectorized_results['grid_sizes'], vectorized_results['speedups'],
-                        marker='o', linewidth=3, markersize=10, color='green', label='Speedup')
+            ax2.semilogx(
+                vectorized_results["grid_sizes"],
+                vectorized_results["speedups"],
+                marker="o",
+                linewidth=3,
+                markersize=10,
+                color="green",
+                label="Speedup",
+            )
         elif y_log_scale:
-            ax2.semilogy(vectorized_results['grid_sizes'], vectorized_results['speedups'],
-                        marker='o', linewidth=3, markersize=10, color='green', label='Speedup')
+            ax2.semilogy(
+                vectorized_results["grid_sizes"],
+                vectorized_results["speedups"],
+                marker="o",
+                linewidth=3,
+                markersize=10,
+                color="green",
+                label="Speedup",
+            )
         else:
-            ax2.plot(vectorized_results['grid_sizes'], vectorized_results['speedups'],
-                    marker='o', linewidth=3, markersize=10, color='green', label='Speedup')
-        
-        ax2.axhline(y=1.0, color='red', linestyle='--', alpha=0.7, label='No speedup')
-        
-        ax2.set_xlabel('Parameter Grid Size', fontsize=13)
-        ax2.set_ylabel('Speedup Factor', fontsize=13)
-        
-        scale_info = f"({'Log' if x_log_scale else 'Linear'}-{'Log' if y_log_scale else 'Linear'} Scale)"
-        ax2.set_title(f'Vectorized Integration Speedup \n {scale_info}', fontsize=13)
+            ax2.plot(
+                vectorized_results["grid_sizes"],
+                vectorized_results["speedups"],
+                marker="o",
+                linewidth=3,
+                markersize=10,
+                color="green",
+                label="Speedup",
+            )
+
+        ax2.axhline(y=1.0, color="red", linestyle="--", alpha=0.7, label="No speedup")
+
+        ax2.set_xlabel("Parameter Grid Size", fontsize=13)
+        ax2.set_ylabel("Speedup Factor", fontsize=13)
+
+        scale_info = (
+            f"({'Log' if x_log_scale else 'Linear'}-{'Log' if y_log_scale else 'Linear'} Scale)"
+        )
+        ax2.set_title(f"Vectorized Integration Speedup \n {scale_info}", fontsize=13)
         ax2.grid(True, alpha=0.3)
         ax2.legend(fontsize=11)
-        
-        plt.suptitle(f'Enhanced Vectorized Integrand Performance Analysis \n '
-                    f'Hardware: {device_info}', fontsize=15)
+
+        plt.suptitle(
+            f"Enhanced Vectorized Integrand Performance Analysis \n " f"Hardware: {device_info}",
+            fontsize=15,
+        )
         plt.tight_layout()
-        plt.savefig(self.results_dir / 'torchquad_vectorized_speedup.png', dpi=300, bbox_inches='tight')
+        plt.savefig(
+            self.results_dir / "torchquad_vectorized_speedup.png", dpi=300, bbox_inches="tight"
+        )
         plt.close()
         print(f"Vectorized plot saved to {self.results_dir / 'torchquad_vectorized_speedup.png'}")
 
@@ -482,19 +634,20 @@ def main():
     if convergence_results:
         plotter.create_convergence_plots(convergence_results, device_info)
         plotter.create_runtime_vs_error_plots(convergence_results, device_info)
-    
+
     # Load scaling results
     scaling_results = plotter.load_results("scaling_results.json")
     if scaling_results:
         plotter.create_scaling_plots(scaling_results, device_info)
-    
+
     # Load vectorized results
     vectorized_results = plotter.load_results("vectorized_results.json")
     if vectorized_results:
         # Default to log-log scale, but could be made configurable
-        plotter.create_vectorized_plots(vectorized_results, device_info, 
-                                      x_log_scale=True, y_log_scale=True)
-    
+        plotter.create_vectorized_plots(
+            vectorized_results, device_info, x_log_scale=True, y_log_scale=True
+        )
+
     if convergence_results or scaling_results or vectorized_results:
         print("All available plots created successfully!")
     else:

@@ -37,7 +37,7 @@ vegas = [100_000, 1_000_000, 10_000_000, 100_000_000, 250_000_000]
 
 [convergence.points_7d]
 simpson = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000]
-gauss_legendre = [1000, 5000, 10000, 50000, 100000, 500_000]
+gauss_legendre = [1000, 5000, 100_00, 50_000, 100_000, 500_000]
 monte_carlo = [
     10_000,
     100_000,
@@ -56,17 +56,30 @@ monte_carlo = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 150_000_000]
 vegas = [100_000, 1_000_000, 10_000_000, 100_000_000, 250_000_000, 300_000_000]
 
 [scaling]
-# Strong scaling configuration
-strong_batch_sizes = [10000, 25000, 50000, 100000, 150000, 250000, 500000]
-strong_total_work_1d = 1_000_000
-strong_total_work_3d = 1_000_000
+# Scaling analysis configuration for runtime/feval from 10K to 100M
+# Function evaluations to test
+feval_counts = [
+    50_000,
+    100_000,
+    500_000,
+    1_000_000,
+    5_000_000,
+    10_000_000,
+    50_000_000,
+    100_000_000,
+]
 
-# Weak scaling configuration
-weak_work_per_dim = [1_000_000, 100, 1]
-weak_mc_constant_work = 1_000_000
+# Gauss-Legendre needs different iteration numbers due to different scaling
+gauss_legendre_fevals_1d = [100, 250, 500, 1000]
+gauss_legendre_fevals_7d = [5000, 10_000, 50_000, 100_000]
+
+# Maximum fevals for different methods
+max_fevals_grid_1d = 100_000_000
+max_fevals_grid_7d = 100_000_000
+max_fevals_mc = 100_000_000
 
 # Number of runs for error estimation
-num_runs = 3
+num_runs = 4
 warmup_runs = 1
 
 [vectorized]

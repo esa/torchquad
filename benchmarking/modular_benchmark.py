@@ -37,7 +37,7 @@ except ImportError:
     toml = None
 
 # torchquad imports
-from torchquad import Simpson, GaussLegendre, MonteCarlo, VEGAS, enable_cuda, Boole
+from torchquad import Simpson, GaussLegendre, MonteCarlo, VEGAS, enable_cuda, Boole, Trapezoid
 from torchquad.utils.set_precision import set_precision
 
 
@@ -246,7 +246,6 @@ class ModularBenchmark:
         func_name = f"{dim}D"
         self.logger.info(f"Calculating reference value for {func_name}...")
 
-        start_time = time.perf_counter()
         try:
             if dim <= 3:
                 ref = Boole()
@@ -602,226 +601,166 @@ class ModularBenchmark:
             self.logger.error(f"Failed to load results: {e}")
             return {}
 
-    def benchmark_scaling_analysis(self) -> tuple:
-        """Scaling analysis with multiple runs and error bars."""
-        self.logger.info("Scaling analysis with error bars...")
+    def benchmark_scaling_analysis(self) -> Dict:
+        """Runtime/feval scaling analysis from 10K to 100M function evaluations."""
+        self.logger.info("Runtime/feval scaling analysis...")
 
         def test_integrand(x):
             """Simple quadratic function for scaling tests."""
             return torch.sum(x**2, dim=1)
 
-        # Strong scaling - multiple runs for error estimation
-        strong_results = {}
-        num_runs = self.config.get("scaling", {}).get("num_runs", 3)
-
-        batch_sizes = self.config.get("scaling", {}).get(
-            "strong_batch_sizes", [50000, 100000, 250000]
+        # Load configuration
+        scaling_config = self.config.get("scaling", {})
+        feval_counts = scaling_config.get(
+            "feval_counts",
+            [10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000, 100000000],
         )
-        test_cases = [
-            {
-                "dim": 1,
-                "total_work": self.config.get("scaling", {}).get("strong_total_work_1d", 1000000),
-                "name": "1D: 1M points",
-            },
-            {
-                "dim": 3,
-                "total_work": self.config.get("scaling", {}).get("strong_total_work_3d", 1000000),
-                "name": "3D: 1M points",
-            },
-        ]
 
-        for case in test_cases:
-            self.logger.info(f"  Strong scaling: {case['name']}")
-            case_results = {
-                "batch_sizes": [],
-                "times_mean": [],
-                "times_std": [],
-                "efficiency_mean": [],
-                "efficiency_std": [],
-            }
+        # Gauss-Legendre specific fevals
+        gauss_legendre_fevals_1d = scaling_config.get("gauss_legendre_fevals_1d", feval_counts)
+        gauss_legendre_fevals_7d = scaling_config.get("gauss_legendre_fevals_7d", feval_counts)
 
-            reference_time = None
+        # Max fevals from config
+        max_fevals_grid_1d = scaling_config.get("max_fevals_grid_1d", 10000000)
+        max_fevals_grid_7d = scaling_config.get("max_fevals_grid_7d", 100000)
+        max_fevals_mc = scaling_config.get("max_fevals_mc", 100000000)
 
-            for batch_size in batch_sizes:
-                if batch_size > case["total_work"]:
-                    break
+        # Methods to test
+        methods = {
+            "trapezoid": Trapezoid(),
+            "simpson": Simpson(),
+            "boole": Boole(),
+            "gauss_legendre": GaussLegendre(),
+            "monte_carlo": MonteCarlo(),
+            "vegas": VEGAS(),
+        }
 
-                self.logger.info(f"    Batch size {batch_size}: ")
+        # Test in 1D and 7D
+        dimensions = [1, 7]
+        num_runs = scaling_config.get("num_runs", 3)
+        warmup_runs = scaling_config.get("warmup_runs", 1)
 
-                run_times = []
-                run_efficiencies = []
+        results = {}
 
-                for run in range(num_runs):
-                    try:
-                        domain = [[0, 1]] * case["dim"]
-                        integrator = Simpson()
+        for dim in dimensions:
+            self.logger.info(f"\nScaling analysis for {dim}D:")
+            results[f"{dim}d"] = {}
+            domain = [[0, 1]] * dim
 
-                        num_batches = case["total_work"] // batch_size
+            for method_name, integrator in methods.items():
+                self.logger.info(f"  Method: {method_name}")
+                method_results = {
+                    "fevals": [],
+                    "times_mean": [],
+                    "times_std": [],
+                    "times_per_eval_mean": [],
+                    "times_per_eval_std": [],
+                }
 
-                        start_time = time.perf_counter()
+                # Determine which feval counts to use for this method
+                if method_name == "gauss_legendre":
+                    # Use special Gauss-Legendre fevals
+                    if dim == 1:
+                        method_feval_counts = gauss_legendre_fevals_1d
+                        max_fevals = max_fevals_grid_1d
+                    else:
+                        method_feval_counts = gauss_legendre_fevals_7d
+                        max_fevals = max_fevals_grid_7d
+                elif method_name in ["trapezoid", "simpson", "boole"]:
+                    # Other grid methods use standard fevals with limits
+                    method_feval_counts = feval_counts
+                    if dim == 1:
+                        max_fevals = max_fevals_grid_1d
+                    else:
+                        max_fevals = max_fevals_grid_7d
+                else:
+                    # Monte Carlo methods
+                    method_feval_counts = feval_counts
+                    max_fevals = max_fevals_mc
 
-                        # Run a sample of batches for timing
-                        sample_batches = min(1, num_batches)
-                        for i in range(sample_batches):
-                            result = integrator.integrate(
-                                test_integrand,
-                                dim=case["dim"],
-                                N=batch_size,
-                                integration_domain=domain,
-                            )
-
-                        elapsed = time.perf_counter() - start_time
-                        estimated_total_time = elapsed * (num_batches / sample_batches)
-                        run_times.append(estimated_total_time)
-
-                        if reference_time is None:
-                            run_efficiencies.append(1.0)
-                        else:
-                            effective_parallelism = batch_size / batch_sizes[0]
-                            theoretical_time = reference_time / effective_parallelism
-                            efficiency = min(1.0, theoretical_time / estimated_total_time)
-                            run_efficiencies.append(efficiency)
-
-                    except Exception as e:
-                        self.logger.warning(f"Run {run} failed: {e}")
+                for fevals in method_feval_counts:
+                    if fevals > max_fevals:
                         continue
 
-                if run_times:
-                    import statistics
+                    self.logger.info(f"    N={fevals}: ")
 
-                    mean_time = statistics.mean(run_times)
-                    std_time = statistics.stdev(run_times) if len(run_times) > 1 else 0
+                    run_times = []
 
-                    if reference_time is None:
-                        reference_time = mean_time
-                        mean_eff = 1.0
-                        std_eff = 0.0
-                    else:
-                        mean_eff = statistics.mean(run_efficiencies)
-                        std_eff = (
-                            statistics.stdev(run_efficiencies) if len(run_efficiencies) > 1 else 0
+                    # Run warmup + actual runs
+                    total_runs = warmup_runs + num_runs
+                    for run in range(total_runs):
+                        is_warmup = run < warmup_runs
+                        run_type = "warmup" if is_warmup else f"run {run - warmup_runs + 1}"
+
+                        try:
+                            # Clear GPU cache if available
+                            if torch.cuda.is_available():
+                                torch.cuda.empty_cache()
+                                gc.collect()
+
+                            start_time = time.perf_counter()
+
+                            if method_name == "vegas":
+                                integrator.integrate(
+                                    test_integrand,
+                                    dim=dim,
+                                    N=fevals,
+                                    integration_domain=domain,
+                                    max_iterations=5,
+                                    use_warmup=True,
+                                    seed=42 + run,
+                                )
+                            elif method_name == "monte_carlo":
+                                integrator.integrate(
+                                    test_integrand,
+                                    dim=dim,
+                                    N=fevals,
+                                    integration_domain=domain,
+                                    seed=42 + run,
+                                )
+                            else:
+                                integrator.integrate(
+                                    test_integrand, dim=dim, N=fevals, integration_domain=domain
+                                )
+
+                            elapsed = time.perf_counter() - start_time
+
+                            # Only record times after warmup runs
+                            if run >= warmup_runs:
+                                run_times.append(elapsed)
+                                self.logger.debug(f"      {run_type}: {elapsed:.4f}s")
+                            else:
+                                self.logger.debug(f"      {run_type}: {elapsed:.4f}s (discarded)")
+
+                        except Exception as e:
+                            self.logger.warning(f"      {run_type} failed: {e}")
+                            continue
+
+                    if run_times:
+                        import statistics
+
+                        mean_time = statistics.mean(run_times)
+                        std_time = statistics.stdev(run_times) if len(run_times) > 1 else 0
+                        mean_time_per_eval = mean_time / fevals
+                        std_time_per_eval = std_time / fevals
+
+                        method_results["fevals"].append(fevals)
+                        method_results["times_mean"].append(mean_time)
+                        method_results["times_std"].append(std_time)
+                        method_results["times_per_eval_mean"].append(mean_time_per_eval)
+                        method_results["times_per_eval_std"].append(std_time_per_eval)
+
+                        self.logger.info(
+                            f"time={mean_time:.4f}±{std_time:.4f}s, "
+                            f"time/eval={mean_time_per_eval:.2e}±{std_time_per_eval:.2e}s"
                         )
-
-                    case_results["batch_sizes"].append(batch_size)
-                    case_results["times_mean"].append(mean_time)
-                    case_results["times_std"].append(std_time)
-                    case_results["efficiency_mean"].append(mean_eff)
-                    case_results["efficiency_std"].append(std_eff)
-
-                    self.logger.info(f"efficiency={mean_eff:.3f}±{std_eff:.3f}")
-                else:
-                    self.logger.warning("All runs failed")
-                    break
-
-            strong_results[case["name"]] = case_results
-
-        # Weak scaling - corrected with constant work for MC
-        weak_results = {}
-
-        work_per_dim = self.config.get("scaling", {}).get(
-            "weak_work_per_dim", [1000000, 100000, 5000]
-        )
-        mc_constant_work = self.config.get("scaling", {}).get("weak_mc_constant_work", 1000000)
-
-        test_cases = [
-            {"dim": 1, "work_per_dim": work_per_dim[0], "mc_work": mc_constant_work},
-            {"dim": 3, "work_per_dim": work_per_dim[1], "mc_work": mc_constant_work},
-            {"dim": 7, "work_per_dim": work_per_dim[2], "mc_work": mc_constant_work},
-        ]
-
-        for method_name in ["simpson", "monte_carlo"]:
-            self.logger.info(f"  Weak scaling: {method_name}")
-            method_results = {
-                "dimensions": [],
-                "times_mean": [],
-                "times_std": [],
-                "efficiency_mean": [],
-                "efficiency_std": [],
-            }
-            reference_time = None
-
-            for i, case in enumerate(test_cases):
-                self.logger.info(f"    {case['dim']}D: ")
-
-                run_times = []
-                run_efficiencies = []
-
-                for run in range(num_runs):
-                    try:
-                        domain = [[0, 1]] * case["dim"]
-
-                        if method_name == "simpson":
-                            integrator = Simpson()
-                            # Scale work appropriately for grid methods
-                            actual_N = case["work_per_dim"] ** case["dim"]
-                        else:
-                            integrator = MonteCarlo()
-                            # Keep work constant for MC (true weak scaling)
-                            actual_N = case["mc_work"]
-
-                        start_time = time.perf_counter()
-
-                        if method_name == "monte_carlo":
-                            result = integrator.integrate(
-                                test_integrand,
-                                dim=case["dim"],
-                                N=actual_N,
-                                integration_domain=domain,
-                                seed=42 + run,
-                            )
-                        else:
-                            result = integrator.integrate(
-                                test_integrand,
-                                dim=case["dim"],
-                                N=actual_N,
-                                integration_domain=domain,
-                            )
-
-                        elapsed = time.perf_counter() - start_time
-                        run_times.append(elapsed)
-
-                        if i == 0:  # First dimension
-                            run_efficiencies.append(1.0)
-                        else:
-                            efficiency = min(1.0, reference_time / elapsed)
-                            run_efficiencies.append(efficiency)
-
-                    except Exception as e:
-                        self.logger.warning(f"Run {run} failed: {e}")
-                        continue
-
-                if run_times:
-                    import statistics
-
-                    mean_time = statistics.mean(run_times)
-                    std_time = statistics.stdev(run_times) if len(run_times) > 1 else 0
-
-                    if i == 0:
-                        reference_time = mean_time
-                        mean_eff = 1.0
-                        std_eff = 0.0
                     else:
-                        mean_eff = statistics.mean(run_efficiencies)
-                        std_eff = (
-                            statistics.stdev(run_efficiencies) if len(run_efficiencies) > 1 else 0
-                        )
+                        self.logger.warning("All runs failed")
+                        break
 
-                    method_results["dimensions"].append(case["dim"])
-                    method_results["times_mean"].append(mean_time)
-                    method_results["times_std"].append(std_time)
-                    method_results["efficiency_mean"].append(mean_eff)
-                    method_results["efficiency_std"].append(std_eff)
+                results[f"{dim}d"][method_name] = method_results
 
-                    self.logger.info(
-                        f"N={actual_N}, time={mean_time:.4f}±{std_time:.4f}s, efficiency={mean_eff:.3f}±{std_eff:.3f}"
-                    )
-                else:
-                    self.logger.warning("All runs failed")
-                    continue
-
-            weak_results[method_name] = method_results
-
-        return strong_results, weak_results
+        return results
 
     def benchmark_vectorized_analysis(self) -> Dict:
         """Vectorized integrand test with configurable scaling."""
@@ -868,7 +807,7 @@ class ModularBenchmark:
                         x_vals = x[:, 0]
                         return torch.sqrt(torch.cos(torch.sin(torch.outer(x_vals, params))))
 
-                    vectorized_result = integrator.integrate(
+                    integrator.integrate(
                         vectorized_integrand, dim=1, N=N, integration_domain=domain
                     )
                     vectorized_times.append(time.perf_counter() - start_time)
@@ -904,6 +843,7 @@ def main():
     parser.add_argument(
         "--convergence-only", action="store_true", help="Run only convergence benchmarks"
     )
+    parser.add_argument("--scaling-only", action="store_true", help="Run only scaling benchmarks")
 
     args = parser.parse_args()
 
@@ -918,20 +858,31 @@ def main():
     warnings.filterwarnings("ignore")
     benchmark = ModularBenchmark(args.config)
 
-    # Run convergence benchmarks
-    convergence_results = benchmark.run_convergence_benchmarks(dimensions)
-
     scaling_results = None
     vectorized_results = None
 
-    if not args.convergence_only:
+    # Handle mutually exclusive flags
+    if args.convergence_only and args.scaling_only:
+        print("Error: Cannot use both --convergence-only and --scaling-only")
+        return
+
+    if args.scaling_only:
+        # Run only scaling benchmarks
+        benchmark.logger.info("Running scaling analysis only...")
+        scaling_results = benchmark.benchmark_scaling_analysis()
+        benchmark.save_results(scaling_results, "scaling_results.json")
+    elif args.convergence_only:
+        # Run only convergence benchmarks
+        benchmark.run_convergence_benchmarks(dimensions)
+    else:
+        # Run all benchmarks
+        # Run convergence benchmarks
+        benchmark.run_convergence_benchmarks(dimensions)
+
         # Run scaling benchmarks
         benchmark.logger.info("Running scaling analysis...")
-        strong_scaling, weak_scaling = benchmark.benchmark_scaling_analysis()
-        scaling_results = (strong_scaling, weak_scaling)
-        benchmark.save_results(
-            {"strong": strong_scaling, "weak": weak_scaling}, "scaling_results.json"
-        )
+        scaling_results = benchmark.benchmark_scaling_analysis()
+        benchmark.save_results(scaling_results, "scaling_results.json")
 
         # Run vectorized benchmarks
         benchmark.logger.info("Running vectorized analysis...")

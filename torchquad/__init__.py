@@ -16,8 +16,6 @@ from .integration.base_integrator import BaseIntegrator
 
 from .integration.rng import RNG
 
-from .plots.plot_convergence import plot_convergence
-from .plots.plot_runtime import plot_runtime
 
 from .utils.set_log_level import set_log_level
 from .utils.enable_cuda import enable_cuda
@@ -37,8 +35,6 @@ __all__ = [
     "GaussLegendre",
     "Gaussian",
     "RNG",
-    "plot_convergence",
-    "plot_runtime",
     "enable_cuda",
     "set_precision",
     "set_log_level",

@@ -212,19 +212,19 @@ Using GPUs, torchquad scales particularly well with integration methods that off
 <!-- TODO Update plot links -->
 ### Convergence Analysis
 ![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_convergence.png?raw=true)
-*Convergence comparison using challenging test functions including discontinuous oscillatory (1D), multi-peak with ridges (3D), and high-dimensional problems. Note the superior scaling of GPU-accelerated methods for large evaluation counts.*
+*Convergence comparison across challenging test functions from 1D to 15D. GPU-accelerated torchquad methods demonstrate great performance, particularly for high-dimensional integration where scipy's nquad becomes computationally infeasible. Beyond 1D, torchquad significantly outperforms scipy in efficiency.*
 
 ### Runtime vs Error Efficiency  
 ![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_runtime_vs_error.png?raw=true)
-*Runtime vs error trade-offs showing torchquad's efficiency advantage. Lower-left positions indicate better performance (faster computation with lower error).*
+*Runtime-error trade-offs across dimensions. Lower-left positions indicate better performance. While scipy's traditional methods are competitive for simple 1D problems, torchquad's GPU acceleration provides orders of magnitude better performance for multi-dimensional integration, achieving both faster computation and lower errors.*
 
 ### Scaling Performance
 ![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_scaling_analysis.png?raw=true)
-*Strong and weak scaling analysis demonstrating parallel efficiency across problem sizes and dimensions.*
+*Scaling investigation across problem sizes and dimensions of the different methods in torchquad.*
 
 ### Vectorized Integration Speedup
 ![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_vectorized_speedup.png?raw=true)
-*Performance benefits of vectorized integrand evaluation for parameter sweeps, showing significant speedups for batch computations.*
+*Strong performance gains when evaluating multiple integrands simultaneously. The vectorized approach shows exponential speedup (up to 200x) compared to sequential evaluation, making torchquad ideal for parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration.*
 
 ### Running Benchmarks
 
