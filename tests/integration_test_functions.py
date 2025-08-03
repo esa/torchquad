@@ -287,7 +287,6 @@ class Sinusoid(IntegrationTestFunction):
         return anp.sum(anp.sin(x), axis=1)
 
 
-
 class ProductFunction(IntegrationTestFunction):
     def __init__(
         self,
@@ -299,7 +298,7 @@ class ProductFunction(IntegrationTestFunction):
         integrand_dims=1,
     ):
         """Creates an n-dimensional product test function.
-        
+
         f(x) = prod(cos(x_i)) - product of cosines across dimensions
 
         Args:

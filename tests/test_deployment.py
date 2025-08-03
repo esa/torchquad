@@ -4,7 +4,6 @@ This test ensures that the _deployment_test function works correctly
 and is included in pytest coverage.
 """
 
-import pytest
 from torchquad.utils.deployment_test import _deployment_test
 
 
@@ -49,17 +48,17 @@ def test_deployment_helper_functions():
     from torchquad.utils.deployment_test import _is_finite_result
 
     # Test finite result detection
-    assert _is_finite_result(1.0) is True
-    assert _is_finite_result(-1.0) is True
-    assert _is_finite_result(0.0) is True
+    assert _is_finite_result(1.0)
+    assert _is_finite_result(-1.0)
+    assert _is_finite_result(0.0)
 
     # Test with different types
-    assert _is_finite_result(42) is True
+    assert _is_finite_result(42)
 
     # These tests might not work on all systems, so we'll be lenient
     try:
-        assert _is_finite_result(float("inf")) is False
-        assert _is_finite_result(float("nan")) is False
+        assert not _is_finite_result(float("inf"))
+        assert not _is_finite_result(float("nan"))
     except (ImportError, AssertionError):
         # Skip if math operations not available or behave differently
         pass

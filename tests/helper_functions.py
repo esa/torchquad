@@ -80,7 +80,7 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
             # Product function: cos(x) from 0 to pi/2
             ProductFunction(
                 1.0,  # integral of cos(x) from 0 to pi/2
-                domain=[[0, np.pi/2]],
+                domain=[[0, np.pi / 2]],
                 is_complex=False,
                 backend=backend,
                 integrand_dims=1,
@@ -214,7 +214,7 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
             ProductFunction(
                 1.0,  # (sin(pi/2) - sin(0))^3 = 1
                 integration_dim=3,
-                domain=[[0, np.pi/2], [0, np.pi/2], [0, np.pi/2]],
+                domain=[[0, np.pi / 2], [0, np.pi / 2], [0, np.pi / 2]],
                 is_complex=False,
                 backend=backend,
                 integrand_dims=1,
