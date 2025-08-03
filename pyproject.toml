@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchquad"
-version = "0.4.1"
+version = "0.5.0"
 description = "Package providing numerical integration methods for PyTorch, jax, TensorFlow and numpy."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8, <4"
@@ -37,12 +37,12 @@ packages = ["torchquad", "torchquad.integration", "torchquad.utils"]
 
 [tool.pytest.ini_options]
 filterwarnings = [
-    "ignore::UserWarning:torchquad.integration.utils:256",  # Our own deprecation warning
-    "ignore:torch.meshgrid:UserWarning",  # PyTorch meshgrid warning 
-    "ignore:Explicitly requested dtype.*truncated:UserWarning",  # JAX dtype warnings
-    "ignore:In the next release:UserWarning",  # TensorFlow warnings
-    "ignore:DEPRECATION WARNING.*In future versions of torchquad:UserWarning",  # Our deprecation warnings in TF autograph
-    "ignore:integration_domain should be a list:RuntimeWarning",  # Intentional warning for conflicting backend arguments
-    "ignore:To copy construct from a tensor.*recommended to use sourceTensor.clone:UserWarning",  # PyTorch tensor copy warnings
-    "ignore:Cannot update the VEGASMap.*integrand which evaluates to zero:RuntimeWarning",  # VEGAS warning for zero integrands
+    "ignore::UserWarning:torchquad.integration.utils:256",                                       # Our own deprecation warning
+    "ignore:torch.meshgrid:UserWarning",                                                         # PyTorch meshgrid warning 
+    "ignore:Explicitly requested dtype.*truncated:UserWarning",                                  # JAX dtype warnings
+    "ignore:In the next release:UserWarning",                                                    # TensorFlow warnings
+    "ignore:DEPRECATION WARNING.*In future versions of torchquad:UserWarning",                   # Our deprecation warnings in TF autograph
+    "ignore:integration_domain should be a list:RuntimeWarning",                                 # Intentional warning for conflicting backend arguments
+    "ignore:To copy construct from a tensor.*recommended to use sourceTensor.clone:UserWarning", # PyTorch tensor copy warnings
+    "ignore:Cannot update the VEGASMap.*integrand which evaluates to zero:RuntimeWarning",       # VEGAS warning for zero integrands
 ]

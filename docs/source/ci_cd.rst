@@ -294,6 +294,36 @@ Common CI Failures
    * Check for version conflicts between backends
    * Verify micromamba cache invalidation
 
+Building Documentation Locally
+------------------------------
+
+To build the Sphinx documentation locally:
+
+.. code-block:: bash
+
+   # Navigate to docs directory
+   cd docs
+   
+   # Build HTML documentation
+   make html
+   
+   # On Windows, you can also use:
+   make.bat html
+   
+   # Clean build directory
+   make clean
+   
+   # View all available targets
+   make help
+
+The built documentation will be available in ``docs/_build/html/``. Open ``docs/_build/html/index.html`` in your browser to view the documentation.
+
+**Note**: Make sure you have Sphinx and all documentation dependencies installed:
+
+.. code-block:: bash
+
+   pip install sphinx sphinx-rtd-theme
+
 Getting Help
 ------------
 

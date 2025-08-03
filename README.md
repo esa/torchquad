@@ -195,7 +195,7 @@ integral_value = mc.integrate(
 ```
 ## Logging Configuration
 
-By default, torchquad disables its internal logging when installed from PyPI to avoid interfering with other loggers in your application. To enable logging:
+By default, torchquad disables its internal logging when installed from PyPI to avoid interfering with other loggers in your application. To enable logging change `TORCHQUAD_DISABLE_LOGGING` in `__init__.py`:
 
 1. **Set the log level**: Use the `TORCHQUAD_LOG_LEVEL` environment variable:
    ```bash
@@ -209,8 +209,6 @@ By default, torchquad disables its internal logging when installed from PyPI to 
    import torchquad
    torchquad.set_log_level("DEBUG")  # This will enable and configure logging
    ```
-
-Note: When developing from a git clone, logging is enabled by default. The `TORCHQUAD_RELEASE_BUILD` environment variable controls this behavior.
 
 ## Multi-GPU Usage
 
