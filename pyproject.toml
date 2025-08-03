@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "torchquad"
 version = "0.4.1"
 description = "Package providing numerical integration methods for PyTorch, jax, TensorFlow and numpy."
-readme = "README.md"
-requires-python = ">=3.8"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.8, <4"
 license = { text = "GPL-3.0" }
 authors = [
     { name = "ESA Advanced Concepts Team", email = "pablo.gomez@esa.int" },
@@ -32,5 +32,5 @@ dependencies = [
 Homepage = "https://github.com/esa/torchquad"
 Source = "https://github.com/esa/torchquad/"
 
-[tool.setuptools.packages.find]
-include = ["torchquad*"]
+[tool.setuptools]
+packages = ["torchquad", "torchquad.integration", "torchquad.utils"]
