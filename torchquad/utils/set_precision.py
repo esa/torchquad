@@ -1,5 +1,6 @@
 from loguru import logger
 import os
+import sys
 
 
 def _get_precision(backend):
@@ -31,9 +32,9 @@ def set_precision(data_type="float32", backend="torch"):
     # upper-case letters
     data_type = {"float": "float32", "double": "float64"}.get(data_type.lower(), data_type)
     if data_type not in ["float32", "float64"]:
-        logger.error(
-            f'Invalid data type "{data_type}". Only float32 and float64 are supported. Setting the data type to float32.'
-        )
+        error_msg = f'Invalid data type "{data_type}". Only float32 and float64 are supported. Setting the data type to float32.'
+        logger.error(error_msg)
+        print(f"ERROR: {error_msg}", file=sys.stderr)
         data_type = "float32"
 
     if backend == "torch":
@@ -67,4 +68,6 @@ def set_precision(data_type="float32", backend="torch"):
         os.environ["TORCHQUAD_DTYPE_NUMPY"] = data_type
         logger.info(f"NumPy default dtype set to {_get_precision('numpy')}")
     else:
-        logger.error(f"Changing the data type is not supported for backend {backend}")
+        error_msg = f"Changing the data type is not supported for backend {backend}"
+        logger.error(error_msg)
+        print(f"ERROR: {error_msg}", file=sys.stderr)

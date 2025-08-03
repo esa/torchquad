@@ -193,8 +193,24 @@ integral_value = mc.integrate(
     backend="torch",
 )
 ```
-To change the logger verbosity, set the `TORCHQUAD_LOG_LEVEL` environment
-variable; for example `export TORCHQUAD_LOG_LEVEL=DEBUG`.
+## Logging Configuration
+
+By default, torchquad disables its internal logging when installed from PyPI to avoid interfering with other loggers in your application. To enable logging:
+
+1. **Set the log level**: Use the `TORCHQUAD_LOG_LEVEL` environment variable:
+   ```bash
+   export TORCHQUAD_LOG_LEVEL=DEBUG   # For detailed debugging
+   export TORCHQUAD_LOG_LEVEL=INFO    # For general information  
+   export TORCHQUAD_LOG_LEVEL=WARNING # For warnings only (default when enabled)
+   ```
+
+2. **Enable logging programmatically**:
+   ```python
+   import torchquad
+   torchquad.set_log_level("DEBUG")  # This will enable and configure logging
+   ```
+
+Note: When developing from a git clone, logging is enabled by default. The `TORCHQUAD_RELEASE_BUILD` environment variable controls this behavior.
 
 You can find all available integrators [here](https://torchquad.readthedocs.io/en/main/integration_methods.html).
 

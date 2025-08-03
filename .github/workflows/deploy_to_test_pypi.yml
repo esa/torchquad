@@ -23,6 +23,7 @@ jobs:
         env:
           TWINE_USERNAME: "__token__"
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
+          TORCHQUAD_RELEASE_BUILD: "True"
         run: |
           python setup.py sdist bdist_wheel
           twine upload -r testpypi dist/*
