@@ -65,7 +65,7 @@ class Gaussian(GridIntegrator):
             ).ravel()
         else:
             return anp.prod(
-                anp.meshgrid(*([weights] * dim), like=backend), axis=0
+                anp.stack(anp.meshgrid(*([weights] * dim), like=backend)), axis=0
             ).ravel()
 
     def _roots(self, N, backend, requires_grad=False):
