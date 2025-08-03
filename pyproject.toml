@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "torchquad"
+version = "0.4.1"
+description = "Package providing numerical integration methods for PyTorch, jax, TensorFlow and numpy."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "GPL-3.0" }
+authors = [
+    { name = "ESA Advanced Concepts Team", email = "pablo.gomez@esa.int" },
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3.8",
+]
+dependencies = [
+    "loguru>=0.5.3",
+    "matplotlib>=3.3.3",
+    "scipy>=1.6.0",
+    "tqdm>=4.56.1",
+    "autoray>=0.5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/esa/torchquad"
+Source = "https://github.com/esa/torchquad/"
+
+[tool.setuptools.packages.find]
+include = ["torchquad*"]
