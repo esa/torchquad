@@ -1,10 +1,6 @@
-import sys
-
-sys.path.append("../")
-
 import warnings
 
-from integration.boole import Boole
+from torchquad.integration.boole import Boole
 from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
@@ -71,9 +67,7 @@ def _run_boole_tests(backend, _precision):
             # which is then re-used on all other integrations (as is the point of JIT).
             nonlocal jit_integrate
             if jit_integrate is None:
-                jit_integrate = bl.get_jit_compiled_integrate(
-                    dim=1, N=N, backend=backend
-                )
+                jit_integrate = bl.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
             return jit_integrate(*args, **kwargs)
 
         errors, funcs = compute_integration_test_errors(
@@ -93,9 +87,7 @@ def _run_boole_tests(backend, _precision):
         for error in errors:
             assert error < 6.33e-11
 
-        jit_integrate = (
-            None  # set to None again so can be re-used with new integrand shape
-        )
+        jit_integrate = None  # set to None again so can be re-used with new integrand shape
 
         errors, funcs = compute_integration_test_errors(
             integrate,
@@ -118,9 +110,7 @@ def _run_boole_tests(backend, _precision):
 test_integrate_numpy = setup_test_for_backend(_run_boole_tests, "numpy", "float64")
 test_integrate_torch = setup_test_for_backend(_run_boole_tests, "torch", "float64")
 test_integrate_jax = setup_test_for_backend(_run_boole_tests, "jax", "float64")
-test_integrate_tensorflow = setup_test_for_backend(
-    _run_boole_tests, "tensorflow", "float64"
-)
+test_integrate_tensorflow = setup_test_for_backend(_run_boole_tests, "tensorflow", "float64")
 
 
 if __name__ == "__main__":

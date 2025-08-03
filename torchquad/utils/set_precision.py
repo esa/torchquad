@@ -29,9 +29,7 @@ def set_precision(data_type="float32", backend="torch"):
     """
     # Backwards-compatibility: allow "float" and "double", optionally with
     # upper-case letters
-    data_type = {"float": "float32", "double": "float64"}.get(
-        data_type.lower(), data_type
-    )
+    data_type = {"float": "float32", "double": "float64"}.get(data_type.lower(), data_type)
     if data_type not in ["float32", "float64"]:
         logger.error(
             f'Invalid data type "{data_type}". Only float32 and float64 are supported. Setting the data type to float32.'
@@ -48,9 +46,7 @@ def set_precision(data_type="float32", backend="torch"):
             ("float32", False): (torch.FloatTensor, "Float32"),
             ("float64", False): (torch.DoubleTensor, "Float64"),
         }[(data_type, cuda_enabled)]
-        cuda_enabled_info = (
-            "CUDA is initialized" if cuda_enabled else "CUDA not initialized"
-        )
+        cuda_enabled_info = "CUDA is initialized" if cuda_enabled else "CUDA not initialized"
         logger.info(
             f"Setting Torch's default tensor type to {tensor_dtype_name} ({cuda_enabled_info})."
         )

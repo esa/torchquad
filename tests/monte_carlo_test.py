@@ -1,8 +1,4 @@
-import sys
-
-sys.path.append("../")
-
-from integration.monte_carlo import MonteCarlo
+from torchquad.integration.monte_carlo import MonteCarlo
 from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
@@ -24,9 +20,7 @@ def _run_monte_carlo_tests(backend, _precision):
         use_complex=True,
         backend=backend,
     )
-    print(
-        f"1D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors: {str(errors)}"
-    )
+    print(f"1D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors: {str(errors)}")
     # Constant functions can be integrated exactly with MonteCarlo.
     # (at least our example functions)
     for err, test_function in zip(errors, funcs):
@@ -54,9 +48,7 @@ def _run_monte_carlo_tests(backend, _precision):
         use_complex=True,
         backend=backend,
     )
-    print(
-        f"3D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors: {str(errors)}"
-    )
+    print(f"3D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors: {str(errors)}")
     for err, test_function in zip(errors, funcs):
         assert test_function.get_order() > 0 or err == 0.0
     for error, test_function in zip(errors, funcs):
@@ -73,10 +65,7 @@ def _run_monte_carlo_tests(backend, _precision):
         use_complex=True,
         backend=backend,
     )
-    print(
-        f"10D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors:"
-        f" {str(errors)}"
-    )
+    print(f"10D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors:" f" {str(errors)}")
     for err, test_function in zip(errors, funcs):
         assert test_function.get_order() > 0 or err == 0.0
     for error in errors:
@@ -92,9 +81,7 @@ def _run_monte_carlo_tests(backend, _precision):
             # which is then re-used on all other integrations (as is the point of JIT).
             nonlocal jit_integrate
             if jit_integrate is None:
-                jit_integrate = mc.get_jit_compiled_integrate(
-                    dim=1, N=N, backend=backend
-                )
+                jit_integrate = mc.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
             return jit_integrate(*args, **kwargs)
 
         errors, funcs = compute_integration_test_errors(
@@ -125,9 +112,7 @@ def _run_monte_carlo_tests(backend, _precision):
         for error in errors[10:]:
             assert error < 35.0
 
-        jit_integrate = (
-            None  # set to None again so can be re-used with new integrand shape
-        )
+        jit_integrate = None  # set to None again so can be re-used with new integrand shape
 
         errors, funcs = compute_integration_test_errors(
             integrate,
@@ -145,16 +130,10 @@ def _run_monte_carlo_tests(backend, _precision):
             assert test_function.get_order() > 0 or err < 1e-14
 
 
-test_integrate_numpy = setup_test_for_backend(
-    _run_monte_carlo_tests, "numpy", "float32"
-)
-test_integrate_torch = setup_test_for_backend(
-    _run_monte_carlo_tests, "torch", "float32"
-)
+test_integrate_numpy = setup_test_for_backend(_run_monte_carlo_tests, "numpy", "float32")
+test_integrate_torch = setup_test_for_backend(_run_monte_carlo_tests, "torch", "float32")
 test_integrate_jax = setup_test_for_backend(_run_monte_carlo_tests, "jax", "float32")
-test_integrate_tensorflow = setup_test_for_backend(
-    _run_monte_carlo_tests, "tensorflow", "float32"
-)
+test_integrate_tensorflow = setup_test_for_backend(_run_monte_carlo_tests, "tensorflow", "float32")
 
 
 if __name__ == "__main__":
