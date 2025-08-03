@@ -76,14 +76,9 @@ class MonteCarlo(BaseIntegrator):
         N = function_values.shape[0]
         integral = volume * anp.sum(function_values, axis=0) / N
         # NumPy automatically casts to float64 when dividing by N
-        if (
-            infer_backend(integration_domain) == "numpy"
-            and function_values.dtype != integral.dtype
-        ):
+        if infer_backend(integration_domain) == "numpy" and function_values.dtype != integral.dtype:
             integral = integral.astype(function_values.dtype)
-        logger.opt(lazy=True).info(
-            "Computed integral: {result}", result=lambda: str(integral)
-        )
+        logger.opt(lazy=True).info("Computed integral: {result}", result=lambda: str(integral))
         return integral
 
     def calculate_sample_points(self, N, integration_domain, seed=None, rng=None):
@@ -108,10 +103,7 @@ class MonteCarlo(BaseIntegrator):
         domain_starts = integration_domain[:, 0]
         domain_sizes = integration_domain[:, 1] - domain_starts
         # Scale and translate random numbers via broadcasting
-        return (
-            rng.uniform(size=[N, dim], dtype=domain_sizes.dtype) * domain_sizes
-            + domain_starts
-        )
+        return rng.uniform(size=[N, dim], dtype=domain_sizes.dtype) * domain_sizes + domain_starts
 
     def get_jit_compiled_integrate(
         self, dim, N=1000, integration_domain=None, seed=None, backend=None
@@ -150,17 +142,13 @@ class MonteCarlo(BaseIntegrator):
                 self._tf_jit_calculate_sample_points = tf.function(
                     self.calculate_sample_points, jit_compile=True
                 )
-                self._tf_jit_calculate_result = tf.function(
-                    self.calculate_result, jit_compile=True
-                )
+                self._tf_jit_calculate_result = tf.function(self.calculate_result, jit_compile=True)
             jit_calculate_sample_points = self._tf_jit_calculate_sample_points
             jit_calculate_result = self._tf_jit_calculate_result
             rng = RNG(backend="tensorflow", seed=seed)
 
             def compiled_integrate(fn, integration_domain):
-                sample_points = jit_calculate_sample_points(
-                    N, integration_domain, rng=rng
-                )
+                sample_points = jit_calculate_sample_points(N, integration_domain, rng=rng)
                 function_values, _ = self.evaluate_integrand(fn, sample_points)
                 return jit_calculate_result(function_values, integration_domain)
 
@@ -188,9 +176,7 @@ class MonteCarlo(BaseIntegrator):
 
             def compiled_integrate(fn, integration_domain):
                 nonlocal rng_key
-                sample_points, rng_key = jit_calc_sample_points(
-                    integration_domain, rng_key
-                )
+                sample_points, rng_key = jit_calc_sample_points(integration_domain, rng_key)
                 function_values, _ = self.evaluate_integrand(fn, sample_points)
                 return jit_calculate_result(function_values, integration_domain)
 
@@ -201,9 +187,7 @@ class MonteCarlo(BaseIntegrator):
             def do_compile(example_integrand):
                 # Define traceable first and third steps
                 def step1(integration_domain):
-                    return self.calculate_sample_points(
-                        N, integration_domain, seed=seed
-                    )
+                    return self.calculate_sample_points(N, integration_domain, seed=seed)
 
                 step3 = self.calculate_result
 
@@ -214,14 +198,10 @@ class MonteCarlo(BaseIntegrator):
 
                 # Get example input for the third step
                 sample_points = step1(integration_domain)
-                function_values, _ = self.evaluate_integrand(
-                    example_integrand, sample_points
-                )
+                function_values, _ = self.evaluate_integrand(example_integrand, sample_points)
 
                 # Trace the third step
-                step3 = _torch_trace_without_warnings(
-                    step3, (function_values, integration_domain)
-                )
+                step3 = _torch_trace_without_warnings(step3, (function_values, integration_domain))
 
                 # Define a compiled integrate function
                 def compiled_integrate(fn, integration_domain):

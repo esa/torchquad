@@ -148,9 +148,10 @@ import torchquad
 torchquad._deployment_test()
 ```
 
-After cloning the repository, developers can check the functionality of `torchquad` by running the following command in the `torchquad/tests` directory:
+After cloning the repository, developers can check the functionality of `torchquad` by running
 
 ```sh
+pip install -e .
 pytest
 ```
 
@@ -192,8 +193,50 @@ integral_value = mc.integrate(
     backend="torch",
 )
 ```
-To change the logger verbosity, set the `TORCHQUAD_LOG_LEVEL` environment
-variable; for example `export TORCHQUAD_LOG_LEVEL=DEBUG`.
+## Logging Configuration
+
+By default, torchquad disables its internal logging when installed from PyPI to avoid interfering with other loggers in your application. To enable logging:
+
+1. **Set the log level**: Use the `TORCHQUAD_LOG_LEVEL` environment variable:
+   ```bash
+   export TORCHQUAD_LOG_LEVEL=DEBUG   # For detailed debugging
+   export TORCHQUAD_LOG_LEVEL=INFO    # For general information  
+   export TORCHQUAD_LOG_LEVEL=WARNING # For warnings only (default when enabled)
+   ```
+
+2. **Enable logging programmatically**:
+   ```python
+   import torchquad
+   torchquad.set_log_level("DEBUG")  # This will enable and configure logging
+   ```
+
+Note: When developing from a git clone, logging is enabled by default. The `TORCHQUAD_RELEASE_BUILD` environment variable controls this behavior.
+
+## Multi-GPU Usage
+
+torchquad supports multi-GPU systems through standard PyTorch practices. The recommended approach is to use the `CUDA_VISIBLE_DEVICES` environment variable to control GPU selection:
+
+```bash
+# Use specific GPU
+export CUDA_VISIBLE_DEVICES=0  # Use GPU 0
+python your_script.py
+
+export CUDA_VISIBLE_DEVICES=1  # Use GPU 1  
+python your_script.py
+
+# Use multiple GPUs with separate processes
+export CUDA_VISIBLE_DEVICES=0 && python integration_script.py &
+export CUDA_VISIBLE_DEVICES=1 && python integration_script.py &
+```
+
+For parallel processing across multiple GPUs, we recommend spawning separate processes rather than trying to coordinate multiple GPUs within a single process. This approach:
+
+- Provides clean separation between GPU processes
+- Avoids complex device management
+- Follows PyTorch best practices
+- Enables easy load balancing and error handling
+
+For detailed examples and advanced multi-GPU patterns, see the [Multi-GPU Usage section](https://torchquad.readthedocs.io/en/main/tutorial.html#multi-gpu-usage) in our documentation.
 
 You can find all available integrators [here](https://torchquad.readthedocs.io/en/main/integration_methods.html).
 
@@ -206,13 +249,60 @@ See the [open issues](https://github.com/esa/torchquad/issues) for a list of pro
 <!-- PERFORMANCE -->
 ## Performance
 
-Using GPUs torchquad scales particularly well with integration methods that offer easy parallelization. For example, below you see error and runtime results for integrating the function `f(x,y,z) = sin(x * (y+1)²) * (z+1)` on a consumer-grade desktop PC.
+Using GPUs, torchquad scales particularly well with integration methods that offer easy parallelization. The benchmarks below demonstrate performance across challenging functions from 1D to 15D, comparing torchquad's GPU-accelerated methods against scipy's CPU implementations.
 
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime.png?raw=true)
-*Runtime results of the integration. Note the far superior scaling on the GPU (solid line) in comparison to the CPU (dashed and dotted) for both methods.*
+<!-- TODO Update plot links -->
+### Convergence Analysis
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_convergence.png?raw=true)
+*Convergence comparison across challenging test functions from 1D to 15D. GPU-accelerated torchquad methods demonstrate great performance, particularly for high-dimensional integration where scipy's nquad becomes computationally infeasible. Beyond 1D, torchquad significantly outperforms scipy in efficiency.*
 
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence.png?raw=true)
-*Convergence results of the integration. Note that Simpson quickly reaches floating point precision. Monte Carlo is not competitive here given the low dimensionality of the problem.*
+### Runtime vs Error Efficiency  
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_runtime_vs_error.png?raw=true)
+*Runtime-error trade-offs across dimensions. Lower-left positions indicate better performance. While scipy's traditional methods are competitive for simple 1D problems, torchquad's GPU acceleration provides orders of magnitude better performance for multi-dimensional integration, achieving both faster computation and lower errors.*
+
+### Scaling Performance
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_scaling_analysis.png?raw=true)
+*Scaling investigation across problem sizes and dimensions of the different methods in torchquad.*
+
+### Vectorized Integration Speedup
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_vectorized_speedup.png?raw=true)
+*Strong performance gains when evaluating multiple integrands simultaneously. The vectorized approach shows exponential speedup (up to 200x) compared to sequential evaluation, making torchquad ideal for parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration.*
+
+### Framework Comparison  
+![](https://github.com/esa/torchquad/blob/benchmark-0.4.1/resources/torchquad_framework_comparison.png?raw=true)
+*Cross-framework performance comparison for 1D integration using Monte Carlo and Simpson methods. Demonstrates torchquad's consistent API across PyTorch, TensorFlow, JAX, and NumPy backends, with GPU acceleration providing significant performance advantages for large number of function evaluations. All frameworks achieve similar accuracy while showcasing the computational benefits of GPU acceleration for parallel integration methods.*
+
+### Running Benchmarks
+
+To reproduce these benchmarks or test performance on your hardware:
+
+```bash
+# Run all benchmarks (convergence, framework comparison, scaling, vectorized)
+python benchmarking/modular_benchmark.py --dimensions 1,3,7,15
+
+# Run specific benchmark types
+python benchmarking/modular_benchmark.py --convergence-only --dimensions 1,3,7,15
+python benchmarking/modular_benchmark.py --scaling-only
+python benchmarking/modular_benchmark.py --framework-only
+
+# Generate all plots from results
+python benchmarking/plot_results.py
+
+# Configure benchmark parameters
+# Edit benchmarking/benchmarking_cfg.toml to adjust:
+# - Evaluation point ranges
+# - Framework backends to test
+# - Timeout limits  
+# - Method selection
+# - scipy integration tolerances
+```
+
+**New Features:**
+- **Analytic Reference Values**: Uses SymPy for exact analytic solutions where possible, providing highly accurate reference values for error calculations
+- **Enhanced Test Functions**: Analytically tractable but numerically challenging functions that better demonstrate convergence behavior
+- **Framework Comparison**: Cross-backend performance benchmarking across PyTorch, TensorFlow, JAX, and NumPy with GPU/CPU device comparisons
+
+**Hardware:** RTX 4060 Ti 16GB, i5-13400F, Precision: float32
 
 <!-- CONTRIBUTING -->
 ## Contributing
@@ -245,12 +335,12 @@ Please note that PRs should be created from and into the `develop` branch. For e
 3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 5. Push to the Branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request on the `develop` branch, *not* `main` (NB: We autoformat every PR with black. Our GitHub actions may create additional commits on your PR for that reason.)
+6. Open a Pull Request on the `develop` branch, *not* `main`
 
 and we will have a look at your contribution as soon as we can.
 
-Furthermore, please make sure that your PR passes all automated tests. Review will only happen after that.
-Only PRs created on the `develop` branch with all tests passing will be considered. The only exception to this rule is if you want to update the documentation in relation to the current release on conda / pip. In that case you may ask to merge directly into `main`.
+Furthermore, please make sure that your PR passes all automated tests, you can ping `@gomezzz` to run the CI. Review will only happen after that.
+Only PRs created on the `develop` branch with all tests passing will be considered. The only exception to this rule is if you want to update the documentation in relation to the current release on conda / pip. In that case you open a PR directly into `main`.
 
 <!-- LICENSE -->
 ## License

@@ -1,13 +1,9 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import infer_backend
 from numpy import inf
 from loguru import logger
 
-from integration.utils import _setup_integration_domain
+from torchquad.integration.utils import _setup_integration_domain
 
 
 class IntegrationTestFunction:
@@ -87,9 +83,7 @@ class IntegrationTestFunction:
             )
             return self.integrand_scaling(self.f(x))
 
-        return integrator(
-            fn=integrand, integration_domain=self.domain, **integration_args
-        )
+        return integrator(fn=integrand, integration_domain=self.domain, **integration_args)
 
     def get_order(self):
         """Get the order (polynomial degree) of the function
@@ -113,9 +107,7 @@ class IntegrationTestFunction:
         if self.is_integrand_1d:
             return integrand_scaling * integrand
         if self._is_integrand_tensor:
-            scaling_einsum = "".join(
-                [chr(i + 65) for i in range(len(self.integrand_dims))]
-            )
+            scaling_einsum = "".join([chr(i + 65) for i in range(len(self.integrand_dims))])
             return anp.einsum(
                 f"i,{scaling_einsum}->i{scaling_einsum}", integrand, integrand_scaling
             )
@@ -293,3 +285,41 @@ class Sinusoid(IntegrationTestFunction):
 
     def _sinusoid(self, x):
         return anp.sum(anp.sin(x), axis=1)
+
+
+class ProductFunction(IntegrationTestFunction):
+    def __init__(
+        self,
+        expected_result=None,
+        integration_dim=1,
+        domain=None,
+        is_complex=False,
+        backend=None,
+        integrand_dims=1,
+    ):
+        """Creates an n-dimensional product test function.
+
+        f(x) = prod(cos(x_i)) - product of cosines across dimensions
+
+        Args:
+            expected_result (backend tensor): Expected result. Required to compute errors.
+            integration_dim (int, optional): Input dimension. Defaults to 1.
+            domain (list or backend tensor, optional): Integration domain passed to _setup_integration_domain.
+            is_complex (Boolean): If the test function contains complex numbers. Defaults to False.
+            backend (string, optional): Numerical backend passed to _setup_integration_domain.
+            integrand_dims (Union[int, tuple], optional): Defaults to 1.  Should either be 1 or a tuple.  Determines how the integrand will be evaluated,
+            whether once or over a matrix/vector of scaling factors.
+        """
+        super().__init__(
+            expected_result,
+            integration_dim,
+            domain,
+            is_complex,
+            backend,
+            integrand_dims,
+        )
+        self.f = self._product
+
+    def _product(self, x):
+        # Compute product of cos(x_i) across dimensions
+        return anp.prod(anp.cos(x), axis=1)

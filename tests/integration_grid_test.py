@@ -7,9 +7,9 @@ sys.path.append("../")
 from autoray import numpy as anp
 from autoray import to_backend_dtype
 import autoray as ar
-from integration.integration_grid import IntegrationGrid
-from integration.grid_integrator import GridIntegrator
-from integration.utils import _linspace_with_grads
+from torchquad.integration.integration_grid import IntegrationGrid
+from torchquad.integration.grid_integrator import GridIntegrator
+from torchquad.integration.utils import _linspace_with_grads
 from helper_functions import setup_test_for_backend
 
 
@@ -54,17 +54,11 @@ def _check_grid_validity(grid, integration_domain, N, eps):
         int(N),
         integration_domain.shape[0],
     ), "Incorrect number of calculated points"
-    assert (
-        grid.points.dtype == integration_domain.dtype
-    ), "Grid points have an incorrect dtype"
-    assert (
-        grid.h.dtype == integration_domain.dtype
-    ), "Mesh widths have an incorrect dtype"
+    assert grid.points.dtype == integration_domain.dtype, "Grid points have an incorrect dtype"
+    assert grid.h.dtype == integration_domain.dtype, "Mesh widths have an incorrect dtype"
     for dim in range(len(integration_domain)):
         domain_width = integration_domain[dim][1] - integration_domain[dim][0]
-        assert (
-            anp.abs(grid.h[dim] - domain_width / (grid._N - 1)) < eps
-        ), "Incorrect mesh width"
+        assert anp.abs(grid.h[dim] - domain_width / (grid._N - 1)) < eps, "Incorrect mesh width"
         assert (
             anp.min(grid.points[:, dim]) >= integration_domain[dim][0]
         ), "Points are outside of the integration domain"
@@ -112,9 +106,7 @@ def _run_integration_grid_tests(backend, dtype_name):
 
     def grid_check(x):
         has_right_shape = x.shape == (N, 3)
-        has_right_vals = anp.all(ar.to_numpy(x[0, :]) == 0) and anp.all(
-            ar.to_numpy(x[-1, :]) == 1
-        )
+        has_right_vals = anp.all(ar.to_numpy(x[0, :]) == 0) and anp.all(ar.to_numpy(x[-1, :]) == 1)
         return has_right_shape and has_right_vals
 
     mock_integrator_no_check.integrate(
@@ -144,9 +136,7 @@ test_integration_grid_numpy = setup_test_for_backend(
 test_integration_grid_torch = setup_test_for_backend(
     _run_integration_grid_tests, "torch", "float64"
 )
-test_integration_grid_jax = setup_test_for_backend(
-    _run_integration_grid_tests, "jax", "float64"
-)
+test_integration_grid_jax = setup_test_for_backend(_run_integration_grid_tests, "jax", "float64")
 test_integration_grid_tensorflow = setup_test_for_backend(
     _run_integration_grid_tests, "tensorflow", "float64"
 )

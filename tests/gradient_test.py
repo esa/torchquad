@@ -1,17 +1,13 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import to_numpy, to_backend_dtype, get_dtype_name
 import numpy as np
 
-from integration.vegas import VEGAS
-from integration.monte_carlo import MonteCarlo
-from integration.trapezoid import Trapezoid
-from integration.simpson import Simpson
-from integration.boole import Boole
-from integration.gaussian import GaussLegendre
+from torchquad.integration.vegas import VEGAS
+from torchquad.integration.monte_carlo import MonteCarlo
+from torchquad.integration.trapezoid import Trapezoid
+from torchquad.integration.simpson import Simpson
+from torchquad.integration.boole import Boole
+from torchquad.integration.gaussian import GaussLegendre
 
 from helper_functions import setup_test_for_backend
 
@@ -158,9 +154,7 @@ def _calculate_gradient_over_param(
     return _calculate_gradient(
         backend,
         param,
-        lambda par: integrate(
-            lambda x: integrand_with_param(x, par), **integrate_kwargs
-        ),
+        lambda par: integrate(lambda x: integrand_with_param(x, par), **integrate_kwargs),
         dtype_name,
     )
 
@@ -188,9 +182,7 @@ def _run_gradient_tests(backend, dtype_name):
             # Currently VEGAS supports only Torch.
             continue
 
-        print(
-            f"Calculating gradients; backend: {backend}, integrator: {integrator_name}"
-        )
+        print(f"Calculating gradients; backend: {backend}, integrator: {integrator_name}")
 
         print("Calculating gradients of the one-dimensional V-shaped function")
         integrate_kwargs = {"fn": _v_function, "dim": 1, "N": N_1d}
@@ -269,9 +261,7 @@ def _run_gradient_tests(backend, dtype_name):
 
 test_gradients_torch = setup_test_for_backend(_run_gradient_tests, "torch", "float64")
 test_gradients_jax = setup_test_for_backend(_run_gradient_tests, "jax", "float64")
-test_gradients_tensorflow = setup_test_for_backend(
-    _run_gradient_tests, "tensorflow", "float64"
-)
+test_gradients_tensorflow = setup_test_for_backend(_run_gradient_tests, "tensorflow", "float64")
 
 if __name__ == "__main__":
     # used to run this test individually

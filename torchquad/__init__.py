@@ -1,5 +1,4 @@
 import os
-from loguru import logger
 
 # TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
@@ -16,8 +15,6 @@ from .integration.base_integrator import BaseIntegrator
 
 from .integration.rng import RNG
 
-from .plots.plot_convergence import plot_convergence
-from .plots.plot_runtime import plot_runtime
 
 from .utils.set_log_level import set_log_level
 from .utils.enable_cuda import enable_cuda
@@ -37,8 +34,6 @@ __all__ = [
     "GaussLegendre",
     "Gaussian",
     "RNG",
-    "plot_convergence",
-    "plot_runtime",
     "enable_cuda",
     "set_precision",
     "set_log_level",
@@ -46,5 +41,11 @@ __all__ = [
     "_deployment_test",
 ]
 
-set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
-logger.info("Initializing torchquad.")
+# Check for release build flag to avoid interfering with other loggers
+TORCHQUAD_RELEASE_BUILD = os.environ.get("TORCHQUAD_RELEASE_BUILD", "False").lower() == "true"
+
+if not TORCHQUAD_RELEASE_BUILD:
+    from loguru import logger
+
+    set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
+    logger.info("Initializing torchquad.")

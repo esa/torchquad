@@ -3,9 +3,9 @@ import pytest
 from autoray import numpy as anp
 import autoray as ar
 
-from integration_test_functions import Polynomial, Exponential, Sinusoid
-from utils.set_up_backend import set_up_backend
-from utils.set_log_level import set_log_level
+from integration_test_functions import Polynomial, Exponential, Sinusoid, ProductFunction
+from torchquad.utils.set_up_backend import set_up_backend
+from torchquad.utils.set_log_level import set_log_level
 
 
 def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
@@ -19,12 +19,8 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
     if integration_dim == 1:
         res = [
             # Real numbers
-            Polynomial(
-                4.0, [2.0], is_complex=False, backend=backend, integrand_dims=1
-            ),  # y = 2
-            Polynomial(
-                0, [0, 1], is_complex=False, backend=backend, integrand_dims=1
-            ),  # y = x
+            Polynomial(4.0, [2.0], is_complex=False, backend=backend, integrand_dims=1),  # y = 2
+            Polynomial(0, [0, 1], is_complex=False, backend=backend, integrand_dims=1),  # y = x
             Polynomial(
                 2 / 3,
                 [0, 0, 2],
@@ -81,14 +77,26 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
                 backend=backend,
                 integrand_dims=1,
             ),
+            # Product function: cos(x) from 0 to pi/2
+            ProductFunction(
+                1.0,  # integral of cos(x) from 0 to pi/2
+                domain=[[0, np.pi / 2]],
+                is_complex=False,
+                backend=backend,
+                integrand_dims=1,
+            ),
+            # More sinusoidal functions for better transcendental coverage
+            Sinusoid(
+                2.0,  # integral of sin(x) from 0 to pi = [-cos(x)]_0^pi = -(-1) - (-1) = 2
+                domain=[[0, np.pi]],
+                is_complex=False,
+                backend=backend,
+                integrand_dims=1,
+            ),
             #
             # Complex numbers
-            Polynomial(
-                4.0j, [2.0j], is_complex=True, backend=backend, integrand_dims=1
-            ),  # y = 2j
-            Polynomial(
-                0, [0, 1j], is_complex=True, backend=backend, integrand_dims=1
-            ),  # y = xj
+            Polynomial(4.0j, [2.0j], is_complex=True, backend=backend, integrand_dims=1),  # y = 2j
+            Polynomial(0, [0, 1j], is_complex=True, backend=backend, integrand_dims=1),  # y = xj
             # y=7x^4-3jx^3+2x^2-jx+3
             Polynomial(
                 44648.0 / 15.0,
@@ -202,6 +210,15 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
                 backend=backend,
                 integrand_dims=1,
             ),
+            # 3D Product function: cos(x)*cos(y)*cos(z) over [0, pi/2]^3
+            ProductFunction(
+                1.0,  # (sin(pi/2) - sin(0))^3 = 1
+                integration_dim=3,
+                domain=[[0, np.pi / 2], [0, np.pi / 2], [0, np.pi / 2]],
+                is_complex=False,
+                backend=backend,
+                integrand_dims=1,
+            ),
             #
             # Complex numbers
             Polynomial(
@@ -264,9 +281,7 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
                 ),  # f(x,y,z) = x + y + z
                 # Over 3 integrand dims
                 Polynomial(  # MC tests fail here with default float32 precision, so need float64
-                    np.array(
-                        [[[0.0, 48.0], [96.0, 144.0]], [[192.0, 240.0], [288.0, 336.0]]]
-                    ),
+                    np.array([[[0.0, 48.0], [96.0, 144.0]], [[192.0, 240.0], [288.0, 336.0]]]),
                     integration_dim=3,
                     domain=anp.array(
                         [[-1.0, 1.0], [-1.0, 1.0], [-1.0, 1.0]],
@@ -312,8 +327,7 @@ def get_test_functions(integration_dim, backend, use_multi_dim_integrand):
         ]
     else:
         raise ValueError(
-            "Not testing functions implemented for integration_dim "
-            + str(integration_dim)
+            "Not testing functions implemented for integration_dim " + str(integration_dim)
         )
 
 
@@ -353,16 +367,12 @@ def compute_integration_test_errors(
             continue
         if backend == "torch":
             diff = np.abs(
-                test_function.evaluate(integrator, integrator_args)
-                .cpu()
-                .detach()
-                .numpy()
+                test_function.evaluate(integrator, integrator_args).cpu().detach().numpy()
                 - test_function.expected_result
             )
         else:
             diff = np.abs(
-                test_function.evaluate(integrator, integrator_args)
-                - test_function.expected_result
+                test_function.evaluate(integrator, integrator_args) - test_function.expected_result
             )
         if test_function.is_integrand_1d:
             errors.append(diff)

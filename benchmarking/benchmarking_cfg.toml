@@ -1,0 +1,147 @@
+# Benchmarking configuration for torchquad
+# Adjust these parameters to control benchmark execution time and detail
+
+[general]
+device_info = "RTX 4060 Ti 16GB, i5-13400F"
+precision = "float32"
+save_path = "resources"
+log_level = "INFO"
+
+[convergence]
+# Enable/disable specific dimensions
+enable_1d = true
+enable_3d = true
+enable_7d = true
+enable_15d = true
+
+# Reference calculation points (for MC reference)
+reference_points_1d = 256_000_000
+reference_points_3d = 256_000_000
+reference_points_7d = 500_000_000
+reference_points_15d = 333_000_000
+
+# Evaluation points for each dimension
+# Adjust these to control execution time
+[convergence.points_1d]
+simpson = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000]
+gauss_legendre = [100, 500, 1000, 5000]
+monte_carlo = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 500_000_000]
+vegas = [100_000, 1_000_000, 10_000_000, 100_000_000]
+scipy_grids = [10001, 100_001, 1_000_001]
+
+[convergence.points_3d]
+simpson = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000]
+gauss_legendre = [100, 500, 1000, 5000]
+monte_carlo = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 250_000_000]
+vegas = [100_000, 1_000_000, 10_000_000, 100_000_000, 250_000_000]
+
+[convergence.points_7d]
+simpson = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000]
+gauss_legendre = [1000, 5000, 100_00, 50_000, 100_000, 500_000]
+monte_carlo = [
+    10_000,
+    100_000,
+    1_000_000,
+    10_000_000,
+    50_000_000,
+    100_000_000,
+    150_000_000,
+]
+vegas = [100_000, 1_000_000, 10_000_000, 100_000_000, 250_000_000]
+
+[convergence.points_15d]
+simpson = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 250_000_000]
+gauss_legendre = [50000, 100000, 500_000, 1_000_000]
+monte_carlo = [10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 150_000_000]
+vegas = [100_000, 1_000_000, 10_000_000, 100_000_000, 250_000_000, 300_000_000]
+
+[scaling]
+# Scaling analysis configuration for runtime/feval from 10K to 100M
+# Function evaluations to test
+feval_counts = [
+    50_000,
+    100_000,
+    500_000,
+    1_000_000,
+    5_000_000,
+    10_000_000,
+    50_000_000,
+    100_000_000,
+]
+
+# Gauss-Legendre needs different iteration numbers due to different scaling
+gauss_legendre_fevals_1d = [100, 250, 500, 1000]
+gauss_legendre_fevals_7d = [5000, 10_000, 50_000, 100_000]
+
+# Maximum fevals for different methods
+max_fevals_grid_1d = 100_000_000
+max_fevals_grid_7d = 100_000_000
+max_fevals_mc = 100_000_000
+
+# Number of runs for error estimation
+num_runs = 4
+warmup_runs = 1
+
+[vectorized]
+grid_sizes = [1, 5, 20, 50, 100, 200]
+num_runs = 3
+integration_points = 10001
+
+[scipy]
+# scipy integration tolerances for high dimensions
+nquad_limit_1d = 200
+nquad_limit_3d = 5
+nquad_limit_7d = 2
+nquad_limit_15d = 1
+nquad_epsabs = 1e-2
+nquad_epsrel = 1e-2
+nquad_epsabs_15d = 1e-3
+nquad_epsrel_15d = 1e-3
+
+[framework_comparison]
+# Framework comparison benchmark configuration for 1D MC and Simpson
+enable = true
+dimension = 1
+methods = ["monte_carlo", "simpson"]
+
+# Backends to test (format: "backend_device")
+backends = [
+    "torch_gpu",
+    "torch_cpu",
+    "tensorflow_gpu",
+    "tensorflow_cpu",
+    "numpy_cpu",
+    "jax_cpu",
+]
+
+# Evaluation points for framework comparison (1D only)
+points_monte_carlo = [
+    10000,
+    50000,
+    100000,
+    500000,
+    1000000,
+    1_000_000,
+    10_000_000,
+    50_000_000,
+    100_000_000,
+]
+points_simpson = [
+    10000,
+    50000,
+    100000,
+    500000,
+    1_000_000,
+    10_000_000,
+    50_000_000,
+    100_000_000,
+]
+
+# Number of runs for timing stability
+num_runs = 3
+warmup_runs = 1
+
+[timeouts]
+# Maximum time in seconds for each benchmark component
+max_time_per_method = 300 # 5 minutes per method
+max_time_total = 1800     # 30 minutes total

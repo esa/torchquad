@@ -34,10 +34,16 @@ def _linspace_with_grads(start, stop, N, requires_grad):
     """
     # The requires_grad case is only needed for Torch.
     if requires_grad:
-        # Create 0 to 1 spaced grid
-        grid = anp.linspace(
-            anp.array(0.0, like=start), anp.array(1.0, like=start), N, dtype=start.dtype
-        )
+        # Create 0 to 1 spaced grid using the same device and dtype as start
+        backend = infer_backend(start)
+        if backend == "torch":
+            zero = start.new_zeros(())  # scalar tensor
+            one = start.new_ones(())  # scalar tensor
+        else:
+            zero = anp.array(0.0, like=start)
+            one = anp.array(1.0, like=start)
+
+        grid = anp.linspace(zero, one, N, dtype=start.dtype)
 
         # Scale to desired range, thus keeping gradients
         grid *= stop - start
@@ -123,18 +129,16 @@ def _setup_integration_domain(dim, integration_domain, backend):
     domain_arg_backend = infer_backend(integration_domain)
     convert_to_tensor = domain_arg_backend == "builtins"
     if not convert_to_tensor and backend is not None and domain_arg_backend != backend:
-        logger.warning(
-            "integration_domain should be a list when the backend argument is set."
-        )
+        warning_msg = "integration_domain should be a list when the backend argument is set."
+        logger.warning(warning_msg)
+        warnings.warn(warning_msg, RuntimeWarning)
         convert_to_tensor = True
 
     # Convert integration_domain to a tensor if needed
     if convert_to_tensor:
         # Cast all integration domain values to Python3 float because
         # some numerical backends create a tensor based on the Python3 types
-        integration_domain = [
-            [float(b) for b in bounds] for bounds in integration_domain
-        ]
+        integration_domain = [[float(b) for b in bounds] for bounds in integration_domain]
         if backend is None:
             # Get a globally default backend
             backend = _get_default_backend()
@@ -144,9 +148,7 @@ def _setup_integration_domain(dim, integration_domain, backend):
 
             dtype_arg = dtype_arg or tf.keras.backend.floatx()
 
-        integration_domain = anp.array(
-            integration_domain, like=backend, dtype=dtype_arg
-        )
+        integration_domain = anp.array(integration_domain, like=backend, dtype=dtype_arg)
 
     if integration_domain.shape != (dim, 2):
         raise ValueError(
@@ -240,17 +242,36 @@ def expand_func_values_and_squeeze_integral(f):
     """
 
     def wrap(*args, **kwargs):
+        # Extract function_values from either positional or keyword arguments
+        if len(args) > 1:
+            function_values = args[1]
+        elif "function_values" in kwargs:
+            function_values = kwargs["function_values"]
+        else:
+            raise ValueError(
+                "function_values argument not found in either positional or keyword arguments. "
+                "Please provide function_values as the second positional argument or as a keyword argument."
+            )
+
         # i.e we only have one dimension, or the second dimension (that of the integrand) is 1
-        is_1d = len(args[1].shape) == 1 or (
-            len(args[1].shape) == 2 and args[1].shape[1] == 1
+        is_1d = len(function_values.shape) == 1 or (
+            len(function_values.shape) == 2 and function_values.shape[1] == 1
         )
+
         if is_1d:
             warnings.warn(
                 "DEPRECATION WARNING: In future versions of torchquad, an array-like object will be returned."
             )
-            return anp.squeeze(
-                f(args[0], anp.expand_dims(args[1], axis=1), *args[2:], **kwargs)
-            )
+            if len(args) > 1:
+                # Modify positional arguments
+                args = (args[0], anp.expand_dims(function_values, axis=1), *args[2:])
+            else:
+                # Modify keyword arguments
+                kwargs["function_values"] = anp.expand_dims(function_values, axis=1)
+
+            result = f(*args, **kwargs)
+            return anp.squeeze(result)
+
         return f(*args, **kwargs)
 
     return wrap
