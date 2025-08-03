@@ -1,5 +1,7 @@
 import os
 
+__version__ = "0.5.0"
+
 # TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
 from .integration.integration_grid import IntegrationGrid
@@ -23,6 +25,7 @@ from .utils.set_up_backend import set_up_backend
 from .utils.deployment_test import _deployment_test
 
 __all__ = [
+    "__version__",
     "GridIntegrator",
     "BaseIntegrator",
     "IntegrationGrid",
