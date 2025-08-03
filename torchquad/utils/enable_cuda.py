@@ -1,4 +1,5 @@
 from loguru import logger
+import warnings
 
 from .set_precision import set_precision
 
@@ -20,4 +21,6 @@ def enable_cuda(data_type="float32"):
         if data_type is not None:
             set_precision(data_type)
     else:
-        logger.warning("Error enabling CUDA. cuda.is_available() returned False. CPU will be used.")
+        warning_msg = "Error enabling CUDA. cuda.is_available() returned False. CPU will be used."
+        logger.warning(warning_msg)
+        warnings.warn(warning_msg, RuntimeWarning)

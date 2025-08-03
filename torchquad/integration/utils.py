@@ -123,7 +123,9 @@ def _setup_integration_domain(dim, integration_domain, backend):
     domain_arg_backend = infer_backend(integration_domain)
     convert_to_tensor = domain_arg_backend == "builtins"
     if not convert_to_tensor and backend is not None and domain_arg_backend != backend:
-        logger.warning("integration_domain should be a list when the backend argument is set.")
+        warning_msg = "integration_domain should be a list when the backend argument is set."
+        logger.warning(warning_msg)
+        warnings.warn(warning_msg, RuntimeWarning)
         convert_to_tensor = True
 
     # Convert integration_domain to a tensor if needed

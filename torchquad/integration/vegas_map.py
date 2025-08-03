@@ -1,6 +1,7 @@
 from autoray import numpy as anp
 from autoray import astype, to_backend_dtype
 from loguru import logger
+import warnings
 
 from .utils import _add_at_indices
 
@@ -185,10 +186,12 @@ class VEGASMap:
         """Update the adaptive map, Section II C."""
         smoothed_weights = self._smooth_map(self.weights, self.counts, self.alpha)
         if smoothed_weights is None:
-            logger.warning(
+            warning_msg = (
                 "Cannot update the VEGASMap. This can happen with an integrand "
                 "which evaluates to zero everywhere."
             )
+            logger.warning(warning_msg)
+            warnings.warn(warning_msg, RuntimeWarning)
             self._reset_weight()
             return
 
@@ -242,9 +245,9 @@ class VEGASMap:
                 # smoothed_weights[i][indices] can be zero, which leads to
                 # invalid edges.
                 num_edges = self.x_edges.shape[1]
-                logger.warning(
-                    f"{num_edges - anp.sum(finite_edges)} out of {num_edges} calculated VEGASMap edges were infinite"
-                )
+                warning_msg = f"{num_edges - anp.sum(finite_edges)} out of {num_edges} calculated VEGASMap edges were infinite"
+                logger.warning(warning_msg)
+                warnings.warn(warning_msg, RuntimeWarning)
                 # Replace inf edges with the average of their two neighbours
                 middle_edges = 0.5 * (self.x_edges[i][:-2] + self.x_edges[i][2:])
                 self.x_edges[i][1:-1] = anp.where(

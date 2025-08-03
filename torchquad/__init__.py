@@ -1,5 +1,4 @@
 import os
-from loguru import logger
 
 # TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
@@ -42,5 +41,10 @@ __all__ = [
     "_deployment_test",
 ]
 
-set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
-logger.info("Initializing torchquad.")
+# Check for release build flag to avoid interfering with other loggers
+TORCHQUAD_RELEASE_BUILD = os.environ.get("TORCHQUAD_RELEASE_BUILD", "False").lower() == "true"
+
+if not TORCHQUAD_RELEASE_BUILD:
+    from loguru import logger
+    set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
+    logger.info("Initializing torchquad.")
