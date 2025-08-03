@@ -21,7 +21,6 @@ import logging
 import argparse
 import subprocess
 import sys
-import json
 from pathlib import Path
 from scipy.integrate import quad, nquad
 
@@ -42,7 +41,6 @@ except ImportError:
 # torchquad imports
 from torchquad import Simpson, GaussLegendre, MonteCarlo, VEGAS, enable_cuda, Boole, Trapezoid
 from torchquad.utils.set_precision import set_precision
-from torchquad.utils.set_up_backend import set_up_backend
 
 
 class ModularBenchmark:
@@ -256,7 +254,7 @@ class ModularBenchmark:
             1: 4.0422850545e-01,  # Computed analytically using SymPy
             3: 2.6605308056e-01,  # Validated against Boole's rule
             7: 8.4401047230e-01,  # Validated against VEGAS
-            15: 6.3714799881e+00  # Validated against VEGAS
+            15: 6.3714799881e00,  # Validated against VEGAS
         }
 
         if dim in analytical_references:
@@ -265,12 +263,16 @@ class ModularBenchmark:
             return reference
         else:
             # Fallback to numerical computation for unsupported dimensions
-            self.logger.warning(f"No analytical reference for {dim}D, using numerical computation...")
+            self.logger.warning(
+                f"No analytical reference for {dim}D, using numerical computation..."
+            )
             try:
                 if dim <= 3:
                     ref = Boole()
                     ref_points = self.config["convergence"].get(f"reference_points_{dim}d", 1000000)
-                    ref_result = ref.integrate(func, dim=dim, N=ref_points, integration_domain=domain)
+                    ref_result = ref.integrate(
+                        func, dim=dim, N=ref_points, integration_domain=domain
+                    )
                     self.logger.info(
                         f"Boole's rule reference ({ref_points} pts): {ref_result.item():.8e}"
                     )
@@ -622,7 +624,7 @@ class ModularBenchmark:
     def benchmark_framework_comparison(self) -> Dict:
         """Framework comparison benchmark for 1D Monte Carlo and Simpson methods."""
         framework_config = self.config.get("framework_comparison", {})
-        
+
         if not framework_config.get("enable", False):
             self.logger.info("Framework comparison disabled in config")
             return {}
@@ -638,8 +640,8 @@ class ModularBenchmark:
         warmup_runs = framework_config.get("warmup_runs", 1)
 
         # Use the 1D test function
-        func = self.challenging_1d
-        domain = [[0, 1]]
+        # func = self.challenging_1d
+        # domain = [[0, 1]]
         reference = 4.0422850545e-01  # 1D analytical reference
 
         results = {
@@ -647,7 +649,7 @@ class ModularBenchmark:
             "backends": backends,
             "reference": reference,
             "function": "Discontinuous oscillatory 1D",
-            "results": {}
+            "results": {},
         }
 
         for method_name in methods:
@@ -662,7 +664,7 @@ class ModularBenchmark:
 
             for backend_spec in backends:
                 self.logger.info(f"  Testing {method_name} with {backend_spec}...")
-                
+
                 try:
                     # Parse backend specification
                     if "_" in backend_spec:
@@ -677,23 +679,39 @@ class ModularBenchmark:
 
                     # Benchmark this method-backend combination using subprocess isolation
                     backend_results = self._benchmark_method_backend_subprocess(
-                        backend_name, device, method_name, eval_points, reference, num_runs, warmup_runs
+                        backend_name,
+                        device,
+                        method_name,
+                        eval_points,
+                        reference,
+                        num_runs,
+                        warmup_runs,
                     )
 
                     if backend_results:
                         results["results"][method_name][backend_spec] = backend_results
 
                 except Exception as e:
-                    self.logger.error(f"  Failed to benchmark {method_name} with {backend_spec}: {e}")
+                    self.logger.error(
+                        f"  Failed to benchmark {method_name} with {backend_spec}: {e}"
+                    )
                     continue
 
         return results
 
-    def _benchmark_method_backend_subprocess(self, backend_name: str, device: str, method_name: str,
-                                           eval_points: list, reference: float, num_runs: int, warmup_runs: int):
+    def _benchmark_method_backend_subprocess(
+        self,
+        backend_name: str,
+        device: str,
+        method_name: str,
+        eval_points: list,
+        reference: float,
+        num_runs: int,
+        warmup_runs: int,
+    ):
         """Benchmark method-backend combination using subprocess isolation."""
         self.logger.info(f"    Using subprocess isolation for {backend_name}_{device}")
-        
+
         # Prepare configuration for worker process
         config = {
             "backend_name": backend_name,
@@ -702,12 +720,12 @@ class ModularBenchmark:
             "eval_points": eval_points,
             "reference": reference,
             "num_runs": num_runs,
-            "warmup_runs": warmup_runs
+            "warmup_runs": warmup_runs,
         }
-        
+
         # Path to worker script
         worker_script = Path(__file__).parent / "framework_worker.py"
-        
+
         try:
             # Run worker in subprocess
             result = subprocess.run(
@@ -715,22 +733,24 @@ class ModularBenchmark:
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout per backend
-                cwd=Path(__file__).parent.parent  # Run from torchquad root
+                cwd=Path(__file__).parent.parent,  # Run from torchquad root
             )
-            
+
             if result.returncode != 0:
                 self.logger.error(f"    Worker process failed: {result.stderr}")
                 return None
-            
+
             # Parse result
             worker_result = json.loads(result.stdout.strip())
-            
+
             if worker_result.get("success"):
                 return worker_result["results"]
             else:
-                self.logger.error(f"    Worker failed: {worker_result.get('error', 'Unknown error')}")
+                self.logger.error(
+                    f"    Worker failed: {worker_result.get('error', 'Unknown error')}"
+                )
                 return None
-                
+
         except subprocess.TimeoutExpired:
             self.logger.error(f"    Worker process timed out for {backend_name}_{device}")
             return None
@@ -742,16 +762,16 @@ class ModularBenchmark:
         """Check if a backend is available."""
         try:
             if backend_name == "torch":
-                import torch
+                torch  # noqa: F401
                 return True
             elif backend_name == "tensorflow":
-                import tensorflow as tf
+                import tensorflow as tf  # noqa: F401
                 return True
             elif backend_name == "jax":
-                import jax
+                import jax  # noqa: F401
                 return True
             elif backend_name == "numpy":
-                import numpy
+                import numpy  # noqa: F401
                 return True
             else:
                 return False
@@ -1001,7 +1021,9 @@ def main():
         "--convergence-only", action="store_true", help="Run only convergence benchmarks"
     )
     parser.add_argument("--scaling-only", action="store_true", help="Run only scaling benchmarks")
-    parser.add_argument("--framework-only", action="store_true", help="Run only framework comparison")
+    parser.add_argument(
+        "--framework-only", action="store_true", help="Run only framework comparison"
+    )
 
     args = parser.parse_args()
 
