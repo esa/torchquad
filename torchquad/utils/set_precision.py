@@ -40,18 +40,34 @@ def set_precision(data_type="float32", backend="torch"):
     if backend == "torch":
         import torch
 
-        cuda_enabled = torch.cuda.is_initialized()
-        tensor_dtype, tensor_dtype_name = {
-            ("float32", True): (torch.cuda.FloatTensor, "cuda.Float32"),
-            ("float64", True): (torch.cuda.DoubleTensor, "cuda.Float64"),
-            ("float32", False): (torch.FloatTensor, "Float32"),
-            ("float64", False): (torch.DoubleTensor, "Float64"),
-        }[(data_type, cuda_enabled)]
-        cuda_enabled_info = "CUDA is initialized" if cuda_enabled else "CUDA not initialized"
-        logger.info(
-            f"Setting Torch's default tensor type to {tensor_dtype_name} ({cuda_enabled_info})."
-        )
-        torch.set_default_tensor_type(tensor_dtype)
+        # Use new PyTorch 2.1+ API if available, fallback to legacy for older versions
+        if hasattr(torch, "set_default_dtype"):
+            # Modern PyTorch 2.1+ approach
+            dtype_map = {"float32": torch.float32, "float64": torch.float64}
+            torch.set_default_dtype(dtype_map[data_type])
+
+            # Only set default device to CUDA if CUDA was already initialized
+            # (matching the old behavior more closely)
+            cuda_enabled = torch.cuda.is_initialized()
+            if cuda_enabled:
+                torch.set_default_device("cuda")
+                logger.info(f"Setting Torch's default dtype to {data_type} and device to CUDA.")
+            else:
+                logger.info(f"Setting Torch's default dtype to {data_type} (CPU).")
+        else:
+            # Legacy approach for older PyTorch versions
+            cuda_enabled = torch.cuda.is_initialized()
+            tensor_dtype, tensor_dtype_name = {
+                ("float32", True): (torch.cuda.FloatTensor, "cuda.Float32"),
+                ("float64", True): (torch.cuda.DoubleTensor, "cuda.Float64"),
+                ("float32", False): (torch.FloatTensor, "Float32"),
+                ("float64", False): (torch.DoubleTensor, "Float64"),
+            }[(data_type, cuda_enabled)]
+            cuda_enabled_info = "CUDA is initialized" if cuda_enabled else "CUDA not initialized"
+            logger.info(
+                f"Setting Torch's default tensor type to {tensor_dtype_name} ({cuda_enabled_info})."
+            )
+            torch.set_default_tensor_type(tensor_dtype)
     elif backend == "jax":
         from jax import config
 

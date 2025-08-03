@@ -212,6 +212,32 @@ By default, torchquad disables its internal logging when installed from PyPI to 
 
 Note: When developing from a git clone, logging is enabled by default. The `TORCHQUAD_RELEASE_BUILD` environment variable controls this behavior.
 
+## Multi-GPU Usage
+
+torchquad supports multi-GPU systems through standard PyTorch practices. The recommended approach is to use the `CUDA_VISIBLE_DEVICES` environment variable to control GPU selection:
+
+```bash
+# Use specific GPU
+export CUDA_VISIBLE_DEVICES=0  # Use GPU 0
+python your_script.py
+
+export CUDA_VISIBLE_DEVICES=1  # Use GPU 1  
+python your_script.py
+
+# Use multiple GPUs with separate processes
+export CUDA_VISIBLE_DEVICES=0 && python integration_script.py &
+export CUDA_VISIBLE_DEVICES=1 && python integration_script.py &
+```
+
+For parallel processing across multiple GPUs, we recommend spawning separate processes rather than trying to coordinate multiple GPUs within a single process. This approach:
+
+- Provides clean separation between GPU processes
+- Avoids complex device management
+- Follows PyTorch best practices
+- Enables easy load balancing and error handling
+
+For detailed examples and advanced multi-GPU patterns, see the [Multi-GPU Usage section](https://torchquad.readthedocs.io/en/main/tutorial.html#multi-gpu-usage) in our documentation.
+
 You can find all available integrators [here](https://torchquad.readthedocs.io/en/main/integration_methods.html).
 
 <!-- ROADMAP -->
@@ -309,12 +335,12 @@ Please note that PRs should be created from and into the `develop` branch. For e
 3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 5. Push to the Branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request on the `develop` branch, *not* `main` (NB: We autoformat every PR with black. Our GitHub actions may create additional commits on your PR for that reason.)
+6. Open a Pull Request on the `develop` branch, *not* `main`
 
 and we will have a look at your contribution as soon as we can.
 
-Furthermore, please make sure that your PR passes all automated tests. Review will only happen after that.
-Only PRs created on the `develop` branch with all tests passing will be considered. The only exception to this rule is if you want to update the documentation in relation to the current release on conda / pip. In that case you may ask to merge directly into `main`.
+Furthermore, please make sure that your PR passes all automated tests, you can ping `@gomezzz` to run the CI. Review will only happen after that.
+Only PRs created on the `develop` branch with all tests passing will be considered. The only exception to this rule is if you want to update the documentation in relation to the current release on conda / pip. In that case you open a PR directly into `main`.
 
 <!-- LICENSE -->
 ## License
