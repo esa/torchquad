@@ -95,7 +95,7 @@ class IntegrationGrid:
         logger.opt(lazy=True).debug("Grid mesh width is {h}", h=lambda: str(self.h))
 
         # Get grid points
-        points = anp.meshgrid(*grid_1d)
+        points = anp.meshgrid(*grid_1d, indexing="ij")
         self.points = anp.stack([mg.ravel() for mg in points], axis=1, like=integration_domain)
 
         logger.info("Integration grid created.")

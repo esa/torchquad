@@ -54,7 +54,7 @@ def _run_vegas_map_checks(backend, dtype_name):
     # Get example point and function values
     N_per_dim = 100
     y = anp.linspace(0.0, 0.99999, N_per_dim, dtype=dtype_float, like=backend)
-    y = anp.meshgrid(*([y] * dim))
+    y = anp.meshgrid(*([y] * dim), indexing="ij")
     y = anp.stack([mg.ravel() for mg in y], axis=1, like=backend)
     # Use exp to get a peak in a corner
     f_eval = anp.prod(anp.exp(y), axis=1)

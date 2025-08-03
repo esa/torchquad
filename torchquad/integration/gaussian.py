@@ -56,11 +56,17 @@ class Gaussian(GridIntegrator):
         if backend == "torch":
             weights.requires_grad = requires_grad
             return anp.prod(
-                anp.array(anp.stack(list(anp.meshgrid(*([weights] * dim))), like=backend, dim=0)),
+                anp.array(
+                    anp.stack(
+                        list(anp.meshgrid(*([weights] * dim), indexing="ij")), like=backend, dim=0
+                    )
+                ),
                 axis=0,
             ).ravel()
         else:
-            return anp.prod(anp.meshgrid(*([weights] * dim), like=backend), axis=0).ravel()
+            return anp.prod(
+                anp.meshgrid(*([weights] * dim), indexing="ij", like=backend), axis=0
+            ).ravel()
 
     def _roots(self, N, backend, requires_grad=False):
         """return the roots generated from the polynomial of choice
