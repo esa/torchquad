@@ -2,6 +2,9 @@ import os
 
 __version__ = "0.5.0"
 
+# Set for release builds
+TORCHQUAD_DISABLE_LOGGING = True
+
 # TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
 from .integration.integration_grid import IntegrationGrid
@@ -44,10 +47,7 @@ __all__ = [
     "_deployment_test",
 ]
 
-# Check for release build flag to avoid interfering with other loggers
-TORCHQUAD_RELEASE_BUILD = os.environ.get("TORCHQUAD_RELEASE_BUILD", "False").lower() == "true"
-
-if not TORCHQUAD_RELEASE_BUILD:
+if not TORCHQUAD_DISABLE_LOGGING:
     from loguru import logger
 
     set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
