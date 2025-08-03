@@ -56,11 +56,7 @@ class Gaussian(GridIntegrator):
         if backend == "torch":
             weights.requires_grad = requires_grad
             return anp.prod(
-                anp.array(
-                    anp.stack(
-                        list(anp.meshgrid(*([weights] * dim))), like=backend, dim=0
-                    )
-                ),
+                anp.array(anp.stack(list(anp.meshgrid(*([weights] * dim))), like=backend, dim=0)),
                 axis=0,
             ).ravel()
         else:
@@ -90,9 +86,7 @@ class Gaussian(GridIntegrator):
         """
 
         def f(integration_domain, N, requires_grad, backend=None):
-            return self._resize_roots(
-                integration_domain, self._roots(N, backend, requires_grad)
-            )
+            return self._resize_roots(integration_domain, self._roots(N, backend, requires_grad))
 
         return f
 
@@ -124,9 +118,7 @@ class Gaussian(GridIntegrator):
             if hasattr(N, "item"):
                 _root_args = (N.item(), *self._root_args)
             else:
-                raise NotImplementedError(
-                    f"N {N} is not an int and lacks an `item` method"
-                )
+                raise NotImplementedError(f"N {N} is not an int and lacks an `item` method")
         if _root_args in self._cache:
             return self._cache[_root_args]
         self._cache[_root_args] = self._root_fn(*_root_args)

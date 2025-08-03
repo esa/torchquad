@@ -68,8 +68,7 @@ class Simpson(NewtonCotes):
         # complex rule that works for even N as well but it is not implemented here.
         if n_per_dim < 3:
             warnings.warn(
-                "N per dimension cannot be lower than 3. "
-                "N per dim will now be changed to 3."
+                "N per dimension cannot be lower than 3. " "N per dim will now be changed to 3."
             )
             N = 3**dim
         elif n_per_dim % 2 != 1:

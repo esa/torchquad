@@ -1,8 +1,4 @@
-import sys
-
-sys.path.append("../")
-
-from integration.gaussian import GaussLegendre
+from torchquad.integration.gaussian import GaussLegendre
 from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
@@ -84,9 +80,7 @@ def _run_gaussian_tests(backend, _precision):
     )
     print(f"10D {gauss} Test passed. N: {N}, backend: {backend}, Errors: {errors}")
     for err, test_function in zip(errors, funcs):
-        assert (
-            test_function.get_order() > 60 or err < 4e-09
-        )  # poly order should be relatively high
+        assert test_function.get_order() > 60 or err < 4e-09  # poly order should be relatively high
     for error in errors:
         assert error < 1e-5
 
@@ -100,9 +94,7 @@ def _run_gaussian_tests(backend, _precision):
             # which is then re-used on all other integrations (as is the point of JIT).
             nonlocal jit_integrate
             if jit_integrate is None:
-                jit_integrate = gauss.get_jit_compiled_integrate(
-                    dim=1, N=N, backend=backend
-                )
+                jit_integrate = gauss.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
             return jit_integrate(*args, **kwargs)
 
         errors, funcs = compute_integration_test_errors(
@@ -114,18 +106,14 @@ def _run_gaussian_tests(backend, _precision):
             filter_test_functions=lambda x: x.is_integrand_1d,
         )
 
-        print(
-            f"1D Gaussian JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}"
-        )
+        print(f"1D Gaussian JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}")
         # Polynomials up to degree 2N-1 can be integrated almost exactly with gaussian.
         for err, test_function in zip(errors, funcs):
             assert test_function.get_order() > (2 * N - 1) or err < 2e-10
         for error in errors:
             assert error < 6.33e-11
 
-        jit_integrate = (
-            None  # set to None again so can be re-used with new integrand shape
-        )
+        jit_integrate = None  # set to None again so can be re-used with new integrand shape
 
         errors, funcs = compute_integration_test_errors(
             integrate,
@@ -147,9 +135,7 @@ def _run_gaussian_tests(backend, _precision):
 test_integrate_numpy = setup_test_for_backend(_run_gaussian_tests, "numpy", "float64")
 test_integrate_torch = setup_test_for_backend(_run_gaussian_tests, "torch", "float64")
 test_integrate_jax = setup_test_for_backend(_run_gaussian_tests, "jax", "float64")
-test_integrate_tensorflow = setup_test_for_backend(
-    _run_gaussian_tests, "tensorflow", "float64"
-)
+test_integrate_tensorflow = setup_test_for_backend(_run_gaussian_tests, "tensorflow", "float64")
 
 
 if __name__ == "__main__":

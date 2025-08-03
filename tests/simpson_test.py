@@ -1,10 +1,6 @@
-import sys
-
-sys.path.append("../")
-
 import warnings
 
-from integration.simpson import Simpson
+from torchquad.integration.simpson import Simpson
 from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
@@ -99,9 +95,7 @@ def _run_simpson_tests(backend, _precision):
             # which is then re-used on all other integrations (as is the point of JIT).
             nonlocal jit_integrate
             if jit_integrate is None:
-                jit_integrate = simp.get_jit_compiled_integrate(
-                    dim=1, N=N, backend=backend
-                )
+                jit_integrate = simp.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
             return jit_integrate(*args, **kwargs)
 
         errors, funcs = compute_integration_test_errors(
@@ -113,9 +107,7 @@ def _run_simpson_tests(backend, _precision):
             filter_test_functions=lambda x: x.is_integrand_1d,
         )
 
-        print(
-            f"1D Simpson JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}"
-        )
+        print(f"1D Simpson JIT Test passed. N: {N}, backend: {backend}, Errors: {errors}")
         for err, test_function in zip(errors, funcs):
             assert test_function.get_order() > 3 or (
                 err < 3e-11 if test_function.is_integrand_1d else err < 6e-10
@@ -123,9 +115,7 @@ def _run_simpson_tests(backend, _precision):
         for error in errors:
             assert error < 1e-7
 
-        jit_integrate = (
-            None  # set to None again so can be re-used with new integrand shape
-        )
+        jit_integrate = None  # set to None again so can be re-used with new integrand shape
 
         errors, funcs = compute_integration_test_errors(
             integrate,
@@ -149,9 +139,7 @@ def _run_simpson_tests(backend, _precision):
 test_integrate_numpy = setup_test_for_backend(_run_simpson_tests, "numpy", "float64")
 test_integrate_torch = setup_test_for_backend(_run_simpson_tests, "torch", "float64")
 test_integrate_jax = setup_test_for_backend(_run_simpson_tests, "jax", "float64")
-test_integrate_tensorflow = setup_test_for_backend(
-    _run_simpson_tests, "tensorflow", "float64"
-)
+test_integrate_tensorflow = setup_test_for_backend(_run_simpson_tests, "tensorflow", "float64")
 
 
 if __name__ == "__main__":

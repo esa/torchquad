@@ -1,12 +1,8 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import to_backend_dtype
 
-from integration.rng import RNG
-from integration.vegas_stratification import VEGASStratification
+from torchquad.integration.rng import RNG
+from torchquad.integration.vegas_stratification import VEGASStratification
 
 from helper_functions import setup_test_for_backend
 
@@ -47,9 +43,7 @@ def _run_vegas_stratification_checks(backend, dtype_name):
     assert jf.dtype == jf2.dtype == dtype_float
     assert jf.shape == jf2.shape == (strat.N_cubes,)
     assert anp.min(jf2) >= 0.0, "Sums of squared values should be non-negative"
-    assert (
-        anp.min(jf**2 - jf2) >= 0.0
-    ), "Squared sums should be bigger than summed squares"
+    assert anp.min(jf**2 - jf2) >= 0.0, "Squared sums should be bigger than summed squares"
 
     # Test the dampened sample counts update
     strat.update_DH()

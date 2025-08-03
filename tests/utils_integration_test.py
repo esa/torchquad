@@ -1,21 +1,17 @@
-import sys
-
-sys.path.append("../")
-
 from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name, to_backend_dtype
 import importlib
 import pytest
 import warnings
 
-from integration.utils import (
+from torchquad.integration.utils import (
     _linspace_with_grads,
     _add_at_indices,
     _setup_integration_domain,
     _is_compiling,
 )
-from utils.set_precision import set_precision
-from utils.enable_cuda import enable_cuda
+from torchquad.utils.set_precision import set_precision
+from torchquad.utils.enable_cuda import enable_cuda
 
 
 def _run_tests_with_all_backends(func, func_extra_args=[{}]):
@@ -63,9 +59,7 @@ def _run_linspace_with_grads_tests(dtype_name, backend, requires_grad):
     dtype_backend = to_backend_dtype(dtype_name, like=backend)
     start = anp.array(-2.0, like=backend, dtype=dtype_backend)
     stop = anp.array(-1.0, like=backend, dtype=dtype_backend)
-    assert (
-        get_dtype_name(start) == dtype_name
-    ), "Unexpected dtype for the configured precision"
+    assert get_dtype_name(start) == dtype_name, "Unexpected dtype for the configured precision"
     grid1d = _linspace_with_grads(start, stop, 10, requires_grad)
     # Test if the backend, dtype and shape match
     assert infer_backend(grid1d) == backend
@@ -130,9 +124,7 @@ def _run_setup_integration_domain_tests(dtype_name, backend):
     """
     Test _setup_integration_domain with the given dtype and numerical backend
     """
-    print(
-        f"Testing _setup_integration_domain; backend: {backend}, precision: {dtype_name}"
-    )
+    print(f"Testing _setup_integration_domain; backend: {backend}, precision: {dtype_name}")
 
     # Domain given as List with Python floats
     domain = _setup_integration_domain(2, [[0.0, 1.0], [1.0, 2.0]], backend)
@@ -157,17 +149,13 @@ def _run_setup_integration_domain_tests(dtype_name, backend):
 
     # User-specified domain
     dtype_backend = to_backend_dtype(dtype_name, like=backend)
-    custom_domain = anp.array(
-        [[0.0, 1.0], [1.0, 2.0]], like=backend, dtype=dtype_backend
-    )
+    custom_domain = anp.array([[0.0, 1.0], [1.0, 2.0]], like=backend, dtype=dtype_backend)
     domain = _setup_integration_domain(2, custom_domain, None)
     assert domain.shape == custom_domain.shape
     assert domain.dtype == custom_domain.dtype
 
     # Backend specified with both backend and integration_domain parameters
-    custom_np_domain = anp.array(
-        [[0.0, 1.0], [1.0, 2.0]], like="numpy", dtype="float16"
-    )
+    custom_np_domain = anp.array([[0.0, 1.0], [1.0, 2.0]], like="numpy", dtype="float16")
     domain = _setup_integration_domain(2, custom_np_domain, backend)
     assert (
         infer_backend(domain) == backend
@@ -203,14 +191,10 @@ def _run_is_compiling_tests(dtype_name, backend):
     """
     dtype = to_backend_dtype(dtype_name, like=backend)
     x = anp.array([[0.0, 1.0], [1.0, 2.0]], dtype=dtype, like=backend)
-    assert not _is_compiling(
-        x
-    ), f"_is_compiling has a false positive with backend {backend}"
+    assert not _is_compiling(x), f"_is_compiling has a false positive with backend {backend}"
 
     def check_compiling(x):
-        assert _is_compiling(
-            x
-        ), f"_is_compiling has a false negative with backend {backend}"
+        assert _is_compiling(x), f"_is_compiling has a false negative with backend {backend}"
         return x
 
     if backend == "jax":

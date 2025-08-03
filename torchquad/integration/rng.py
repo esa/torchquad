@@ -65,9 +65,7 @@ class RNG:
                 self._rng = tf.random.Generator.from_non_deterministic_state()
             else:
                 self._rng = tf.random.Generator.from_seed(seed)
-            self.uniform = lambda size, dtype: self._rng.uniform(
-                shape=size, dtype=dtype
-            )
+            self.uniform = lambda size, dtype: self._rng.uniform(shape=size, dtype=dtype)
         else:
             if seed is not None:
                 anp.random.seed(seed, like=backend)
