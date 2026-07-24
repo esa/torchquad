@@ -70,7 +70,7 @@ class Boole(NewtonCotes):
         # where n is a positive integer, for correctness.
         if n_per_dim < 5:
             warnings.warn(
-                "N per dimension cannot be lower than 5. " "N per dim will now be changed to 5."
+                "N per dimension cannot be lower than 5. N per dim will now be changed to 5."
             )
             N = 5**dim
         elif (n_per_dim - 1) % 4 != 0:

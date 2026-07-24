@@ -70,6 +70,9 @@ def _add_at_indices(target, indices, source, is_sorted=False):
         indices (int backend tensor): Indices into target for each value in source
         source (backend tensor): Values which are added to target
         is_sorted (bool, optional): Set this to True if indices is monotonically increasing to skip a redundant sorting step with the numpy backend. Defaults to False.
+
+    Raises:
+        NotImplementedError: If the numerical backend of ``target`` is neither numpy nor torch.
     """
     backend = infer_backend(target)
     if backend == "torch":
@@ -115,6 +118,8 @@ def _setup_integration_domain(dim, integration_domain, backend):
         backend (string or None): Numerical backend. If set to None, use integration_domain's backend if it is a tensor and otherwise use the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
     Returns:
         backend tensor: Integration domain.
+    Raises:
+        ValueError: If the integration domain does not have shape ``(dim, 2)``.
     """
     logger.debug("Setting up integration domain.")
 
@@ -167,6 +172,8 @@ def _check_integration_domain(integration_domain):
         integration_domain (list or backend tensor): Integration domain, e.g. [[-1,1],[0,1]].
     Returns:
         int: Dimension represented by the domain
+    Raises:
+        ValueError: If the integration domain has an invalid shape or invalid boundary values.
     """
     if infer_backend(integration_domain) == "builtins":
         dim = len(integration_domain)
@@ -239,6 +246,9 @@ def expand_func_values_and_squeeze_integral(f):
 
     Args:
         f (Callable): the wrapped function
+
+    Returns:
+        Callable: the wrapped function with 1D integrand handling applied
     """
 
     def wrap(*args, **kwargs):

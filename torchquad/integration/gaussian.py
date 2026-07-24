@@ -13,7 +13,6 @@ class Gaussian(GridIntegrator):
     The primary methods/attributes of interest to override are `_root_fn` (for different polynomials, like `numpy.polynomial.legendre.leggauss`), `_apply_composite_rule` (as in other integration methods), and `_resize_roots` (for handling different integration domains).
 
     Attributes:
-        name  (str): A human-readable name for the integral.
         _root_fn (function): A function that returns roots and weights like `numpy.polynomial.legendre.leggauss`.
         _root_args (tuple): a way of adding information to be passed into `_root_fn` as needed.  This is then used when caching roots/weights to potentially distinguish different calls to `_root_fn` based on arguments.
         _cache (dict): a cache for roots and weights, used internally.
@@ -21,7 +20,6 @@ class Gaussian(GridIntegrator):
 
     def __init__(self):
         super().__init__()
-        self.name = "Gauss-Legendre"
         self._root_fn = numpy.polynomial.legendre.leggauss
         self._root_args = ()
         self._cache = {}
@@ -48,6 +46,7 @@ class Gaussian(GridIntegrator):
             N (int): number of nodes
             dim (int): number of dimensions
             backend (string): which backend array to return
+            requires_grad (bool, optional): whether the returned weights should track gradients (torch only). Defaults to False.
 
         Returns:
             backend tensor: the weights
@@ -74,6 +73,7 @@ class Gaussian(GridIntegrator):
         Args:
             N (int): number of nodes
             backend (string): which backend array to return
+            requires_grad (bool, optional): whether the returned roots should track gradients (torch only). Defaults to False.
 
         Returns:
             backend tensor: the roots
@@ -112,10 +112,12 @@ class Gaussian(GridIntegrator):
 
         Args:
             N (int): number of nodes to return
-            backend (string): which backend to use
 
         Returns:
             tuple: nodes and weights
+
+        Raises:
+            NotImplementedError: If N is not an int and has no ``item`` method to convert it to one.
         """
         _root_args = (N, *self._root_args)
         if not isinstance(N, int):

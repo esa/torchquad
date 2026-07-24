@@ -31,7 +31,14 @@ class GridIntegrator(BaseIntegrator):
 
     def integrate(self, fn, dim, N, integration_domain, backend):
         """Integrate the passed function on the passed domain using a Composite Newton Cotes rule.
-        The argument meanings are explained in the sub-classes.
+        The argument meanings are explained in more detail in the sub-classes.
+
+        Args:
+            fn (func): The function to integrate over.
+            dim (int): Dimensionality of the integration domain.
+            N (int): Total number of sample points to use for the integration.
+            integration_domain (list or backend tensor): Integration domain, e.g. [[-1,1],[0,1]]. It can also determine the numerical backend.
+            backend (string): Numerical backend. Ignored if it can be inferred from integration_domain.
 
         Returns:
             float: integral value
@@ -63,6 +70,7 @@ class GridIntegrator(BaseIntegrator):
             dim (int): Dimensionality
             n_per_dim (int): Number of grid slices per dimension
             hs (backend tensor): Distances between grid slices for each dimension
+            integration_domain (backend tensor): Integration domain
 
         Returns:
             backend tensor: Quadrature result
@@ -80,9 +88,9 @@ class GridIntegrator(BaseIntegrator):
         )  # chr(i + 65) generates an alphabetical character
         reshaped_function_values = anp.einsum(f"{einsum}->{einsum[1:]}{einsum[0]}", function_values)
         reshaped_function_values = reshaped_function_values.reshape(new_shape)
-        assert new_shape == list(
-            reshaped_function_values.shape
-        ), f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
+        assert new_shape == list(reshaped_function_values.shape), (
+            f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
+        )
         logger.debug("Computing areas.")
 
         result = self._apply_composite_rule(reshaped_function_values, dim, hs, integration_domain)
@@ -145,6 +153,9 @@ class GridIntegrator(BaseIntegrator):
 
         Returns:
             function(fn, integration_domain): JIT compiled integrate function where all parameters except the integrand and domain are fixed
+
+        Raises:
+            ValueError: If JIT compilation is not implemented for the selected numerical backend.
         """
         # If N is None, use the minimal required number of points per dimension
         if N is None:

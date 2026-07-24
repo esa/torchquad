@@ -6,6 +6,10 @@ class RNG:
     """
     A random number generator helper class for multiple numerical backends
 
+    An instance exposes a ``uniform(size, dtype)`` method, defined per backend in
+    the constructor, which generates uniform random numbers in [0, 1) of the given
+    shape ``size`` and ``dtype`` and returns them as a backend tensor.
+
     Notes:
         - The seed argument may behave differently in different versions of a
           numerical backend and when using GPU instead of CPU
@@ -31,9 +35,6 @@ class RNG:
             backend (string): Numerical backend, e.g. "torch".
             seed (int or None, optional): Random number generation seed. If set to None, the RNG is seeded randomly. Defaults to None.
             torch_save_state (Bool, optional): If True, maintain a separate RNG state for PyTorch. This argument can be helpful to avoid problems with integrand functions which set PyTorch's RNG seed. Unused unless backend is "torch". Defaults to False.
-
-        Returns:
-            An object whose "uniform" method generates uniform random numbers for the given backend
         """
         if backend == "numpy":
             import numpy as np
@@ -123,19 +124,6 @@ class RNG:
             else:
                 torch.random.manual_seed(seed)
             self.uniform = lambda size, dtype: torch.rand(size=size, dtype=dtype)
-
-    def uniform(self, size, dtype):
-        """Generate uniform random numbers in [0, 1) for the given numerical backend.
-        This function is backend-specific; its definitions are in the constructor.
-
-        Args:
-            size (list): The shape of the generated numbers tensor
-            dtype (backend dtype): The dtype for the numbers, e.g. torch.float32
-
-        Returns:
-            backend tensor: A tensor with random values for the given numerical backend
-        """
-        pass
 
     def jax_get_key(self):
         """

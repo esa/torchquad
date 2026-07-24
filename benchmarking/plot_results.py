@@ -341,7 +341,7 @@ class ResultsPlotter:
             fig.delaxes(axes[i])
 
         plt.suptitle(
-            f"Runtime vs Error Analysis - Challenging Functions \n " f"Hardware: {device_info}",
+            f"Runtime vs Error Analysis - Challenging Functions \n Hardware: {device_info}",
             fontsize=15,
         )
         plt.tight_layout()
@@ -613,7 +613,7 @@ class ResultsPlotter:
         ax2.legend(fontsize=11)
 
         plt.suptitle(
-            f"Enhanced Vectorized Integrand Performance Analysis \n " f"Hardware: {device_info}",
+            f"Enhanced Vectorized Integrand Performance Analysis \n Hardware: {device_info}",
             fontsize=15,
         )
         plt.tight_layout()

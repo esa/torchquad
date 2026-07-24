@@ -2,7 +2,7 @@ from loguru import logger
 import sys
 
 
-def set_log_level(log_level: str):
+def set_log_level(log_level):
     """Set the log level for the logger.
     The preset log level when initialising Torchquad is the value of the TORCHQUAD_LOG_LEVEL environment variable, or 'WARNING' if the environment variable is unset.
 

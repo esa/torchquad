@@ -68,7 +68,7 @@ def _run_monte_carlo_tests(backend, _precision):
         use_complex=True,
         backend=backend,
     )
-    print(f"10D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors:" f" {str(errors)}")
+    print(f"10D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors: {str(errors)}")
     for err, test_function in zip(errors, funcs):
         assert test_function.get_order() > 0 or err == 0.0
     for error in errors:
