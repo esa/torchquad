@@ -35,7 +35,11 @@ Please note that PRs should be created from and into the ``develop`` branch. For
 5. Push to the Branch: ``git push origin feature/AmazingFeature``
 6. Open a Pull Request on the ``develop`` branch, *not* ``main`` (NB: We autoformat every PR with black. Our GitHub actions may create additional commits on your PR for that reason.)
 
-and we will have a look at your contribution as soon as we can. 
+and we will have a look at your contribution as soon as we can.
+
+Before opening a PR, please skim `REVIEW.md <https://github.com/esa/torchquad/blob/develop/REVIEW.md>`_ in the
+repository root. It lists the review priorities specific to *torchquad* — correctness first, backend-agnostic
+code, vectorized integrand evaluation, and fail-hard error handling — and is the rubric your PR will be reviewed against.
 
 Furthermore, please make sure that your PR passes all automated tests. Review will only happen after that.
 Only PRs created on the ``develop`` branch with all tests passing will be considered. The only exception to this rule is if you want to update the documentation in relation to the current release on ``conda`` / ``pip``. 
