@@ -35,6 +35,37 @@ Source = "https://github.com/esa/torchquad/"
 [tool.setuptools]
 packages = ["torchquad", "torchquad.integration", "torchquad.utils"]
 
+[tool.ruff]
+line-length = 100
+extend-exclude = ["my_notebooks", "build", "dist"]
+
+[tool.ruff.lint]
+# The default selection (E4/E7/E9/F) already covers the severe-error gate
+# (E9, F63, F7, F82) that flake8 enforced. These three are intentionally
+# relaxed, matching the retired .flake8 config:
+#   E402 - numerical backends are imported lazily, not at top of file
+#   E501 - line length is handled by the formatter, not the linter
+#   E203 - conflicts with the formatter's slice-spacing style
+ignore = ["E203", "E402", "E501"]
+
+[tool.pydoclint]
+style = "google"
+# Signature type hints are deferred to the 0.7 typing pass (roadmap R9);
+# docstrings carry the types for now, so only check docstring completeness
+# and consistency (missing Args/Returns/Raises), not signature annotations.
+arg-type-hints-in-signature = false
+check-return-types = false
+check-yield-types = false
+skip-checking-short-docstrings = true
+
+[tool.vulture]
+paths = ["torchquad"]
+# The blocking CI tier runs at 100% confidence; a 60% advisory tier runs
+# non-blocking. Symbols used implicitly (autoray registrations, API hooks)
+# that vulture cannot see belong in .vulture_whitelist.py, but prefer
+# deleting dead code over whitelisting it.
+min_confidence = 100
+
 [tool.pytest.ini_options]
 filterwarnings = [
     "ignore::UserWarning:torchquad.integration.utils:256",                                       # Our own deprecation warning

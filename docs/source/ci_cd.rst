@@ -20,35 +20,40 @@ GitHub Actions Workflows
 The CI/CD pipeline consists of five main workflows:
 
 1. **Test Suite** (``run_tests.yml``)
-   
+
    **Triggers**: Push to main/develop branches, pull requests, manual dispatch
-   
+
    This is the core testing workflow that runs on every code change:
-   
-   * **Linting Stage**: Uses flake8 to check code quality and style
-   * **Testing Stage**: 
-     - Sets up Python 3.9 environment
+
+   * **Lint Stage**: Uses `ruff <https://docs.astral.sh/ruff/>`_ to check
+     formatting (``ruff format --check``) and code quality (``ruff check``), and
+     `pydoclint <https://github.com/jsh9/pydoclint>`_ to check Google-style
+     docstring completeness and consistency.
+   * **Testing Stage**:
+     - Sets up the Python environment
      - Installs all backend dependencies via micromamba
      - Runs full pytest suite with coverage reporting
      - Posts coverage reports as PR comments
-   
+
    **Key Features**:
-   
+
    * Multi-backend testing (all numerical backends)
    * Coverage tracking with pytest-cov
    * JUnit XML output for CI integration
    * Automated PR comments with test results
 
-2. **Code Formatting** (``autoblack.yml``)
-   
-   **Triggers**: Pull requests only
-   
-   Ensures consistent code formatting across the project:
-   
-   * Uses Black formatter with 100-character line length
-   * Python 3.11 environment
-   * Checks formatting without modifying files
-   * Fails if reformatting is needed
+2. **Dead Code** (``dead_code.yml``)
+
+   **Triggers**: Push to main/develop branches, pull requests, manual dispatch
+
+   Detects unused code with `vulture <https://github.com/jendrikseipp/vulture>`_
+   in two tiers:
+
+   * A blocking tier at 100% confidence (near-certain dead code fails the build)
+   * An advisory tier at 60% confidence (reported but non-blocking)
+
+   Genuine implicit uses go in ``.vulture_whitelist.py``, but deleting dead code
+   is preferred over whitelisting it.
 
 3. **PyPI Deployment** (``deploy_to_pypi.yml``)
    
@@ -126,37 +131,65 @@ The test suite runs with comprehensive coverage:
 Code Quality Standards
 ----------------------
 
-Linting with Flake8
-~~~~~~~~~~~~~~~~~~~
+Linting and Formatting with Ruff
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Two-stage linting process:
+`ruff <https://docs.astral.sh/ruff/>`_ replaces the previous flake8 + black
+setup with a single, much faster tool. Configuration lives in the ``[tool.ruff]``
+section of ``pyproject.toml`` (line length 100).
 
-1. **Critical Errors**: Check for syntax errors and undefined names
-   
+1. **Formatting**: Check (or apply) the code style
+
    .. code-block:: bash
-   
-      flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
-2. **Full Analysis**: Complete code quality check using project ``.flake8`` configuration
-   
+      ruff format --check .   # check only (CI)
+      ruff format .           # apply
+
+2. **Critical Errors**: Syntax errors and undefined names (the severe gate)
+
    .. code-block:: bash
-   
-      flake8 . --count --show-source --statistics
 
-Formatting with Black
-~~~~~~~~~~~~~~~~~~~~~
+      ruff check --select=E9,F63,F7,F82 .
 
-Consistent code style enforcement:
+3. **Full Analysis**: Complete lint check
+
+   .. code-block:: bash
+
+      ruff check .
+
+Docstrings with Pydoclint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`pydoclint <https://github.com/jsh9/pydoclint>`_ enforces Google-style docstring
+completeness and consistency (missing ``Args``/``Returns``/``Raises``) on the
+``torchquad`` package. Configuration lives in ``[tool.pydoclint]`` in
+``pyproject.toml``.
 
 .. code-block:: bash
 
-   black --check --line-length 100 .
+   pydoclint torchquad/
 
-**Configuration**:
+Dead Code with Vulture
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Line length: 100 characters
-* Target: Python 3.11+
-* Complies with project style guide
+`vulture <https://github.com/jendrikseipp/vulture>`_ flags unused code. The
+blocking CI tier runs at 100% confidence; a 60% advisory tier is non-blocking.
+
+.. code-block:: bash
+
+   vulture torchquad .vulture_whitelist.py --min-confidence 100
+
+Pre-commit Hooks
+~~~~~~~~~~~~~~~~~
+
+All of the above are wired into `pre-commit <https://pre-commit.com/>`_ via
+``.pre-commit-config.yaml``. Install them once so issues are caught before pushing:
+
+.. code-block:: bash
+
+   pip install pre-commit
+   pre-commit install
+   pre-commit run --all-files   # run against the whole repo
 
 Coverage Reporting
 ------------------
@@ -182,15 +215,16 @@ Before pushing changes, run these checks locally:
 .. code-block:: bash
 
    # Format code
-   black . --line-length 100
-   
-   # Check linting
-   flake8 . --count --show-source --statistics
-   
+   ruff format .
+
+   # Check linting and docstrings
+   ruff check .
+   pydoclint torchquad/
+
    # Run tests
    cd tests/
    pytest
-   
+
    # Run with coverage
    pytest --cov=../torchquad
 
@@ -263,12 +297,12 @@ Common CI Failures
 ~~~~~~~~~~~~~~~~~~
 
 1. **Formatting Issues**:
-   
+
    .. code-block:: bash
-   
+
       # Fix locally
-      black . --line-length 100
-      git add . && git commit -m "Fix formatting"
+      ruff format .
+      git add . && git commit -m "style: fix formatting"
 
 2. **Import Errors**:
    

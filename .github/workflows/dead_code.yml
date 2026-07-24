@@ -1,0 +1,27 @@
+name: dead_code
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+  workflow_dispatch:
+jobs:
+  vulture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install vulture
+        run: pip install vulture==2.14
+      # Blocking tier: only 100%-confidence findings fail the build. These are
+      # near-certain dead code (unused imports, unreachable assignments).
+      - name: Vulture (100% confidence, blocking)
+        run: vulture torchquad .vulture_whitelist.py --min-confidence 100
+      # Advisory tier: lower-confidence findings are reported but never block.
+      # Review them and either delete the code or whitelist a genuine implicit use.
+      - name: Vulture (60% confidence, advisory)
+        run: vulture torchquad .vulture_whitelist.py --min-confidence 60 || true
