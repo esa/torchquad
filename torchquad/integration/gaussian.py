@@ -2,6 +2,19 @@ import numpy
 from autoray import numpy as anp
 from .grid_integrator import GridIntegrator
 
+#: Largest number of nodes *per dimension* a Gaussian rule will build.
+#:
+#: The nodes come from the eigenvalues of an ``n x n`` companion matrix, so the
+#: cost is quadratic in memory and cubic in time: 2 000 nodes take 0.16 s and
+#: 32 MB, 10 000 take about 20 s and 0.75 GiB, and 200 000 raise a bare
+#: ``MemoryError: Unable to allocate 298. GiB``. Without this limit a caller who
+#: asks for ``GaussLegendre().integrate(..., dim=1, N=10**6)`` gets that NumPy
+#: error, which names neither torchquad nor a way forward, after an unbounded
+#: wait. Passing the limit is nearly always a mistake rather than a real need:
+#: Gauss-Legendre converges exponentially on smooth integrands and reaches
+#: double precision within a few hundred nodes, so more nodes buy nothing.
+MAX_NODES_PER_DIMENSION = 10_000
+
 
 class Gaussian(GridIntegrator):
     """
@@ -119,6 +132,8 @@ class Gaussian(GridIntegrator):
 
         Raises:
             NotImplementedError: If N is not an int and has no ``item`` method to convert it to one.
+            ValueError: If N exceeds :data:`MAX_NODES_PER_DIMENSION`, since building
+                that many nodes needs a quadratically large intermediate matrix.
         """
         _root_args = (N, *self._root_args)
         if not isinstance(N, int):
@@ -128,6 +143,25 @@ class Gaussian(GridIntegrator):
                 raise NotImplementedError(f"N {N} is not an int and lacks an `item` method")
         if _root_args in self._cache:
             return self._cache[_root_args]
+
+        # Check before calling _root_fn: past a few tens of thousands of nodes it
+        # raises a bare NumPy MemoryError about an n x n array, which says
+        # nothing about which argument caused it or what to do instead.
+        nodes_per_dimension = _root_args[0]
+        if nodes_per_dimension > MAX_NODES_PER_DIMENSION:
+            required_gib = 8 * nodes_per_dimension**2 / 1024**3
+            raise ValueError(
+                f"Gaussian quadrature needs {nodes_per_dimension} nodes per dimension, above "
+                f"the limit of {MAX_NODES_PER_DIMENSION}. The nodes are the eigenvalues of an "
+                f"n x n matrix, so this one would need about {required_gib:.1f} GiB and "
+                "correspondingly long to diagonalize. Note that N is divided across the "
+                "dimensions, so this is N**(1/dim) rather than N itself. Gauss-Legendre "
+                "converges exponentially on smooth integrands and reaches double precision "
+                "within a few hundred nodes, so a lower N is very likely to be just as "
+                "accurate; for a genuinely large number of points, use a Newton-Cotes rule "
+                "(Trapezoid, Simpson, Boole) or MonteCarlo instead."
+            )
+
         self._cache[_root_args] = self._root_fn(*_root_args)
         return self._cache[_root_args]
 
