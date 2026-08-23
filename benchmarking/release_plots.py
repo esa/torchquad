@@ -24,6 +24,7 @@ import argparse
 import json
 import platform
 import sys
+import time
 from pathlib import Path
 
 import matplotlib
@@ -34,6 +35,7 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 from torchquad import (  # noqa: E402
+    VEGAS,
     Boole,
     GaussLegendre,
     MonteCarlo,
@@ -45,7 +47,7 @@ from torchquad import (  # noqa: E402
 
 # Sibling module; this script is run as `python benchmarking/release_plots.py`,
 # which puts benchmarking/ on sys.path.
-from genz_functions import GENZ_FAMILY  # noqa: E402
+from genz_functions import BENCHMARK_INTEGRANDS, GENZ_FAMILY  # noqa: E402
 from timing import time_integration  # noqa: E402
 
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "resources"
@@ -321,7 +323,548 @@ def plot_dimension_scaling(save=True):
     return results
 
 
-def _save(figure, data, stem, precision="float64"):
+# --- SciPy comparison -------------------------------------------------------
+
+# Chosen to bracket the crossover: SciPy's adaptive rules dominate in low
+# dimensions and torchquad's fixed-budget methods take over as the dimension
+# grows. Showing only one side of that would be advocacy rather than a benchmark.
+_SCIPY_DIMENSIONS = (3, 6, 10)
+
+# One integrand carrying three different failure modes at once: it oscillates,
+# concentrates its mass in a corner, and is not differentiable at its peak. Each
+# defeats a different method, so no single family member can flatter one library.
+# See genz_functions.combined for why summing keeps the integral exact.
+#
+# The multiplier is set where the problem is hard but still discriminating.
+# On an easy integrand every library returns a good answer and the comparison
+# says nothing. At full difficulty (1.0) the opposite happens: at d=6 and d=10
+# every method sits between 1e-1 and 1e-2 even at the largest budget here, the
+# curves flatten, and SciPy exhausts its evaluation budget everywhere, so the
+# figure shows nothing but torchquad. At 0.5 nothing comes close to machine
+# precision -- Gauss-Legendre reaches only 3.8e-02 at d=6 -- yet the methods
+# separate by orders of magnitude and SciPy completes often enough to compare.
+_SCIPY_INTEGRANDS = {"combined": 0.5}
+
+# Caps for a single call. Enforced from inside the integrand, which is the only
+# place that can interrupt an opaque library routine: checking the clock after a
+# call returns bounds nothing, since the call that runs away never returns.
+# nquad at d=10 would need 21**10 scalar evaluations, so this is not hypothetical.
+_SCIPY_TIME_BUDGET_SECONDS = 60.0
+_SCIPY_EVALUATION_BUDGET = 50_000_000
+
+
+class _BudgetExceeded(RuntimeError):
+    """Raised from inside an integrand to abort a method that is over budget."""
+
+
+class _CountingIntegrand:
+    """Wrap an integrand, count its evaluations, and abort it when over budget.
+
+    Function evaluations are the fair axis. Runtime mixes the algorithm with the
+    hardware it ran on -- a GPU method beating a CPU one says little about either
+    -- whereas evaluation counts compare the methods themselves, and are not
+    perturbed by whatever else the machine is doing.
+
+    Attributes:
+        evaluations (int): Points evaluated so far.
+    """
+
+    def __init__(self, function, scalar_api=False, time_budget=None, evaluation_budget=None):
+        """Initialize the counter.
+
+        Args:
+            function (GenzFunction): The integrand to wrap.
+            scalar_api (bool, optional): True for callers like ``nquad`` that pass
+                one coordinate per positional argument instead of a batch.
+                Defaults to False.
+            time_budget (float or None, optional): Abort once this many seconds
+                have elapsed. Defaults to None, meaning no limit.
+            evaluation_budget (int or None, optional): Abort once this many points
+                have been evaluated. Defaults to None, meaning no limit.
+        """
+        self._function = function
+        self._scalar_api = scalar_api
+        self._time_budget = time_budget
+        self._deadline = None if time_budget is None else time.perf_counter() + time_budget
+        self._evaluation_budget = evaluation_budget
+        self.evaluations = 0
+
+    def _check_budget(self):
+        """Abort the integration if either budget has been passed.
+
+        The budget can only be checked between calls, so a single very large
+        batch overshoots it; the reported time is the real one either way.
+
+        Raises:
+            _BudgetExceeded: If the evaluation or time budget is exhausted.
+        """
+        if self._evaluation_budget is not None and self.evaluations > self._evaluation_budget:
+            raise _BudgetExceeded(f"over {self._evaluation_budget:,} evaluations")
+        if self._deadline is not None and time.perf_counter() > self._deadline:
+            raise _BudgetExceeded(f"over {self._time_budget:g}s")
+
+    def __call__(self, *args):
+        """Evaluate the wrapped integrand, counting the points.
+
+        Args:
+            *args: A single ``(N, dim)`` batch, or ``dim`` scalars for the scalar API.
+
+        Returns:
+            The integrand's value, batched or scalar to match the caller.
+        """
+        if self._scalar_api:
+            self.evaluations += 1
+            # Checking every call would dominate the cost of a scalar integrand,
+            # so amortize it; the overshoot is bounded and irrelevant at this scale.
+            if self.evaluations % 4096 == 0:
+                self._check_budget()
+            return float(np.asarray(self._function(np.array(args, dtype=float)[None, :]))[0])
+
+        points = args[0]
+        self.evaluations += int(points.shape[0])
+        self._check_budget()
+        return self._function(points)
+
+
+def _timed(call):
+    """Run a callable, returning its value, wall-clock time and any failure.
+
+    Args:
+        call (callable): Zero-argument callable to measure.
+
+    Returns:
+        tuple: ``(value, elapsed_seconds, failure)`` where ``failure`` is None on
+        success and a short string otherwise. A method that cannot run is a
+        result worth plotting, not an error to propagate.
+    """
+    start = time.perf_counter()
+    try:
+        return call(), time.perf_counter() - start, None
+    except Exception as exc:  # noqa: BLE001 - inability to run is the measurement
+        return None, time.perf_counter() - start, f"{type(exc).__name__}: {str(exc)[:120]}"
+
+
+def _measure_scipy(function):
+    """Measure SciPy's cubature rules and nquad on one Genz integrand.
+
+    Three configurations, because they differ enormously and picking only one
+    would misrepresent SciPy:
+
+    - ``genz-malik``: a real n-dimensional degree-7 rule, ``2**d + 2*d**2 + 2*d + 1``
+      nodes. This is SciPy's strongest tool here.
+    - ``gk21``: the *default*, which in more than one dimension is applied as a
+      **product** rule and therefore needs ``21**d`` nodes -- 1.7e13 at d=10.
+    - ``nquad``: nested one-dimensional adaptive quadrature, also exponential, and
+      called one point at a time because its API takes scalars.
+
+    Args:
+        function (GenzFunction): Integrand with a closed-form integral.
+
+    Returns:
+        dict: Series keyed by method label.
+    """
+    from scipy.integrate import cubature, nquad
+
+    lower, upper = np.zeros(function.dim), np.ones(function.dim)
+    measurements = {}
+
+    for rule in ("genz-malik", "gk21"):
+        label = f"SciPy cubature [{rule}]"
+        points, errors, times, failure = [], [], [], None
+        for rtol in (1e-3, 1e-6, 1e-9):
+            counter = _CountingIntegrand(
+                function,
+                time_budget=_SCIPY_TIME_BUDGET_SECONDS,
+                evaluation_budget=_SCIPY_EVALUATION_BUDGET,
+            )
+            value, elapsed, failed = _timed(
+                lambda: float(
+                    np.asarray(
+                        cubature(counter, lower, upper, rule=rule, rtol=rtol, atol=0.0).estimate
+                    ).reshape(())
+                )
+            )
+            if failed:
+                failure = failed
+                print(f"    {label} rtol={rtol:g}: {failed}", file=sys.stderr)
+                break
+            points.append(counter.evaluations)
+            errors.append(max(function.relative_error(value), 1e-16))
+            times.append(elapsed)
+            print(
+                f"    {label} rtol={rtol:g}: {elapsed:.3f}s, "
+                f"{counter.evaluations} evals, err={errors[-1]:.2e}",
+                file=sys.stderr,
+            )
+            if elapsed > _SCIPY_TIME_BUDGET_SECONDS:
+                print(
+                    f"    {label}: over the {_SCIPY_TIME_BUDGET_SECONDS}s budget, stopping",
+                    file=sys.stderr,
+                )
+                break
+        measurements[label] = {
+            "evaluations": points,
+            "error": errors,
+            "time": times,
+            "failure": failure,
+        }
+
+    label = "SciPy nquad"
+    points, errors, times, failure = [], [], [], None
+    for epsrel in (1e-3, 1e-6):
+        counter = _CountingIntegrand(
+            function,
+            scalar_api=True,
+            time_budget=_SCIPY_TIME_BUDGET_SECONDS,
+            evaluation_budget=_SCIPY_EVALUATION_BUDGET,
+        )
+        value, elapsed, failed = _timed(
+            lambda: nquad(counter, [(0.0, 1.0)] * function.dim, opts={"epsrel": epsrel})[0]
+        )
+        if failed:
+            failure = failed
+            print(f"    {label} epsrel={epsrel:g}: {failed}", file=sys.stderr)
+            break
+        points.append(counter.evaluations)
+        errors.append(max(function.relative_error(value), 1e-16))
+        times.append(elapsed)
+        print(
+            f"    {label} epsrel={epsrel:g}: {elapsed:.3f}s, "
+            f"{counter.evaluations} evals, err={errors[-1]:.2e}",
+            file=sys.stderr,
+        )
+        if elapsed > _SCIPY_TIME_BUDGET_SECONDS:
+            print(
+                f"    {label}: over the {_SCIPY_TIME_BUDGET_SECONDS}s budget, stopping",
+                file=sys.stderr,
+            )
+            break
+    measurements[label] = {
+        "evaluations": points,
+        "error": errors,
+        "time": times,
+        "failure": failure,
+    }
+
+    return measurements
+
+
+def _measure_torchquad(function, device_label):
+    """Measure torchquad's best deterministic and stochastic methods.
+
+    Args:
+        function (GenzFunction): Integrand with a closed-form integral.
+        device_label (str): "GPU" or "CPU", used only for the series name.
+
+    Returns:
+        dict: Series keyed by method label.
+    """
+    measurements = {}
+
+    # Sweep up to roughly the same evaluation budget SciPy is given. Capping
+    # torchquad at a million while allowing SciPy fifty would not be a comparison
+    # -- and there is headroom, since a million points costs tens of milliseconds
+    # on the GPU. The top of each range lands near _SCIPY_EVALUATION_BUDGET:
+    # 340**3, 19**6 and 6**10 are all between 4e7 and 6e7.
+    per_dimension = {
+        3: (4, 6, 9, 13, 19, 27, 39, 55, 80, 115, 165, 235, 340),
+        6: (2, 3, 4, 5, 6, 7, 9, 11, 14, 17, 19),
+        10: (2, 3, 4, 5, 6),
+    }[function.dim]
+
+    # Stochastic budgets stop lower in high dimensions: the point array alone is
+    # N * dim * 8 bytes, so 2**24 at d=10 is already 1.3 GB before the integrand's
+    # own temporaries.
+    stochastic_exponents = {3: range(10, 27, 2), 6: range(10, 25, 2), 10: range(10, 25, 2)}[
+        function.dim
+    ]
+
+    # Discard a warm-up. The first call on a GPU pays CUDA context creation --
+    # measured at 364 ms against 5.6 ms for the same work afterwards -- which
+    # would otherwise be charged to the smallest N and misread as the method
+    # being slow there.
+    _timed(
+        lambda: GaussLegendre().integrate(
+            function,
+            dim=function.dim,
+            N=2**function.dim,
+            integration_domain=function.integration_domain,
+        )
+    )
+
+    # Both deterministic rules, not just the highest-order one. Gauss-Legendre's
+    # advantage is exponential convergence on smooth integrands, and this one has
+    # a kink, which removes it: measured here Boole beats Gauss-Legendre by 4x at
+    # dim 3 and nearly 300x at dim 6. Showing only Gauss-Legendre would understate
+    # what torchquad can do on exactly the integrand that is hard for it.
+    for rule_name, rule_class in (("GaussLegendre", GaussLegendre), ("Boole", Boole)):
+        label = f"torchquad {rule_name} ({device_label})"
+        points, errors, times = [], [], []
+        for nodes in per_dimension:
+            total = nodes**function.dim
+            counter = _CountingIntegrand(function)
+            value, elapsed, failed = _timed(
+                lambda: rule_class().integrate(
+                    counter,
+                    dim=function.dim,
+                    N=total,
+                    integration_domain=function.integration_domain,
+                )
+            )
+            if failed:
+                print(f"    {label} N={total}: {failed}", file=sys.stderr)
+                continue
+            materialized = float(value.item()) if hasattr(value, "item") else float(value)
+            points.append(counter.evaluations)
+            errors.append(max(function.relative_error(materialized), 1e-16))
+            times.append(elapsed)
+        measurements[label] = {
+            "evaluations": points,
+            "error": errors,
+            "time": times,
+            "failure": None,
+        }
+
+    # VEGAS is included because it is the only adaptive method torchquad has, and
+    # without it this compares torchquad's non-adaptive rules against SciPy's
+    # adaptive ones -- a structural mismatch, since only SciPy would get to
+    # concentrate its effort where the integrand is hard. VEGAS is stochastic, so
+    # its error is the median over several seeds rather than one lucky draw.
+    stochastic_methods = (
+        ("MonteCarlo+Sobol", lambda: MonteCarlo(), lambda seed: {"rng": Sobol("torch", seed=seed)}),
+        ("VEGAS", lambda: VEGAS(), lambda seed: {"seed": seed}),
+    )
+    seeds = (0, 1, 2)
+
+    for method_name, integrator_factory, seed_kwargs in stochastic_methods:
+        label = f"torchquad {method_name} ({device_label})"
+        points, errors, times = [], [], []
+        for exponent in stochastic_exponents:
+            total = 2**exponent
+            trials, evaluations, elapsed_runs = [], [], []
+            for seed in seeds:
+                counter = _CountingIntegrand(function)
+                value, elapsed, failed = _timed(
+                    lambda: integrator_factory().integrate(
+                        counter,
+                        dim=function.dim,
+                        N=total,
+                        integration_domain=function.integration_domain,
+                        **seed_kwargs(seed),
+                    )
+                )
+                if failed:
+                    print(f"    {label} N={total} seed={seed}: {failed}", file=sys.stderr)
+                    break
+                materialized = float(value.item()) if hasattr(value, "item") else float(value)
+                trials.append(max(function.relative_error(materialized), 1e-16))
+                evaluations.append(counter.evaluations)
+                elapsed_runs.append(elapsed)
+            if len(trials) != len(seeds):
+                continue
+            points.append(int(np.median(evaluations)))
+            errors.append(float(np.median(trials)))
+            times.append(float(np.median(elapsed_runs)))
+        measurements[label] = {
+            "evaluations": points,
+            "error": errors,
+            "time": times,
+            "failure": None,
+        }
+
+    return measurements
+
+
+def _scipy_comparison_worker(device, include_scipy=True):
+    """Measure one device's series and print them as JSON.
+
+    Runs in its own process because ``set_up_backend`` sets torch's global default
+    device. SciPy is measured only in the CPU process, so its timings are not taken
+    while a CUDA context is held.
+
+    Args:
+        device (str): "cpu" or "gpu".
+        include_scipy (bool, optional): Whether the CPU pass also measures SciPy.
+            False when reusing a previous run's SciPy series. Defaults to True.
+    """
+    import os
+
+    if device == "cpu":
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+    from torchquad import set_up_backend as setup
+
+    setup("torch", data_type="float64")
+
+    measurements = {}
+    for integrand, difficulty in _SCIPY_INTEGRANDS.items():
+        for dim in _SCIPY_DIMENSIONS:
+            function = BENCHMARK_INTEGRANDS[integrand](dim, a=difficulty)
+            print(f"  {integrand} d={dim} on {device}", file=sys.stderr)
+            per_dimension = _measure_torchquad(function, device.upper())
+            if device == "cpu" and include_scipy:
+                per_dimension.update(_measure_scipy(function))
+            measurements[f"{integrand}/{dim}"] = per_dimension
+
+    print(json.dumps(measurements))
+
+
+def plot_scipy_comparison(save=True, reuse_scipy=False):
+    """Compare torchquad against SciPy on equal terms.
+
+    Two rows. The first is error against function evaluations, which compares the
+    algorithms and is independent of the machine. The second is error against
+    runtime, which is what a user actually waits for but folds in CPU-versus-GPU.
+    Reading only the second would credit torchquad for its hardware; reading only
+    the first would ignore the reason to use a GPU at all.
+
+    Args:
+        save (bool, optional): Write the figure and its data. Defaults to True.
+        reuse_scipy (bool, optional): Take the SciPy series from the previous
+            run's saved JSON instead of measuring them again. Their evaluation
+            counts are deterministic, so the top row is unaffected; only their
+            timings then come from a different session. Defaults to False.
+
+    Returns:
+        dict: Measurements keyed by dimension.
+
+    Raises:
+        FileNotFoundError: If reuse_scipy is set but no previous run was saved.
+    """
+    import subprocess
+
+    cached = {}
+    if reuse_scipy:
+        cache_path = OUTPUT_DIR / "torchquad_vs_scipy_combined.json"
+        if not cache_path.exists():
+            raise FileNotFoundError(
+                f"--reuse-scipy needs a previous run at {cache_path}, which does not exist"
+            )
+        with open(cache_path, encoding="utf-8") as handle:
+            cached = json.load(handle)["results"]
+        print(f"  reusing SciPy series from {cache_path.name}")
+
+    combined = {}
+    # GPU only. The algorithm row does not depend on the device at all -- same
+    # method, same N, same seed gives a bit-identical error -- so a CPU pass adds
+    # only a second wall-clock series, at the cost of doubling the run.
+    for device in ("gpu",):
+        print(f"  measuring {device}...")
+        # stdout is captured for the JSON payload; stderr is deliberately left
+        # attached so a long run reports progress instead of going silent.
+        command = [sys.executable, str(Path(__file__).resolve()), "--worker-scipy", device]
+        if reuse_scipy:
+            command.append("--worker-skip-scipy")
+        completed = subprocess.run(command, stdout=subprocess.PIPE, text=True, check=True)
+        measured = json.loads(completed.stdout.strip().splitlines()[-1])
+        for key, series in measured.items():
+            combined.setdefault(key, {}).update(series)
+
+    if save:
+        for integrand in _SCIPY_INTEGRANDS:
+            subset = {
+                key.split("/", 1)[1]: series
+                for key, series in combined.items()
+                if key.startswith(f"{integrand}/")
+            }
+
+            # Fold the cached SciPy series in here, after the keys have been
+            # stripped to bare dimensions. The cache was written in that form,
+            # while a fresh measurement is keyed "<integrand>/<dim>", so merging
+            # before this point silently files them under keys nothing reads.
+            # Only labels SciPy owns are taken, so a stale torchquad series can
+            # never leak in from the previous run.
+            for dim_key, cached_series in cached.items():
+                for label, values in cached_series.items():
+                    if label.startswith("SciPy"):
+                        subset.setdefault(dim_key, {}).setdefault(label, values)
+
+            _draw_scipy_comparison(subset, integrand)
+    return combined
+
+
+def _draw_scipy_comparison(combined, integrand, hardware=None):
+    """Render the SciPy comparison figure for one integrand.
+
+    Args:
+        combined (dict): Measurements keyed by dimension then method label.
+        integrand (str): Name of the Genz integrand, used in the title and stem.
+        hardware (str or None, optional): Hardware label recorded when the data
+            was measured. Pass it when redrawing saved results: the default
+            describes the machine doing the drawing, which is not necessarily the
+            one that produced the numbers, and a figure naming the wrong torch
+            version is worse than one naming none. Defaults to None.
+    """
+    hardware = hardware or _hardware_label()
+    dimensions = [str(d) for d in _SCIPY_DIMENSIONS]
+    figure, axes = plt.subplots(2, len(dimensions), figsize=(5 * len(dimensions), 9))
+
+    styles = {
+        "SciPy cubature [genz-malik]": ("-s", "tab:green"),
+        "SciPy cubature [gk21]": ("--s", "tab:olive"),
+        "SciPy nquad": (":s", "tab:brown"),
+    }
+
+    for column, dim in enumerate(dimensions):
+        for row, axis_key in enumerate(("evaluations", "time")):
+            axis = axes[row][column]
+            for label, series in combined[dim].items():
+                if not series["error"]:
+                    continue
+
+                # Error against evaluations does not depend on the device: the
+                # same method at the same N with the same seed gives a
+                # bit-identical result on CPU and GPU. Drawing both would put one
+                # line exactly on top of the other and hide it. Keep one, and
+                # drop the device from its name, since it does not apply.
+                display = label
+                if axis_key == "evaluations" and "(" in label:
+                    if "(CPU)" in label:
+                        continue
+                    display = label.split(" (")[0]
+
+                style, color = styles.get(label, ("-o", None))
+                axis.loglog(
+                    series[axis_key],
+                    series["error"],
+                    style,
+                    label=display,
+                    color=color,
+                    markersize=5,
+                )
+            axis.grid(True, which="both", alpha=0.3)
+            axis.set_xlabel("Function evaluations" if axis_key == "evaluations" else "Runtime [s]")
+            if column == 0:
+                axis.set_ylabel("Relative error")
+            if row == 0:
+                # Name what could not run at all; an absent line otherwise reads
+                # as an oversight rather than as the result it is.
+                failed = [
+                    label.replace("SciPy ", "")
+                    for label, series in combined[dim].items()
+                    if series.get("failure") and not series["error"]
+                ]
+                subtitle = f"\ncould not run: {', '.join(failed)}" if failed else ""
+                axis.set_title(f"$d = {dim}${subtitle}", fontsize=10)
+
+    # Both rows need their own legend now: the top collapses the device series
+    # while the bottom keeps them apart.
+    axes[0][0].legend(fontsize=7, loc="best")
+    axes[1][0].legend(fontsize=7, loc="best")
+    readable = integrand.replace("_", " ")
+    difficulty = _SCIPY_INTEGRANDS[integrand]
+    figure.suptitle(
+        f"torchquad vs SciPy on the Genz {readable} integrand "
+        f"(difficulty multiplier {difficulty:g})\n"
+        "algorithm (top row) and wall clock (bottom row)  |  "
+        f"{hardware}  |  SciPy runs on the CPU",
+        fontsize=11,
+    )
+    figure.tight_layout()
+    _save(figure, combined, f"torchquad_vs_scipy_{integrand}", hardware=hardware)
+
+
+def _save(figure, data, stem, precision="float64", hardware=None):
     """Write a figure and the data behind it.
 
     The JSON goes next to the PNG so the figure can be redrawn without re-running
@@ -333,11 +876,15 @@ def _save(figure, data, stem, precision="float64"):
         stem (str): File name without extension.
         precision (str, optional): Precision the measurement used, recorded in
             the JSON alongside the hardware. Defaults to "float64".
+        hardware (str or None, optional): Hardware label from when the data was
+            measured. Pass it when redrawing saved results, so the JSON and the
+            figure agree about which machine produced the numbers. Defaults to
+            None, meaning describe the machine doing the drawing.
     """
     OUTPUT_DIR.mkdir(exist_ok=True)
     figure.savefig(OUTPUT_DIR / f"{stem}.png", dpi=150, bbox_inches="tight")
     plt.close(figure)
-    payload = {"hardware": _hardware_label(precision), "results": data}
+    payload = {"hardware": hardware or _hardware_label(precision), "results": data}
     with open(OUTPUT_DIR / f"{stem}.json", "w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
     print(f"  wrote {stem}.png and {stem}.json")
@@ -473,6 +1020,7 @@ _PLOTS = {
     "qmc": plot_qmc_vs_mc,
     "dimension": plot_dimension_scaling,
     "runtime": plot_runtime_cpu_vs_gpu,
+    "scipy": plot_scipy_comparison,
 }
 
 
@@ -489,10 +1037,35 @@ def main():
         choices=("cpu", "gpu"),
         help="Internal: measure runtime for one device and print JSON. Not for direct use.",
     )
+    parser.add_argument(
+        "--worker-scipy",
+        choices=("cpu", "gpu"),
+        help="Internal: measure the SciPy comparison for one device. Not for direct use.",
+    )
+    parser.add_argument(
+        "--worker-skip-scipy",
+        action="store_true",
+        help="Internal: measure only torchquad in the worker. Not for direct use.",
+    )
+    parser.add_argument(
+        "--reuse-scipy",
+        action="store_true",
+        help=(
+            "Re-measure only torchquad and take the SciPy series from the previous run's "
+            "saved JSON. Their evaluation counts are deterministic, so the algorithm row is "
+            "unchanged; only their timings then come from an earlier session."
+        ),
+    )
     arguments = parser.parse_args()
 
     if arguments.worker_runtime:
         _runtime_worker(arguments.worker_runtime)
+        return
+
+    if arguments.worker_scipy:
+        _scipy_comparison_worker(
+            arguments.worker_scipy, include_scipy=not arguments.worker_skip_scipy
+        )
         return
 
     # float64 is not optional here: float32 floors the error near 1e-7 and hides
@@ -505,7 +1078,10 @@ def main():
         if name not in _PLOTS:
             raise SystemExit(f"Unknown plot {name!r}; expected one of {sorted(_PLOTS)}")
         print(f"\n=== {name} ===")
-        _PLOTS[name]()
+        if name == "scipy":
+            _PLOTS[name](reuse_scipy=arguments.reuse_scipy)
+        else:
+            _PLOTS[name]()
 
 
 if __name__ == "__main__":

@@ -35,7 +35,16 @@ packaging, and closing long-open fixed issues.
   contributor-thanks section, referenced from the release checklist.
 - New README performance figures: convergence (error vs N, all methods,
   float64), quasi-Monte Carlo vs Monte Carlo, error vs dimension at a fixed
-  budget, and CPU-vs-GPU runtime.
+  budget, CPU-vs-GPU runtime, and a like-for-like comparison against SciPy.
+  The SciPy comparison covers Boole and VEGAS alongside Gauss-Legendre and
+  Sobol, which matters: Boole beats Gauss-Legendre by six orders of magnitude
+  at d=3 on this integrand, because a composite low-order rule handles a kink
+  far better than a single global high-order one, and VEGAS goes from worst
+  method at d=3 to best at d=10.
+- `benchmarking/genz_functions.py` gains a `combined` integrand: a sum of
+  normalised Genz functions that oscillates, peaks in a corner, and is not
+  differentiable, so no single feature can flatter one method. Summing keeps the
+  integral exact, since integration is linear.
 - Dependabot for GitHub Actions.
 - This `CHANGELOG.md`.
 
@@ -48,9 +57,13 @@ packaging, and closing long-open fixed issues.
   rebuilt `environment_all_backends.yml` on conda-forge.
 - The README performance section is rebuilt around the new figures, all
   regenerated on one machine after the GPU timing fix. The claim of a broad
-  efficiency win over SciPy is gone: since SciPy 1.15 `scipy.integrate.cubature`
-  beats a fixed-budget method on smooth low-dimensional problems, and the
-  section now says so and states where torchquad's case actually lies.
+  efficiency win over SciPy is replaced by a measured comparison against SciPy's
+  strongest configuration on a hard integrand, with both sides given the same
+  50-million-evaluation budget. SciPy's algorithms are more efficient per
+  evaluation at low dimension — at d=3 `nquad` reaches 4.4e-16 from 250k points
+  where torchquad needs 38 million to reach 8.3e-12 — while torchquad's GPU
+  throughput offsets that in wall-clock, and dimension decides it past d=6, where
+  no SciPy configuration completes at d=10.
 - `loguru` is disabled by default; `set_log_level` manages a single tracked sink
   instead of touching host-application handlers (#184).
 - `TORCHQUAD_LOG_LEVEL` now works. Setting it to a non-empty value enables

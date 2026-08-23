@@ -306,19 +306,66 @@ are float32 and synchronize the GPU before the clock stops.
 ![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
 *Integrating many integrands in one batched call against looping over them one at a time. The speedup grows roughly linearly with the number of integrands, because the loop pays a kernel launch per integrand while the batched call pays one: about 16x at 20 integrands and 110x at 200 on this machine. The exact figure at the top end is platform-dependent — the batched side is only 1-2 ms, close to the measurement floor — so treat the shape rather than the peak number as the result.*
 
-### On comparisons with SciPy
+### Comparison with SciPy
+
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vs_scipy_combined.png?raw=true)
 
 Earlier versions of this section compared torchquad against `scipy.integrate.nquad`
-and claimed a broad efficiency win. That comparison is not one we want to stand
-behind: since SciPy 1.15 there is `scipy.integrate.cubature`, an adaptive
-Genz-Malik rule that reaches machine precision on a smooth 3-D integrand in a few
-milliseconds and a few tens of thousands of evaluations — comfortably beating a
-fixed-budget method there. SciPy is the better tool for smooth, low-dimensional
-problems where you want near-exact answers.
+and claimed a broad efficiency win. That was not a comparison we can stand behind,
+so here is one we can — against SciPy's *best* configuration rather than its
+weakest, on a deliberately hard integrand, measured both ways.
 
-torchquad's case is different: many dimensions, moderate accuracy quickly, and —
-the part no SciPy comparison can capture — gradients, a GPU, and a choice of
-numerical backend.
+The test function sums three Genz integrands, each normalised to contribute
+equally: one that oscillates, one whose mass concentrates in a corner, and one
+that is continuous but **not differentiable**. Each defeats a different method, so
+no single feature can flatter one library. Summing keeps the integral exact,
+because integration is linear.
+
+The top row of the figure is error against **function evaluations** — that
+compares algorithms and is independent of hardware. The bottom row is error
+against **runtime**, which is what you actually wait for but folds in the fact
+that SciPy runs on the CPU while torchquad here runs on a GPU.
+
+Both sides get the same 50-million-evaluation budget, so neither is being starved.
+
+| | best torchquad | best SciPy |
+|---|---|---|
+| **d=3** | Boole **8.3e-12** @ 38M evals, **0.10 s** | `nquad` **4.4e-16** @ 250k · Genz-Malik 1.0e-12 @ 7.3M, 7.9 s |
+| **d=6** | Boole **2.9e-05** @ 24M evals, **0.10 s** | Genz-Malik **1.8e-05** @ 1.7M evals, 0.41 s |
+| **d=10** | VEGAS **4.8e-04** @ 11M evals, 0.60 s | *none completed* |
+
+**SciPy's algorithms are more efficient per evaluation at low dimension.** At d=3
+`nquad` reaches machine precision from a quarter of a million points; torchquad
+needs 38 million to get to 8e-12 and never closes the last four orders. Adaptive
+subdivision is simply the right approach for a low-dimensional integrand with a
+localized feature, and torchquad does not implement it.
+
+**GPU throughput can offset that, but only in wall-clock.** At d=3 Boole reaches
+8.3e-12 in 0.10 s against Genz-Malik's 1.0e-12 in 7.9 s — comparable accuracy,
+about 80x faster. By d=6 the two are near parity: SciPy is 1.6x more accurate on
+14x fewer evaluations, torchquad is 4x faster in wall-clock. Which matters depends
+on whether your integrand is cheap or expensive to evaluate.
+
+**Past that, dimension decides it.** At d=10 every SciPy configuration here
+fails: the default `gk21` rule is a *product* rule needing 21^d nodes, an
+impossible 121 TiB allocation, and the other two exhaust the evaluation budget.
+torchquad returns 4.8e-04 in 0.6 s.
+
+Two things in this figure are worth knowing when picking a method:
+
+- **The highest-order rule is not the best one here.** Gauss-Legendre applies a
+  single global high-degree rule, which a kink defeats badly; Boole is composite,
+  applying a lower-order rule piecewise, and beats it by six orders of magnitude
+  at d=3 and nearly 300x at d=6. Reach for Boole on integrands that are not
+  smooth everywhere.
+- **VEGAS earns its keep as the dimension grows.** It is the *worst* torchquad
+  method at d=3 (1.3e-04, behind everything) because it spends its early
+  iterations learning the integrand, and the *best* at d=10, where adapting to
+  where the mass actually lies beats sampling uniformly.
+
+And the axis no SciPy comparison can capture at all: gradients through the
+integral, GPU throughput at large N, and the same API across four numerical
+backends.
 
 ### Running Benchmarks
 

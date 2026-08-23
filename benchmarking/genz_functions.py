@@ -248,7 +248,65 @@ def c0_continuous(dim, a=2.0, u=0.5):
     return GenzFunction("C0 continuous", dim, a, u, evaluate, float(exact))
 
 
-#: The family in plot order, keyed by short name.
+#: Total difficulty of each component of the combined integrand, spread evenly
+#: over the dimensions. Holding the sum fixed rather than the per-axis value
+#: keeps the function equally hard at every dimension.
+_COMBINED_COMPONENTS = (
+    (oscillatory, 30.0),
+    (corner_peak, 25.0),
+    (c0_continuous, 20.0),
+)
+
+
+def combined(dim, a=1.0, u=0.5):
+    """Build a sum of normalized Genz integrands with three distinct difficulties.
+
+    A single integrand that oscillates, concentrates its mass in one corner, and
+    is not differentiable at its peak. Each of those defeats a different method:
+    oscillation needs resolution, the corner needs adaptive subdivision, and the
+    kink caps the order any rule can achieve, collapsing exponential convergence
+    to algebraic. Real integrands tend to have several such features at once,
+    and a benchmark on any single one flatters whichever method happens to suit
+    it.
+
+    Summing is what keeps this exact. Integration is linear, so the integral of
+    the sum is the sum of the integrals, each of which has a closed form; a
+    product of the same functions would have no closed form at all.
+
+    Each component is divided by its own exact integral before summing, so every
+    one contributes equally and the total is exactly the number of components.
+    Without that the corner peak, whose integral is 9.9e-12 at ``dim`` 10 against
+    the C0 term's 1.0e-02, would be nine orders of magnitude below the others and
+    could be ignored entirely at no cost in accuracy.
+
+    Args:
+        dim (int): Dimensionality.
+        a (float, optional): Difficulty multiplier applied to every component.
+            Values above 1 make all three harder together. Defaults to 1.0.
+        u (float or sequence, optional): Shift parameters, passed to each
+            component. Defaults to 0.5.
+
+    Returns:
+        GenzFunction: The combined integrand and its exact integral.
+    """
+    parts = [builder(dim, a=(scale * a) / dim, u=u) for builder, scale in _COMBINED_COMPONENTS]
+
+    def evaluate(points):
+        total = None
+        for part in parts:
+            term = part(points) / part.exact
+            total = term if total is None else total + term
+        return total
+
+    difficulties = np.array([scale * a for _, scale in _COMBINED_COMPONENTS], dtype=np.float64)
+    return GenzFunction(
+        "Combined", dim, difficulties, _as_array(u, dim), evaluate, float(len(parts))
+    )
+
+
+#: The Genz family proper, in plot order. Every builder here takes the same
+#: ``(dim, a, u)`` signature, with ``a`` and ``u`` accepting either a scalar or
+#: one value per dimension.
 GENZ_FAMILY = {
     "oscillatory": oscillatory,
     "product_peak": product_peak,
@@ -256,3 +314,9 @@ GENZ_FAMILY = {
     "gaussian": gaussian,
     "c0_continuous": c0_continuous,
 }
+
+#: Everything a benchmark can request by name. ``combined`` is deliberately not
+#: in GENZ_FAMILY: it is a composite rather than a family member, and its ``a``
+#: is a single difficulty multiplier rather than a per-dimension parameter, so it
+#: does not honour the family's signature contract.
+BENCHMARK_INTEGRANDS = {**GENZ_FAMILY, "combined": combined}
