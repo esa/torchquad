@@ -3390,7 +3390,7 @@ requires-dist = [
     { name = "torchquad", extras = ["jax"], marker = "extra == 'all'" },
     { name = "torchquad", extras = ["tensorflow"], marker = "extra == 'all'" },
     { name = "torchquad", extras = ["torch"], marker = "extra == 'all'" },
-    { name = "twine", marker = "extra == 'dev'", specifier = ">=4.0.0" },
+    { name = "twine", marker = "extra == 'dev'", specifier = ">=6.1.0" },
     { name = "vulture", marker = "extra == 'dev'", specifier = ">=2.14" },
 ]
 provides-extras = ["dev", "docs", "torch", "jax", "tensorflow", "all"]

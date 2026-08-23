@@ -1,5 +1,7 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+# PEP 639 SPDX license expressions need setuptools 77.0.3; the wheel dependency
+# is obsolete for a PEP 517 build and was only ever inertia.
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +10,11 @@ version = "0.6.0"
 description = "Package providing numerical integration methods for PyTorch, jax, TensorFlow and numpy."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10, <4"
-license = { text = "GPL-3.0" }
+# SPDX expression (PEP 639). "-only", not "-or-later": the original setup.py
+# declared the GPLv3 classifier rather than GPLv3+, so this is the identifier
+# matching what torchquad has always shipped under.
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 authors = [
     { name = "ESA Advanced Concepts Team", email = "pablo.gomez@esa.int" },
 ]
@@ -17,7 +23,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Mathematics",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -60,7 +65,8 @@ dev = [
     "vulture>=2.14",
     "pre-commit>=3.5.0",
     "build>=1.0.0",
-    "twine>=4.0.0",
+    # 6.1.0 is the first twine that understands Metadata 2.4 (PEP 639).
+    "twine>=6.1.0",
 ]
 docs = [
     "sphinx>=3.4.3",

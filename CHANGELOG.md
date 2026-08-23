@@ -87,7 +87,9 @@ now raises on impossible node counts instead of exhausting memory.
 - Rewrote the release checklist (`.github/ISSUE_TEMPLATE/release.md`): it now
   lists all six places the version lives, adds the missing tagging step, defers
   to CI instead of asking for manual re-runs, and covers conda-forge and
-  Read the Docs.
+  Read the Docs. Review of the release PRs now comes *before* the Test PyPI
+  upload rather than after it: a version number uploaded to an index can never
+  be reused, so anything found in review after publishing costs a version.
 - Raised the SciPy floor to `>=1.7.2` and declared `numpy` explicitly. The
   `Sobol` sampler uses `scipy.stats.qmc` on the non-torch backends, and that
   module only exists from SciPy 1.7.0 onward; 1.7.0 and 1.7.1 are themselves
@@ -99,6 +101,14 @@ now raises on impossible node counts instead of exhausting memory.
   `scipy>=1.7.0`, now carry the same floors — pyproject remains the single
   source of truth. The whole stack is verified working at these floors on
   Python 3.10.
+- License metadata moved to a PEP 639 SPDX expression, `GPL-3.0-only`, replacing
+  the deprecated `license = { text = ... }` table and the `License ::` trove
+  classifier. `-only` rather than `-or-later` because the original `setup.py`
+  declared the `GPLv3` classifier, not `GPLv3+` — this records what torchquad has
+  always shipped under and does not change the licence itself. Builds are now
+  clean: the three `SetuptoolsDeprecationWarning`s are gone, and the published
+  metadata is version 2.4 with a `License-Expression` field. Building from the
+  sdist now needs `setuptools>=77.0.3`, and uploading needs `twine>=6.1.0`.
 
 ### Fixed
 - A CI bug where `pytest | tee` masked a non-zero exit code, hiding failing
