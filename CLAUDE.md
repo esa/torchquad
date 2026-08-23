@@ -68,7 +68,7 @@ vulture torchquad .vulture_whitelist.py --min-confidence 100
    - Direct `dict["key"]` access, not `.get()` with defaults.
    - No silent precision downgrades; raise on backend/dtype mismatches.
    - No bare `except: pass`. Use `logger.warning()` for recoverable issues, raise for broken invariants.
-6. **LOGGING.** Use `from loguru import logger`. `__init__.py` calls `logger.disable("torchquad")` so the library is silent by default and never pollutes a host app (issue #184). `set_log_level()` is the single sanctioned config lever: it `logger.enable("torchquad")`s and manages one tracked, `torchquad`-filtered stderr sink (replacing only its own handler id, never the host's). Do not add other `logger.add(...)`/`logger.remove()` calls in library code. Logging level is read from `TORCHQUAD_LOG_LEVEL` only via `set_log_level()`.
+6. **LOGGING.** Use `from loguru import logger`. `__init__.py` calls `logger.disable("torchquad")` so the library is silent by default and never pollutes a host app (issue #184). `set_log_level()` is the single sanctioned config lever: it `logger.enable("torchquad")`s and manages one tracked, `torchquad`-filtered stderr sink (replacing only its own handler id, never the host's). Do not add other `logger.add(...)`/`logger.remove()` calls in library code. `__init__.py` calls `set_log_level()` at import only when `TORCHQUAD_LOG_LEVEL` is set in the environment; there is no build-time logging switch.
 7. **DOCSTRINGS.** Google style (`Args`, `Returns`, `Raises`). Public functions and classes must have one. Comments explain WHY, not what — a comment that paraphrases the next line is noise.
 8. **NO ABBREVIATIONS** in new code (`integration_domain` not `int_dom`, `function_values` not `fvals`).
 9. **TESTS REQUIRED FOR ALL CHANGES.** Bug fixes need a regression test. New features need both a correctness test (analytic integral) and a backend-coverage test. A new or changed integrator, sampler, or error estimate must be checked against the **whole** analytic test-function collection (real + complex, all dimensionalities) via `helper_functions.py::compute_integration_test_errors`, not just one or two ad-hoc integrands. Any reported error (including an *estimated* error like VEGAS's `sdev`) must be validated against the closed-form ground truth in `tests/integration_test_functions.py`.
@@ -138,9 +138,9 @@ BaseIntegrator                 # integration/base_integrator.py
 
 ### Logging
 
-- Library uses `loguru.logger` directly. The default `TORCHQUAD_DISABLE_LOGGING = True` in `__init__.py` suppresses all output for release builds.
+- Library uses `loguru.logger` directly. `__init__.py` calls `logger.disable("torchquad")` at import, so the library is silent in every build.
 - See issue #184: do not call `logger.add(...)` or `logger.remove(...)` from library code. Configuration is the application's job.
-- `TORCHQUAD_LOG_LEVEL` env var is honored only when `TORCHQUAD_DISABLE_LOGGING = False`.
+- `TORCHQUAD_LOG_LEVEL` is honored when it is set in the environment at import time; otherwise logging stays off until `set_log_level()` is called.
 
 ### Testing
 
