@@ -58,6 +58,12 @@ packaging, and closing long-open fixed issues.
   lists all six places the version lives, adds the missing tagging step, defers
   to CI instead of asking for manual re-runs, and covers conda-forge and
   Read the Docs.
+- Raised the SciPy floor to `>=1.7.2` and declared `numpy` explicitly. The
+  `Sobol` sampler uses `scipy.stats.qmc` on the non-torch backends, and that
+  module only exists from SciPy 1.7.0 onward; 1.7.0 and 1.7.1 are themselves
+  capped at Python <3.10, so 1.7.2 is the oldest release that is both new
+  enough and installable on a supported Python. `numpy` is imported directly by
+  `integration/gaussian.py` and previously arrived only as a SciPy transitive.
 
 ### Fixed
 - A CI bug where `pytest | tee` masked a non-zero exit code, hiding failing
@@ -77,6 +83,13 @@ packaging, and closing long-open fixed issues.
   which nothing read, and the `release: created` trigger on the Test PyPI
   workflow, which re-uploaded an already-published version and failed every time.
 - Dead code (`RNG.uniform`, `Gaussian.name`).
+- `matplotlib` and `tqdm` as runtime dependencies. Neither is imported by the
+  shipped package: `matplotlib` is only used by the benchmarking harness (it
+  moved to the `dev` extra) and `tqdm` was not used anywhere. Installing
+  torchquad no longer pulls them in.
+- `requirements.txt`, a vestigial second copy of the runtime dependencies that
+  had already drifted from `pyproject.toml`. `pyproject.toml` is the single
+  source of truth.
 
 ## [0.5.0] - 2025-08-03
 ### Changed
