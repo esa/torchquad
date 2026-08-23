@@ -60,9 +60,11 @@ __all__ = [
     "set_up_backend",
 ]
 
-# Opt in to logging from the environment. Only an explicitly set
-# TORCHQUAD_LOG_LEVEL turns torchquad's records on, so the library stays silent
-# by default; set_log_level() does the same thing at runtime.
-if "TORCHQUAD_LOG_LEVEL" in os.environ:
+# Opt in to logging from the environment. Only a non-empty TORCHQUAD_LOG_LEVEL
+# turns torchquad's records on, so the library stays silent by default;
+# set_log_level() does the same thing at runtime. The value is tested rather
+# than the key because `TORCHQUAD_LOG_LEVEL=` is the usual shell and CI idiom
+# for "not set", and passing "" on to loguru would abort the import.
+if os.environ.get("TORCHQUAD_LOG_LEVEL"):
     set_log_level(os.environ["TORCHQUAD_LOG_LEVEL"])
     logger.info("Initializing torchquad.")

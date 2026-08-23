@@ -45,11 +45,15 @@ packaging, and closing long-open fixed issues.
   rebuilt `environment_all_backends.yml` on conda-forge.
 - `loguru` is disabled by default; `set_log_level` manages a single tracked sink
   instead of touching host-application handlers (#184).
-- `TORCHQUAD_LOG_LEVEL` now works. Setting it in the environment enables
+- `TORCHQUAD_LOG_LEVEL` now works. Setting it to a non-empty value enables
   torchquad's logging at that level when the package is imported; leaving it
-  unset keeps the library silent. Previously the variable was only read when
+  unset or empty keeps the library silent, and an unrecognised level raises with
+  a message naming the valid ones. Previously the variable was only read when
   the `TORCHQUAD_DISABLE_LOGGING` constant was `False`, which no release ever
-  shipped, so it had no effect.
+  shipped, so it had no effect. Note that the level governs the handler
+  torchquad adds; once records are enabled they also reach any other sink loguru
+  has registered, including its unfiltered default. This is now documented in
+  the README and in `set_log_level`.
 - Rewrote the release checklist (`.github/ISSUE_TEMPLATE/release.md`): it now
   lists all six places the version lives, adds the missing tagging step, defers
   to CI instead of asking for manual re-runs, and covers conda-forge and

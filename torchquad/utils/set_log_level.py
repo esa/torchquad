@@ -26,13 +26,39 @@ def set_log_level(log_level):
     """Set the log level for torchquad's own log records.
 
     torchquad is silent until this is called. Setting the TORCHQUAD_LOG_LEVEL
-    environment variable before importing torchquad calls it automatically with
-    that level.
+    environment variable to a non-empty value before importing torchquad calls
+    it automatically with that level.
+
+    The level applies to the handler torchquad adds, which is the only one it
+    owns. Enabling records also lets them reach every other sink loguru has
+    registered, including its own default stderr handler, which is unfiltered
+    and sits at DEBUG -- so in a default interpreter torchquad's records appear
+    twice and below the requested level. A library cannot reconfigure a handler
+    it did not add without disturbing the host application (issue #184). An
+    application that wants full control should call ``logger.remove()`` and
+    register its own sinks.
 
     Args:
         log_level (str): The log level to set. Options are 'TRACE', 'DEBUG',
             'INFO', 'SUCCESS', 'WARNING', 'ERROR', 'CRITICAL'.
+
+    Raises:
+        ValueError: If ``log_level`` is not one of the level names above. The
+            environment variable is read at import, so a typo in
+            TORCHQUAD_LOG_LEVEL surfaces as a failed ``import torchquad``.
     """
+    # Validate before enabling anything. loguru would raise from inside
+    # logger.add() further down, but only after logger.enable() had already
+    # taken effect, leaving the library half-configured on a typo -- and its
+    # message does not say what the valid levels are.
+    try:
+        logger.level(log_level)
+    except ValueError:
+        raise ValueError(
+            f"Unknown log level {log_level!r}. Expected one of: "
+            "TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL."
+        ) from None
+
     # torchquad's records are disabled by default (see __init__.py); enable them
     # once the user opts into logging by setting a level.
     logger.enable("torchquad")

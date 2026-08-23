@@ -104,8 +104,9 @@ still fresh than after the tag is pushed.
       `release/X.Y.Z` → `develop`.
 - [ ] Review both PRs against [`REVIEW.md`](https://github.com/esa/torchquad/blob/develop/REVIEW.md).
       Merge, but do not delete the branch yet.
-- [ ] Tag the merge commit on `main`:
-      `git tag -a vX.Y.Z -m "torchquad vX.Y.Z" && git push origin vX.Y.Z`.
+- [ ] Tag the merge commit on `main`. Switch first — the previous step leaves you on
+      the release branch, and tagging there tags the wrong commit:
+      `git switch main && git pull && git tag -a vX.Y.Z -m "torchquad vX.Y.Z" && git push origin vX.Y.Z`.
       The `vX.Y.Z` form is load-bearing — the `CHANGELOG.md` compare links depend on it.
 - [ ] Create the GitHub Release from tag `vX.Y.Z`, using the notes drafted from
       [`.github/RELEASE_NOTES_TEMPLATE.md`](https://github.com/esa/torchquad/blob/develop/.github/RELEASE_NOTES_TEMPLATE.md).
@@ -136,4 +137,3 @@ still fresh than after the tag is pushed.
 - [ ] Thank the contributors, issue reporters and reviewers in the release notes (see the
       template) — this is the step that is easiest to skip and most worth doing.
 - [ ] Delete the release branch.
-- [ ] Update `claude_docs/roadmap.md` "Current status" for the next cycle.
