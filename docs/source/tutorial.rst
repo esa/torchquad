@@ -357,9 +357,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.596974849700928
-            Abs. Error: 2.38418579e-06
-            Rel. Error: 5.18642082e-07
+    **Output:** Results: 4.596975326538086
+            Abs. Error: 1.90734863e-06
+            Rel. Error: 4.14913643e-07
             
 
 
@@ -372,9 +372,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.598303318023682
-            Abs. Error: 1.32608414e-03
-            Rel. Error: 2.88468727e-04
+    **Output:** Results: 4.6036553382873535
+            Abs. Error: 6.67810440e-03
+            Rel. Error: 1.45271642e-03
 
 .. code:: python
 
@@ -385,13 +385,24 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.598696708679199
-            Abs. Error: 1.71947479e-03
-            Rel. Error: 3.74044670e-04
+    **Output:** Results: 4.598339080810547
+            Abs. Error: 1.36184692e-03
+            Rel. Error: 2.96248356e-04
 
-Note that the Monte Carlo methods are much more competitive in this case. 
-The bad convergence properties of the trapezoid method are visible while Simpson's 
-and Boole's rule are still OK given the comparatively smooth integrand. 
+Note that the Monte Carlo methods are much more competitive in this case.
+The bad convergence properties of the trapezoid method are visible while Simpson's
+and Boole's rule are still OK given the comparatively smooth integrand.
+
+.. note::
+
+   Do not expect the last digits of the two stochastic results above to match on
+   your machine. ``VEGAS`` is called without a ``seed`` here, so it draws a fresh
+   sample every run and its value moves in the third decimal from one call to the
+   next. ``MonteCarlo`` *is* seeded, and a seeded run is reproducible bit-for-bit
+   — but only against one backend version: PyTorch does not promise a stable
+   random bit-stream across releases, so the printed digits drift when you
+   upgrade. The deterministic rules are stable except in the last float32 digits.
+   Judge these numbers by their order of magnitude, not by their digits.
 
 If you have been repeating the examples from this tutorial on your own computer, you 
 might get ``RuntimeError: CUDA out of memory`` if you have a small GPU.
