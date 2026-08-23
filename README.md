@@ -201,20 +201,44 @@ integral_value = mc.integrate(
 ```
 ## Logging Configuration
 
-By default, torchquad disables its internal logging when installed from PyPI to avoid interfering with other loggers in your application. To enable logging change `TORCHQUAD_DISABLE_LOGGING` in `__init__.py`:
+torchquad is silent by default so that importing it never interferes with the
+logging of the application using it. Turn its log records on in either of two ways:
 
-1. **Set the log level**: Use the `TORCHQUAD_LOG_LEVEL` environment variable:
+1. **Set the `TORCHQUAD_LOG_LEVEL` environment variable** before importing torchquad:
    ```bash
-   export TORCHQUAD_LOG_LEVEL=DEBUG   # For detailed debugging
-   export TORCHQUAD_LOG_LEVEL=INFO    # For general information  
-   export TORCHQUAD_LOG_LEVEL=WARNING # For warnings only (default when enabled)
+   export TORCHQUAD_LOG_LEVEL=DEBUG
+   export TORCHQUAD_LOG_LEVEL=INFO
+   export TORCHQUAD_LOG_LEVEL=WARNING
    ```
+   Leaving it unset — or setting it to the empty string — keeps torchquad silent.
+   An unrecognised level raises at import rather than being ignored.
 
 2. **Enable logging programmatically**:
    ```python
    import torchquad
    torchquad.set_log_level("DEBUG")  # This will enable and configure logging
    ```
+
+torchquad only ever adds its own handler, filtered to its own records, and never
+removes one your application registered.
+
+One consequence is worth knowing: the level applies to torchquad's own handler,
+which is the only one it owns. Once records are enabled they also reach every
+other sink [loguru](https://github.com/Delgan/loguru) has registered — including
+loguru's default stderr handler, which is unfiltered and sits at `DEBUG`. So in a
+plain interpreter you will see torchquad's records twice, and below the level you
+asked for. That is loguru's global state, not something a library can change
+without disturbing its host ([#184](https://github.com/esa/torchquad/issues/184)).
+To control it, configure loguru yourself:
+
+```python
+from loguru import logger
+logger.remove()                      # drop loguru's default handler
+logger.add(sys.stderr, level="WARNING")
+
+import torchquad
+torchquad.set_log_level("WARNING")
+```
 
 ## Multi-GPU Usage
 
@@ -270,7 +294,7 @@ Using GPUs, torchquad scales particularly well with integration methods that off
 
 ### Vectorized Integration Speedup
 ![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
-*Strong performance gains when evaluating multiple integrands simultaneously. The vectorized approach shows exponential speedup (up to 200x) compared to sequential evaluation, making torchquad ideal for parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration.*
+*Evaluating multiple integrands simultaneously is much faster than looping over them. The speedup grows roughly linearly with the number of integrands — about 190x at 200 of them on the reference GPU — because the loop pays a kernel launch per integrand while the batched call pays one. This makes torchquad well suited to parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration. Note: the figure itself predates a fix to the harness's GPU timing, which mismeasured the small-batch end, and will be regenerated.*
 
 ### Framework Comparison  
 ![](https://github.com/esa/torchquad/blob/main/resources/torchquad_framework_comparison.png?raw=true)

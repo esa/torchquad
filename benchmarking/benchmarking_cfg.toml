@@ -147,3 +147,11 @@ warmup_runs = 1
 # Maximum time in seconds for each benchmark component
 max_time_per_method = 300 # 5 minutes per method
 max_time_total = 1800     # 30 minutes total
+
+# Per-backend Python interpreters. TensorFlow and PyTorch pin conflicting
+# versions of the bundled NVIDIA CUDA libraries, so a shared environment leaves
+# one of them on the CPU without saying so. Leave this section out to run every
+# backend with the interpreter that launched the benchmark.
+#
+# [interpreters]
+# tensorflow = "/home/user/tq-tf/bin/python"

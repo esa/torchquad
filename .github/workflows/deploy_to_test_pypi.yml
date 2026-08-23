@@ -1,9 +1,6 @@
 name: Upload Python Package to Test PyPI
 
-on:
-  workflow_dispatch:
-  release:
-    types: [created]
+on: workflow_dispatch
 
 jobs:
   deploy:
@@ -22,7 +19,6 @@ jobs:
         env:
           TWINE_USERNAME: "__token__"
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_TOKEN }}
-          TORCHQUAD_RELEASE_BUILD: "True"
         run: |
           python -m build
           twine upload -r testpypi dist/*
