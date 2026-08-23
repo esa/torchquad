@@ -3375,7 +3375,7 @@ requires-dist = [
     { name = "jax", extras = ["cpu"], marker = "extra == 'jax'", specifier = ">=0.4.17" },
     { name = "loguru", specifier = ">=0.5.3" },
     { name = "matplotlib", marker = "extra == 'dev'", specifier = ">=3.3.3" },
-    { name = "numpy", specifier = ">=1.19.5" },
+    { name = "numpy", specifier = ">=1.21.3" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.5.0" },
     { name = "pydoclint", marker = "extra == 'dev'", specifier = ">=0.8.3" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=6.2.1" },

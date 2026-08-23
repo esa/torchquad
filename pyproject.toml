@@ -30,8 +30,11 @@ dependencies = [
     # installable on a Python this project supports.
     "scipy>=1.7.2",
     # numpy is imported directly (integration/gaussian.py), not merely pulled in
-    # behind SciPy, so it belongs here rather than arriving transitively.
-    "numpy>=1.19.5",
+    # behind SciPy, so it belongs here rather than arriving transitively. 1.21.3
+    # is the oldest release shipping cp310 wheels, and so the oldest that can be
+    # installed at all on a Python this project supports; the whole stack is
+    # verified against this floor on 3.10.
+    "numpy>=1.21.3",
     "autoray>=0.5.0",
 ]
 

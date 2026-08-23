@@ -94,6 +94,11 @@ now raises on impossible node counts instead of exhausting memory.
   capped at Python <3.10, so 1.7.2 is the oldest release that is both new
   enough and installable on a supported Python. `numpy` is imported directly by
   `integration/gaussian.py` and previously arrived only as a SciPy transitive.
+  Its floor is `>=1.21.3` on the same reasoning: 1.21.3 is the oldest release
+  shipping cp310 wheels. The conda and pixi manifests, which had drifted to
+  `scipy>=1.7.0`, now carry the same floors — pyproject remains the single
+  source of truth. The whole stack is verified working at these floors on
+  Python 3.10.
 
 ### Fixed
 - A CI bug where `pytest | tee` masked a non-zero exit code, hiding failing

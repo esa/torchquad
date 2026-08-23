@@ -4,7 +4,7 @@ channels:
 dependencies:
   - ipython
   - loguru>=0.5.3
-  - numpy>=1.19.5
+  - numpy>=1.21.3
   - pytest>=6.2.1
   - python>=3.10
   - autoray>=0.5.0
