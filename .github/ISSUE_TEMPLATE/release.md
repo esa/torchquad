@@ -9,8 +9,7 @@ assignees: "gomezzz"
 # Release X.Y.Z
 
 Draft the release notes from [`.github/RELEASE_NOTES_TEMPLATE.md`](https://github.com/esa/torchquad/blob/develop/.github/RELEASE_NOTES_TEMPLATE.md)
-as you go — the "thanks" section is much easier to fill in while the changes are
-still fresh than after the tag is pushed.
+as you go.
 
 ## What Needs to Be Done (chronologically)
 
@@ -134,6 +133,5 @@ still fresh than after the tag is pushed.
 
 - [ ] Confirm Read the Docs built the new tag and that the version selector shows it.
 - [ ] Close the milestone and every issue this release fixes, linking the release notes.
-- [ ] Thank the contributors, issue reporters and reviewers in the release notes (see the
-      template) — this is the step that is easiest to skip and most worth doing.
+- [ ] Thank contributors in the release notes (see the template).
 - [ ] Delete the release branch.

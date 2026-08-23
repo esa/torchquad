@@ -45,29 +45,7 @@ conda install torchquad -c conda-forge
 
 ### Thanks
 
-Thanks to everyone who contributed to this release, whether through code, bug
-reports, feature suggestions or reviews.
-
-- @handle (#PR or #issue)
-
-Ways to collect the list, none of which are complete on their own:
-
-```bash
-# Everyone with a commit since the previous tag
-git shortlog -sne v<previous>..HEAD
-
-# Merged PRs and their authors
-gh pr list --state merged --search "merged:>=<date-of-previous-release>" \
-    --json number,title,author --limit 200
-
-# Issues this release closes, and who opened them
-gh issue list --state closed --search "closed:>=<date-of-previous-release>" \
-    --json number,title,author --limit 200
-```
-
-Also add the people who reported or diagnosed something without opening a PR —
-`git shortlog` will never show them, and they are the easiest to lose track of.
-Check commit trailers for co-authors too.
+Thanks to everyone who contributed to this release.
 
 ### Full changelog
 
