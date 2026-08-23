@@ -11,7 +11,7 @@ dependencies:
   - matplotlib>=3.3.3
   - pytest>=6.2.1
   - python==3.12
-  - scipy>=1.7.0
+  - scipy>=1.7.2
   - sphinx>=3.4.3
   - sphinx_rtd_theme>=0.5.1
   # Numerical backends. conda-forge now ships PyTorch directly, so the separate
