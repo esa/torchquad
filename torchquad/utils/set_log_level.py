@@ -25,8 +25,9 @@ _torchquad_handler_ids = []
 def set_log_level(log_level):
     """Set the log level for torchquad's own log records.
 
-    The preset log level when initialising torchquad is the value of the
-    TORCHQUAD_LOG_LEVEL environment variable, or 'WARNING' if it is unset.
+    torchquad is silent until this is called. Setting the TORCHQUAD_LOG_LEVEL
+    environment variable before importing torchquad calls it automatically with
+    that level.
 
     Args:
         log_level (str): The log level to set. Options are 'TRACE', 'DEBUG',

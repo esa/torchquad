@@ -9,9 +9,6 @@ __version__ = "0.5.0"
 # set_log_level() re-enables them when the user opts into logging.
 logger.disable("torchquad")
 
-# Set for release builds
-TORCHQUAD_DISABLE_LOGGING = True
-
 # TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
 from .integration.integration_grid import IntegrationGrid
@@ -63,6 +60,9 @@ __all__ = [
     "set_up_backend",
 ]
 
-if not TORCHQUAD_DISABLE_LOGGING:
-    set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
+# Opt in to logging from the environment. Only an explicitly set
+# TORCHQUAD_LOG_LEVEL turns torchquad's records on, so the library stays silent
+# by default; set_log_level() does the same thing at runtime.
+if "TORCHQUAD_LOG_LEVEL" in os.environ:
+    set_log_level(os.environ["TORCHQUAD_LOG_LEVEL"])
     logger.info("Initializing torchquad.")

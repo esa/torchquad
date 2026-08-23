@@ -42,8 +42,10 @@ Minimal working example
         backend="torch",
     )
 
-To set the default logger verbosity, change the ``TORCHQUAD_LOG_LEVEL``
-environment variable; for example ``export TORCHQUAD_LOG_LEVEL=DEBUG``.
+torchquad is silent by default. To see its log records, set the
+``TORCHQUAD_LOG_LEVEL`` environment variable before importing it -- for example
+``export TORCHQUAD_LOG_LEVEL=DEBUG`` -- or call
+:func:`torchquad.set_log_level` at runtime.
 A :ref:`later section <tutorial_backend_selection>` in this tutorial shows how
 to choose a different numerical backend.
 

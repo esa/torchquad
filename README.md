@@ -201,13 +201,14 @@ integral_value = mc.integrate(
 ```
 ## Logging Configuration
 
-By default, torchquad disables its internal logging when installed from PyPI to avoid interfering with other loggers in your application. To enable logging change `TORCHQUAD_DISABLE_LOGGING` in `__init__.py`:
+torchquad is silent by default so that importing it never interferes with the
+logging of the application using it. Turn its log records on in either of two ways:
 
-1. **Set the log level**: Use the `TORCHQUAD_LOG_LEVEL` environment variable:
+1. **Set the `TORCHQUAD_LOG_LEVEL` environment variable** before importing torchquad:
    ```bash
    export TORCHQUAD_LOG_LEVEL=DEBUG   # For detailed debugging
-   export TORCHQUAD_LOG_LEVEL=INFO    # For general information  
-   export TORCHQUAD_LOG_LEVEL=WARNING # For warnings only (default when enabled)
+   export TORCHQUAD_LOG_LEVEL=INFO    # For general information
+   export TORCHQUAD_LOG_LEVEL=WARNING # For warnings only
    ```
 
 2. **Enable logging programmatically**:
@@ -215,6 +216,9 @@ By default, torchquad disables its internal logging when installed from PyPI to 
    import torchquad
    torchquad.set_log_level("DEBUG")  # This will enable and configure logging
    ```
+
+Either way torchquad only ever adds its own handler, filtered to its own
+records, and never removes a handler your application registered.
 
 ## Multi-GPU Usage
 

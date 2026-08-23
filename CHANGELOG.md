@@ -31,6 +31,8 @@ packaging, and closing long-open fixed issues.
   coverage floor.
 - `pre-commit` + `pydoclint` docstring checks and a two-tier `vulture`
   dead-code job.
+- `.github/RELEASE_NOTES_TEMPLATE.md`, a release-notes skeleton with a
+  contributor-thanks section, referenced from the release checklist.
 - Dependabot for GitHub Actions.
 - This `CHANGELOG.md`.
 
@@ -43,6 +45,15 @@ packaging, and closing long-open fixed issues.
   rebuilt `environment_all_backends.yml` on conda-forge.
 - `loguru` is disabled by default; `set_log_level` manages a single tracked sink
   instead of touching host-application handlers (#184).
+- `TORCHQUAD_LOG_LEVEL` now works. Setting it in the environment enables
+  torchquad's logging at that level when the package is imported; leaving it
+  unset keeps the library silent. Previously the variable was only read when
+  the `TORCHQUAD_DISABLE_LOGGING` constant was `False`, which no release ever
+  shipped, so it had no effect.
+- Rewrote the release checklist (`.github/ISSUE_TEMPLATE/release.md`): it now
+  lists all six places the version lives, adds the missing tagging step, defers
+  to CI instead of asking for manual re-runs, and covers conda-forge and
+  Read the Docs.
 
 ### Fixed
 - A CI bug where `pytest | tee` masked a non-zero exit code, hiding failing
@@ -55,6 +66,12 @@ packaging, and closing long-open fixed issues.
 - The library-side `sys.path.append` import hack.
 - The legacy `set_default_tensor_type` branch in `set_precision`.
 - The 3-year-old `(N,) → (N,1)` return-shape deprecation warning.
+- The `TORCHQUAD_DISABLE_LOGGING` constant, a build-time switch that could only
+  be flipped by editing `__init__.py` and was therefore always `True`. Use
+  `TORCHQUAD_LOG_LEVEL` or `set_log_level()` instead.
+- The `TORCHQUAD_RELEASE_BUILD` environment variable from the deploy workflows,
+  which nothing read, and the `release: created` trigger on the Test PyPI
+  workflow, which re-uploaded an already-published version and failed every time.
 - Dead code (`RNG.uniform`, `Gaussian.name`).
 
 ## [0.5.0] - 2025-08-03
