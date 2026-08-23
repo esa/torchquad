@@ -711,6 +711,26 @@ class ModularBenchmark:
 
         return results
 
+    def _interpreter_for(self, backend_name):
+        """Return the Python interpreter to run a backend's worker with.
+
+        TensorFlow and PyTorch pin conflicting versions of the bundled NVIDIA
+        CUDA libraries, so installing both into one environment can leave one of
+        them unable to see the GPU -- silently, as a CPU-only run rather than an
+        error. Pointing each backend at its own interpreter is the only reliable
+        way to benchmark them all on the GPU in a single sweep. The config maps a
+        backend name to an interpreter path; anything unlisted uses the
+        interpreter running this script.
+
+        Args:
+            backend_name (str): Backend the worker will use, e.g. "tensorflow".
+
+        Returns:
+            str: Path to the Python interpreter for that backend.
+        """
+        interpreters = self.config.get("interpreters", {})
+        return interpreters.get(backend_name, sys.executable)
+
     def _benchmark_method_backend_subprocess(
         self,
         backend_name: str,
@@ -737,11 +757,12 @@ class ModularBenchmark:
 
         # Path to worker script
         worker_script = Path(__file__).parent / "framework_worker.py"
+        interpreter = self._interpreter_for(backend_name)
 
         try:
             # Run worker in subprocess
             result = subprocess.run(
-                [sys.executable, str(worker_script), json.dumps(config)],
+                [interpreter, str(worker_script), json.dumps(config)],
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout per backend
