@@ -313,9 +313,18 @@ class ModularBenchmark:
                     self.logger.info(f"VEGAS reference ({ref_points} pts): {ref_result.item():.8e}")
                 return ref_result.item()
 
-            except Exception as e:
-                self.logger.error(f"Reference calculation failed: {e}")
-                return 1.0  # Fallback value
+            except Exception as exc:
+                # Never substitute a value here. Every error on every plot is
+                # measured against this number, so a fabricated reference does
+                # not produce a visibly broken benchmark -- it produces a
+                # plausible one that is quietly wrong for every method at once.
+                # The previous fallback of 1.0 did exactly that.
+                raise RuntimeError(
+                    f"Could not compute a reference value for {dim}D, so every error "
+                    "measured against it would be meaningless. Add an entry to "
+                    "analytical_references for this dimension, or fix the numerical "
+                    f"reference: {type(exc).__name__}: {exc}"
+                ) from exc
 
     def benchmark_method(
         self,
