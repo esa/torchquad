@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The 0.6 line is a modernization and credibility release: modern tooling, honest
 packaging, and closing long-open fixed issues.
 
+**No changes to numerical results.** Every integrator returns what it returned
+under 0.5.0 for the same function, method, `N` and seed, and no existing test
+tolerance was loosened. The additions below are new entry points (`Sobol`,
+`return_error`, `args`); the removals were code that could not run on a
+supported Python or PyTorch. The one behavioural change is that `GaussLegendre`
+now raises on impossible node counts instead of exhausting memory.
+
 ### Added
 - `Sobol` quasi-Monte Carlo sampler, usable via
   `MonteCarlo.integrate(..., rng=Sobol(...))` for faster convergence on smooth
