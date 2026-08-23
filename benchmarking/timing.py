@@ -2,9 +2,9 @@
 
 GPU work is asynchronous. ``integrate()`` returns as soon as its kernels are
 queued, long before the device has run them, so a clock stopped at that point
-measures kernel-launch latency rather than the integration. Measured on an
-RTX 4060 Ti, MonteCarlo at N=1e8 takes 28.4 ms but reports 2.22 ms when the
-result is never forced -- a 12.8x understatement that grows with N.
+measures kernel-launch latency rather than the integration. The gap grows with
+N, since larger kernels take longer to run but no longer to enqueue, and at
+large N it is more than an order of magnitude.
 
 Every timed region in this package must therefore end with :func:`materialize`,
 which blocks until the device has actually produced the result, and start after
