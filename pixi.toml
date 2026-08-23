@@ -17,9 +17,7 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 python = ">=3.10"
 autoray = ">=0.5.0"
 loguru = ">=0.5.3"
-matplotlib = ">=3.3.3"
-scipy = ">=1.6.0"
-tqdm = ">=4.56.1"
+scipy = ">=1.7.0"
 numpy = ">=1.19.5"
 
 [pypi-dependencies]
@@ -40,6 +38,8 @@ tensorflow = ">=2.18.0"
 # --- Development + docs features -------------------------------------------
 [feature.dev.dependencies]
 pytest = ">=6.2.1"
+# Only the benchmarking harness plots; the library itself never imports it.
+matplotlib = ">=3.3.3"
 [feature.dev.pypi-dependencies]
 pytest-cov = ">=4.0.0"
 pytest-error-for-skips = ">=2.0.2"

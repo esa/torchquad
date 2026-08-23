@@ -43,6 +43,12 @@ packaging, and closing long-open fixed issues.
   rebuilt `environment_all_backends.yml` on conda-forge.
 - `loguru` is disabled by default; `set_log_level` manages a single tracked sink
   instead of touching host-application handlers (#184).
+- Raised the SciPy floor to `>=1.7.2` and declared `numpy` explicitly. The
+  `Sobol` sampler uses `scipy.stats.qmc` on the non-torch backends, and that
+  module only exists from SciPy 1.7.0 onward; 1.7.0 and 1.7.1 are themselves
+  capped at Python <3.10, so 1.7.2 is the oldest release that is both new
+  enough and installable on a supported Python. `numpy` is imported directly by
+  `integration/gaussian.py` and previously arrived only as a SciPy transitive.
 
 ### Fixed
 - A CI bug where `pytest | tee` masked a non-zero exit code, hiding failing
@@ -57,12 +63,31 @@ packaging, and closing long-open fixed issues.
   cubic in time. The message states the node count, the limit, the memory implied,
   and that `N` is divided across the dimensions. Note this counts nodes *per
   dimension*: `dim=3, N=10**6` is 100 per axis and is unaffected.
+- GPU timings in the `benchmarking/` harness. Nothing synchronized the device,
+  so every clock stopped once the kernels were queued rather than once they had
+  run: MonteCarlo at N=1e8 measured 1.35 ms where the true cost is 13.6 ms.
+  The vectorized benchmark compared a loop that materialized every result inside
+  the timed region against a batched call that materialized none, so its ratio
+  was partly a synchronization artifact — at grid size 1, where the true speedup
+  is about 1x, it reported 35x. Timed regions now materialize their result, both
+  sides of that comparison are timed identically, and the vectorized benchmark
+  discards a warm-up run like the others. Corrected, the vectorization speedup is
+  close to linear in the number of integrands (0.81x at 1, 19.7x at 20, 186.8x at
+  200), rather than the "exponential" growth the README claimed.
+  The plots in the README predate this fix and still need regenerating.
 
 ### Removed
 - The library-side `sys.path.append` import hack.
 - The legacy `set_default_tensor_type` branch in `set_precision`.
 - The 3-year-old `(N,) → (N,1)` return-shape deprecation warning.
 - Dead code (`RNG.uniform`, `Gaussian.name`).
+- `matplotlib` and `tqdm` as runtime dependencies. Neither is imported by the
+  shipped package: `matplotlib` is only used by the benchmarking harness (it
+  moved to the `dev` extra) and `tqdm` was not used anywhere. Installing
+  torchquad no longer pulls them in.
+- `requirements.txt`, a vestigial second copy of the runtime dependencies that
+  had already drifted from `pyproject.toml`. `pyproject.toml` is the single
+  source of truth.
 
 ## [0.5.0] - 2025-08-03
 ### Changed

@@ -24,9 +24,14 @@ classifiers = [
 ]
 dependencies = [
     "loguru>=0.5.3",
-    "matplotlib>=3.3.3",
-    "scipy>=1.6.0",
-    "tqdm>=4.56.1",
+    # scipy.stats.qmc, which the Sobol sampler uses on the non-torch backends,
+    # arrived in SciPy 1.7.0 -- but 1.7.0 and 1.7.1 are themselves capped at
+    # Python <3.10, so 1.7.2 is the oldest release both new enough and
+    # installable on a Python this project supports.
+    "scipy>=1.7.2",
+    # numpy is imported directly (integration/gaussian.py), not merely pulled in
+    # behind SciPy, so it belongs here rather than arriving transitively.
+    "numpy>=1.19.5",
     "autoray>=0.5.0",
 ]
 
@@ -43,6 +48,8 @@ dependencies = [
 # reasonable minimums, not lockstep pins.
 dev = [
     "pytest>=6.2.1",
+    # Only the benchmarking harness plots; the library itself never imports it.
+    "matplotlib>=3.3.3",
     "pytest-cov>=4.0.0",
     "pytest-error-for-skips>=2.0.2",
     "ruff>=0.14.6",
