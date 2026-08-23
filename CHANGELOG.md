@@ -83,6 +83,11 @@ packaging, and closing long-open fixed issues.
   close to linear in the number of integrands (0.81x at 1, 19.7x at 20, 186.8x at
   200), rather than the "exponential" growth the README claimed.
   The plots in the README predate this fix and still need regenerating.
+- A fabricated ground truth in the `benchmarking/` harness. When a reference
+  value could not be computed it returned `1.0`, so every error on the plot was
+  then measured against a made-up number — the same class of defect as the
+  timing bug, but invisible in the output, since nothing looks unusual. It now
+  raises and names the dimension that failed.
 
 ### Removed
 - The library-side `sys.path.append` import hack.

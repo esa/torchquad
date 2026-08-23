@@ -313,9 +313,18 @@ class ModularBenchmark:
                     self.logger.info(f"VEGAS reference ({ref_points} pts): {ref_result.item():.8e}")
                 return ref_result.item()
 
-            except Exception as e:
-                self.logger.error(f"Reference calculation failed: {e}")
-                return 1.0  # Fallback value
+            except Exception as exc:
+                # Never substitute a value here. Every error on every plot is
+                # measured against this number, so a fabricated reference does
+                # not produce a visibly broken benchmark -- it produces a
+                # plausible one that is quietly wrong for every method at once.
+                # The previous fallback of 1.0 did exactly that.
+                raise RuntimeError(
+                    f"Could not compute a reference value for {dim}D, so every error "
+                    "measured against it would be meaningless. Add an entry to "
+                    "analytical_references for this dimension, or fix the numerical "
+                    f"reference: {type(exc).__name__}: {exc}"
+                ) from exc
 
     def benchmark_method(
         self,
@@ -711,6 +720,26 @@ class ModularBenchmark:
 
         return results
 
+    def _interpreter_for(self, backend_name):
+        """Return the Python interpreter to run a backend's worker with.
+
+        TensorFlow and PyTorch pin conflicting versions of the bundled NVIDIA
+        CUDA libraries, so installing both into one environment can leave one of
+        them unable to see the GPU -- silently, as a CPU-only run rather than an
+        error. Pointing each backend at its own interpreter is the only reliable
+        way to benchmark them all on the GPU in a single sweep. The config maps a
+        backend name to an interpreter path; anything unlisted uses the
+        interpreter running this script.
+
+        Args:
+            backend_name (str): Backend the worker will use, e.g. "tensorflow".
+
+        Returns:
+            str: Path to the Python interpreter for that backend.
+        """
+        interpreters = self.config.get("interpreters", {})
+        return interpreters.get(backend_name, sys.executable)
+
     def _benchmark_method_backend_subprocess(
         self,
         backend_name: str,
@@ -737,11 +766,12 @@ class ModularBenchmark:
 
         # Path to worker script
         worker_script = Path(__file__).parent / "framework_worker.py"
+        interpreter = self._interpreter_for(backend_name)
 
         try:
             # Run worker in subprocess
             result = subprocess.run(
-                [sys.executable, str(worker_script), json.dumps(config)],
+                [interpreter, str(worker_script), json.dumps(config)],
                 capture_output=True,
                 text=True,
                 timeout=300,  # 5 minute timeout per backend
