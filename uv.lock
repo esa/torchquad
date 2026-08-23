@@ -3321,12 +3321,9 @@ dependencies = [
     { name = "autoray", version = "0.8.11", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "autoray", version = "0.9.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "loguru" },
-    { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "matplotlib", version = "3.11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "scipy", version = "1.15.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "tqdm" },
 ]
 
 [package.optional-dependencies]
@@ -3339,6 +3336,8 @@ all = [
 ]
 dev = [
     { name = "build" },
+    { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "matplotlib", version = "3.11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pre-commit" },
     { name = "pydoclint" },
     { name = "pytest" },
@@ -3372,14 +3371,14 @@ requires-dist = [
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "jax", extras = ["cpu"], marker = "extra == 'jax'", specifier = ">=0.4.17" },
     { name = "loguru", specifier = ">=0.5.3" },
-    { name = "matplotlib", specifier = ">=3.3.3" },
+    { name = "matplotlib", marker = "extra == 'dev'", specifier = ">=3.3.3" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.5.0" },
     { name = "pydoclint", marker = "extra == 'dev'", specifier = ">=0.8.3" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=6.2.1" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "pytest-error-for-skips", marker = "extra == 'dev'", specifier = ">=2.0.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.14.6" },
-    { name = "scipy", specifier = ">=1.6.0" },
+    { name = "scipy", specifier = ">=1.7.0" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=3.4.3" },
     { name = "sphinx-rtd-theme", marker = "extra == 'docs'", specifier = ">=0.5.1" },
     { name = "tensorflow", marker = "extra == 'tensorflow'", specifier = ">=2.18.0" },
@@ -3387,23 +3386,10 @@ requires-dist = [
     { name = "torchquad", extras = ["jax"], marker = "extra == 'all'" },
     { name = "torchquad", extras = ["tensorflow"], marker = "extra == 'all'" },
     { name = "torchquad", extras = ["torch"], marker = "extra == 'all'" },
-    { name = "tqdm", specifier = ">=4.56.1" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "vulture", marker = "extra == 'dev'", specifier = ">=2.14" },
 ]
 provides-extras = ["dev", "docs", "torch", "jax", "tensorflow", "all"]
-
-[[package]]
-name = "tqdm"
-version = "4.69.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/69/40407dfc835517f058b603dbf37a6df094d8582b015a51eddc988febbcb7/tqdm-4.69.0.tar.gz", hash = "sha256:700c5e85dcd5f009dd6222588a29180a193a748247a5d855b4d67db93d79a53b", size = 792569 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/fe/21/99a0cdaf54eb35e77623c41b5a2c9472ee4404bba687052791fe2aba6773/tqdm-4.69.0-py3-none-any.whl", hash = "sha256:9979978912be667a6ef21fd5d8abf54e324e63d82f7f43c360792ebc2bc4e622", size = 676680 },
-]
 
 [[package]]
 name = "triton"

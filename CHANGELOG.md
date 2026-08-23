@@ -43,6 +43,9 @@ packaging, and closing long-open fixed issues.
   rebuilt `environment_all_backends.yml` on conda-forge.
 - `loguru` is disabled by default; `set_log_level` manages a single tracked sink
   instead of touching host-application handlers (#184).
+- Raised the SciPy floor to `>=1.7.0`. The `Sobol` sampler uses
+  `scipy.stats.qmc` on the non-torch backends, and that module only exists
+  from SciPy 1.7.0 onward, so 1.6.x resolved but failed at import.
 
 ### Fixed
 - A CI bug where `pytest | tee` masked a non-zero exit code, hiding failing
@@ -56,6 +59,13 @@ packaging, and closing long-open fixed issues.
 - The legacy `set_default_tensor_type` branch in `set_precision`.
 - The 3-year-old `(N,) → (N,1)` return-shape deprecation warning.
 - Dead code (`RNG.uniform`, `Gaussian.name`).
+- `matplotlib` and `tqdm` as runtime dependencies. Neither is imported by the
+  shipped package: `matplotlib` is only used by the benchmarking harness (it
+  moved to the `dev` extra) and `tqdm` was not used anywhere. Installing
+  torchquad no longer pulls them in.
+- `requirements.txt`, a vestigial second copy of the runtime dependencies that
+  had already drifted from `pyproject.toml`. `pyproject.toml` is the single
+  source of truth.
 
 ## [0.5.0] - 2025-08-03
 ### Changed
