@@ -42,6 +42,32 @@ except ImportError:
 from torchquad import Simpson, GaussLegendre, MonteCarlo, VEGAS, enable_cuda, Boole, Trapezoid
 from torchquad.utils.set_precision import set_precision
 
+# Sibling module; this script is run as `python benchmarking/modular_benchmark.py`,
+# which puts benchmarking/ on sys.path.
+from timing import time_integration
+
+
+def _method_arguments(method_name, seed):
+    """Return the integrate() arguments that differ between methods.
+
+    Every method takes the integrand, dim, N and domain the same way; only the
+    stochastic ones need a seed, and VEGAS needs its iteration settings. Keeping
+    the difference in one place avoids repeating the full call per branch at each
+    of the three timed sites.
+
+    Args:
+        method_name (str): Integrator key, e.g. "vegas" or "monte_carlo".
+        seed (int): Seed for the stochastic methods.
+
+    Returns:
+        dict: Extra keyword arguments for ``integrate()``.
+    """
+    if method_name == "vegas":
+        return {"max_iterations": 5, "use_warmup": True, "seed": seed}
+    if method_name == "monte_carlo":
+        return {"seed": seed}
+    return {}
+
 
 class ModularBenchmark:
     """Modular benchmarking suite with configuration support."""
@@ -320,41 +346,27 @@ class ModularBenchmark:
                     torch.cuda.empty_cache()
                     gc.collect()
 
-                start_time = time.perf_counter()
+                # Only the extra arguments are method-specific; build them rather
+                # than repeating the whole call once per branch.
+                extra = _method_arguments(method_name, seed=42)
 
-                # Method-specific integration calls
-                if method_name == "vegas":
-                    result = integrator.integrate(
-                        func,
-                        dim=dim,
-                        N=n,
-                        integration_domain=domain,
-                        max_iterations=5,
-                        use_warmup=True,
-                        seed=42,
+                elapsed, result_value = time_integration(
+                    lambda: integrator.integrate(
+                        func, dim=dim, N=n, integration_domain=domain, **extra
                     )
-                elif method_name == "monte_carlo":
-                    result = integrator.integrate(
-                        func, dim=dim, N=n, integration_domain=domain, seed=42
-                    )
-                else:
-                    result = integrator.integrate(func, dim=dim, N=n, integration_domain=domain)
+                )
 
-                end_time = time.perf_counter()
-
-                error = abs(result.item() - reference)
+                error = abs(result_value - reference)
                 error = max(error, 1e-16)  # Minimum plottable error
 
                 errors.append(error)
-                times.append(end_time - start_time)
+                times.append(elapsed)
                 actual_n.append(n)
                 torch.cuda.empty_cache()
 
                 # Log progress
                 if i % 2 == 0 or n >= 100000:
-                    self.logger.info(
-                        f"  N={n:>8}: error={error:.2e}, time={end_time - start_time:.4f}s"
-                    )
+                    self.logger.info(f"  N={n:>8}: error={error:.2e}, time={elapsed:.4f}s")
 
             except Exception as e:
                 self.logger.warning(f"  N={n}: Failed - {str(e)[:50]}...")
@@ -878,32 +890,17 @@ class ModularBenchmark:
                                 torch.cuda.empty_cache()
                                 gc.collect()
 
-                            start_time = time.perf_counter()
+                            extra = _method_arguments(method_name, seed=42 + run)
 
-                            if method_name == "vegas":
-                                integrator.integrate(
+                            elapsed, _ = time_integration(
+                                lambda: integrator.integrate(
                                     test_integrand,
                                     dim=dim,
                                     N=fevals,
                                     integration_domain=domain,
-                                    max_iterations=5,
-                                    use_warmup=True,
-                                    seed=42 + run,
+                                    **extra,
                                 )
-                            elif method_name == "monte_carlo":
-                                integrator.integrate(
-                                    test_integrand,
-                                    dim=dim,
-                                    N=fevals,
-                                    integration_domain=domain,
-                                    seed=42 + run,
-                                )
-                            else:
-                                integrator.integrate(
-                                    test_integrand, dim=dim, N=fevals, integration_domain=domain
-                                )
-
-                            elapsed = time.perf_counter() - start_time
+                            )
 
                             # Only record times after warmup runs
                             if run >= warmup_runs:
@@ -952,6 +949,7 @@ class ModularBenchmark:
 
         grid_sizes = self.config.get("vectorized", {}).get("grid_sizes", [5, 20, 50, 100, 200])
         num_runs = self.config.get("vectorized", {}).get("num_runs", 2)
+        warmup_runs = self.config["vectorized"]["warmup_runs"]
         results = {"grid_sizes": [], "loop_times": [], "vectorized_times": [], "speedups": []}
 
         for grid_size in grid_sizes:
@@ -960,39 +958,46 @@ class ModularBenchmark:
             params = torch.linspace(1, 5, grid_size)
 
             try:
-                # Method 1: Loop-based (multiple runs for stability)
-                loop_times = []
-                for run in range(num_runs):
-                    start_time = time.perf_counter()
+                # Both paths must be timed the same way for the ratio to mean
+                # anything. Each runs through time_integration, so each pays
+                # exactly one synchronization, and each is given the same
+                # discarded warm-up. Materializing per iteration on the loop side
+                # would charge it grid_size device round-trips that the
+                # vectorized side never pays, which inflates the speedup just as
+                # surely as not synchronizing at all did.
+                def run_loop():
                     loop_results = []
                     for param in params:
 
                         def single_integrand(x):
                             return torch.sqrt(torch.cos(torch.sin(param * x[:, 0])))
 
-                        result = integrator.integrate(
-                            single_integrand, dim=1, N=N, integration_domain=domain
+                        loop_results.append(
+                            integrator.integrate(
+                                single_integrand, dim=1, N=N, integration_domain=domain
+                            )
                         )
-                        loop_results.append(result.item())
-                    loop_times.append(time.perf_counter() - start_time)
+                    return torch.stack(loop_results).sum()
 
-                loop_time = sum(loop_times) / len(loop_times)
-
-                # Method 2: Vectorized (multiple runs for stability)
-                vectorized_times = []
-                for run in range(num_runs):
-                    start_time = time.perf_counter()
-
+                def run_vectorized():
                     def vectorized_integrand(x):
                         x_vals = x[:, 0]
                         return torch.sqrt(torch.cos(torch.sin(torch.outer(x_vals, params))))
 
-                    integrator.integrate(
+                    return integrator.integrate(
                         vectorized_integrand, dim=1, N=N, integration_domain=domain
-                    )
-                    vectorized_times.append(time.perf_counter() - start_time)
+                    ).sum()
 
-                vectorized_time = sum(vectorized_times) / len(vectorized_times)
+                def timed_runs(call):
+                    times = []
+                    for run in range(warmup_runs + num_runs):
+                        elapsed, _ = time_integration(call)
+                        if run >= warmup_runs:
+                            times.append(elapsed)
+                    return sum(times) / len(times)
+
+                loop_time = timed_runs(run_loop)
+                vectorized_time = timed_runs(run_vectorized)
                 speedup = loop_time / vectorized_time
 
                 results["grid_sizes"].append(grid_size)

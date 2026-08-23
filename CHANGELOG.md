@@ -56,6 +56,18 @@ packaging, and closing long-open fixed issues.
   JIT Monte Carlo test.
 - Documentation build warnings (`imgmath` → `mathjax`, removed an unsupported
   theme option, repaired a malformed tutorial code block).
+- GPU timings in the `benchmarking/` harness. Nothing synchronized the device,
+  so every clock stopped once the kernels were queued rather than once they had
+  run: MonteCarlo at N=1e8 measured 1.35 ms where the true cost is 13.6 ms.
+  The vectorized benchmark compared a loop that materialized every result inside
+  the timed region against a batched call that materialized none, so its ratio
+  was partly a synchronization artifact — at grid size 1, where the true speedup
+  is about 1x, it reported 35x. Timed regions now materialize their result, both
+  sides of that comparison are timed identically, and the vectorized benchmark
+  discards a warm-up run like the others. Corrected, the vectorization speedup is
+  close to linear in the number of integrands (0.81x at 1, 19.7x at 20, 186.8x at
+  200), rather than the "exponential" growth the README claimed.
+  The plots in the README predate this fix and still need regenerating.
 
 ### Removed
 - The library-side `sys.path.append` import hack.
