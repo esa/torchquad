@@ -43,9 +43,12 @@ packaging, and closing long-open fixed issues.
   rebuilt `environment_all_backends.yml` on conda-forge.
 - `loguru` is disabled by default; `set_log_level` manages a single tracked sink
   instead of touching host-application handlers (#184).
-- Raised the SciPy floor to `>=1.7.0`. The `Sobol` sampler uses
-  `scipy.stats.qmc` on the non-torch backends, and that module only exists
-  from SciPy 1.7.0 onward, so 1.6.x resolved but failed at import.
+- Raised the SciPy floor to `>=1.7.2` and declared `numpy` explicitly. The
+  `Sobol` sampler uses `scipy.stats.qmc` on the non-torch backends, and that
+  module only exists from SciPy 1.7.0 onward; 1.7.0 and 1.7.1 are themselves
+  capped at Python <3.10, so 1.7.2 is the oldest release that is both new
+  enough and installable on a supported Python. `numpy` is imported directly by
+  `integration/gaussian.py` and previously arrived only as a SciPy transitive.
 
 ### Fixed
 - A CI bug where `pytest | tee` masked a non-zero exit code, hiding failing

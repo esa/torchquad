@@ -24,9 +24,14 @@ classifiers = [
 ]
 dependencies = [
     "loguru>=0.5.3",
-    # scipy.stats.qmc (used by the Sobol sampler on the non-torch backends) was
-    # introduced in SciPy 1.7.0, so 1.6.x would resolve but fail at import.
-    "scipy>=1.7.0",
+    # scipy.stats.qmc, which the Sobol sampler uses on the non-torch backends,
+    # arrived in SciPy 1.7.0 -- but 1.7.0 and 1.7.1 are themselves capped at
+    # Python <3.10, so 1.7.2 is the oldest release both new enough and
+    # installable on a Python this project supports.
+    "scipy>=1.7.2",
+    # numpy is imported directly (integration/gaussian.py), not merely pulled in
+    # behind SciPy, so it belongs here rather than arriving transitively.
+    "numpy>=1.19.5",
     "autoray>=0.5.0",
 ]
 

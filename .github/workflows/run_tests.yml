@@ -141,6 +141,26 @@ jobs:
           source .venv/bin/activate
           uv pip install dist/*.whl
           python -c "import torchquad; assert torchquad._deployment_test()"
+      # The self-test above never reaches scipy.stats.qmc, so a too-low SciPy
+      # floor would pass it. Exercise the Sobol path that the floor exists for,
+      # and assert the packages dropped from the runtime set stay dropped.
+      - name: Check the declared runtime dependencies are correct and minimal
+        run: |
+          source .venv/bin/activate
+          python -c "
+          import importlib.util as util
+          for name in ('matplotlib', 'tqdm'):
+              assert util.find_spec(name) is None, name + ' is back in the runtime install'
+          "
+          python -c "
+          from torchquad import MonteCarlo, Sobol
+          value = MonteCarlo().integrate(
+              lambda x: x[:, 0] ** 2, dim=1, N=1024,
+              integration_domain=[[0.0, 1.0]], backend='numpy',
+              rng=Sobol('numpy', seed=0),
+          )
+          assert abs(float(value) - 1.0 / 3.0) < 1e-6, value
+          "
 
   # Documentation build gate: warnings are errors so doc rot fails the PR
   # instead of silently shipping to Read the Docs.
