@@ -71,6 +71,13 @@ packaging, and closing long-open fixed issues.
   JIT Monte Carlo test.
 - Documentation build warnings (`imgmath` → `mathjax`, removed an unsupported
   theme option, repaired a malformed tutorial code block).
+- `GaussLegendre` (and any `Gaussian` subclass) now raises a clear `ValueError`
+  when asked for more than 10 000 nodes per dimension, instead of reaching NumPy
+  and failing with a bare `MemoryError: Unable to allocate 7450.6 GiB`. The nodes
+  are eigenvalues of an `n x n` matrix, so the cost is quadratic in memory and
+  cubic in time. The message states the node count, the limit, the memory implied,
+  and that `N` is divided across the dimensions. Note this counts nodes *per
+  dimension*: `dim=3, N=10**6` is 100 per axis and is unaffected.
 - GPU timings in the `benchmarking/` harness. Nothing synchronized the device,
   so every clock stopped once the kernels were queued rather than once they had
   run: MonteCarlo at N=1e8 measured 1.35 ms where the true cost is 13.6 ms.
