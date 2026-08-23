@@ -65,9 +65,11 @@ as you go.
       `test (all backends, py3.10|3.11|3.12)`, `test (jax isolated)`,
       `test (tensorflow isolated)`, `wheel-smoke`, `docs-build`.
 - [ ] `dead_code` workflow green (the `vulture` job, 100%-confidence tier).
-- [ ] Trigger [Release testing](https://github.com/esa/torchquad/actions/workflows/release_testing.yml)
-      on the release branch — this is the run against the *latest released* torch/JAX/
-      TensorFlow rather than the pinned CI versions. See
+- [ ] [Release testing](https://github.com/esa/torchquad/actions/workflows/release_testing.yml)
+      green on the release branch — this is the run against the *latest released*
+      torch/JAX/TensorFlow rather than the pinned CI versions. It fires by itself on
+      any push to a `release-*` / `release/**` branch and on any PR into `main`, so
+      there is normally nothing to trigger; just confirm it passed. See
       [`release_testing/README.md`](https://github.com/esa/torchquad/blob/develop/release_testing/README.md).
 - [ ] **GPU check — not covered by any CI.** In a CUDA runtime (e.g.
       [Colab](https://colab.research.google.com/drive/1lFpdtY5zV7VpW88aazedA3n4khedHDQP?usp=sharing)):

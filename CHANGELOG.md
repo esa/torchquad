@@ -32,7 +32,13 @@ now raises on impossible node counts instead of exhausting memory.
 - Optional-dependency extras: `dev`, `docs`, and CPU-convenience backend extras
   `torch`, `jax`, `tensorflow`, `all`.
 - `release_testing/` suite — slower end-to-end checks run against the latest
-  released backends (not the pinned CI env), grounded in real-world usage.
+  released backends (not the pinned CI env), grounded in real-world usage. It
+  runs automatically on any push to a `release-*` / `release/**` branch and on
+  any PR into `main`, so it gates a release before it ships. `workflow_dispatch`
+  alone could not: GitHub registers a workflow only once it exists on the default
+  branch or has already run, so a suite added on `develop` is undispatchable
+  until it reaches `main`, leaving `release: created` — after shipping — as its
+  first possible run.
 - `uv` as the primary dev/CI toolchain, with `uv.lock` for reproducible envs.
 - Experimental `pixi.toml` with per-backend environments.
 - CI quality gates: a Python 3.10–3.12 backend matrix, isolated JAX/TensorFlow
