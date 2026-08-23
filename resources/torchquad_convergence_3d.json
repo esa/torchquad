@@ -1,5 +1,5 @@
 {
-  "hardware": "NVIDIA GeForce RTX 4060 Ti | torch 2.5.1 | float64",
+  "hardware": "NVIDIA GeForce RTX 4060 Ti | torch 2.6.0+cu124 | float64",
   "results": {
     "Trapezoid": {
       "n": [

@@ -33,6 +33,9 @@ packaging, and closing long-open fixed issues.
   dead-code job.
 - `.github/RELEASE_NOTES_TEMPLATE.md`, a release-notes skeleton with a
   contributor-thanks section, referenced from the release checklist.
+- New README performance figures: convergence (error vs N, all methods,
+  float64), quasi-Monte Carlo vs Monte Carlo, error vs dimension at a fixed
+  budget, and CPU-vs-GPU runtime.
 - Dependabot for GitHub Actions.
 - This `CHANGELOG.md`.
 
@@ -43,6 +46,11 @@ packaging, and closing long-open fixed issues.
   `uv` instead of conda/micromamba.
 - Install docs lead with pip/uv; dropped the deprecated `pytorch` conda channel;
   rebuilt `environment_all_backends.yml` on conda-forge.
+- The README performance section is rebuilt around the new figures, all
+  regenerated on one machine after the GPU timing fix. The claim of a broad
+  efficiency win over SciPy is gone: since SciPy 1.15 `scipy.integrate.cubature`
+  beats a fixed-budget method on smooth low-dimensional problems, and the
+  section now says so and states where torchquad's case actually lies.
 - `loguru` is disabled by default; `set_log_level` manages a single tracked sink
   instead of touching host-application handlers (#184).
 - `TORCHQUAD_LOG_LEVEL` now works. Setting it to a non-empty value enables
