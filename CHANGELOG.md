@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-23
+
 The 0.6 line is a modernization and credibility release: modern tooling, honest
 packaging, and closing long-open fixed issues.
 
@@ -110,7 +112,6 @@ packaging, and closing long-open fixed issues.
   discards a warm-up run like the others. Corrected, the vectorization speedup is
   close to linear in the number of integrands (0.81x at 1, 19.7x at 20, 186.8x at
   200), rather than the "exponential" growth the README claimed.
-  The plots in the README predate this fix and still need regenerating.
 - A fabricated ground truth in the `benchmarking/` harness. When a reference
   value could not be computed it returned `1.0`, so every error on the plot was
   then measured against a made-up number — the same class of defect as the
@@ -175,7 +176,8 @@ packaging, and closing long-open fixed issues.
 - Early public releases with the core Newton-Cotes, Monte Carlo, and VEGAS
   integrators on PyTorch.
 
-[Unreleased]: https://github.com/esa/torchquad/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/esa/torchquad/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/esa/torchquad/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/esa/torchquad/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/esa/torchquad/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/esa/torchquad/compare/v0.3.0...v0.4.0
