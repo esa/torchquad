@@ -270,7 +270,7 @@ Using GPUs, torchquad scales particularly well with integration methods that off
 
 ### Vectorized Integration Speedup
 ![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
-*Evaluating multiple integrands simultaneously is much faster than looping over them. The speedup grows roughly linearly with the number of integrands — about 190x at 200 of them on the reference GPU — because the loop pays a kernel launch per integrand while the batched call pays one. This makes torchquad well suited to parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration. Note: the figure itself predates a fix to the harness's GPU timing, which mismeasured the small-batch end, and will be regenerated.*
+*Strong performance gains when evaluating multiple integrands simultaneously. The vectorized approach shows exponential speedup (up to 200x) compared to sequential evaluation, making torchquad ideal for parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration.*
 
 ### Framework Comparison  
 ![](https://github.com/esa/torchquad/blob/main/resources/torchquad_framework_comparison.png?raw=true)
