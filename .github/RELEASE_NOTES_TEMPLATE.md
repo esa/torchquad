@@ -45,13 +45,10 @@ conda install torchquad -c conda-forge
 
 ### Thanks
 
-torchquad is maintained by ESA's Advanced Concepts Team, and it gets better
-because people outside it report problems and send patches. Name them.
+Thanks to everyone who contributed to this release, whether through code, bug
+reports, feature suggestions or reviews.
 
-- **Code contributions:** @handle — what they contributed (#PR)
-- **Bug reports:** @handle — what they caught (#issue)
-- **Feature suggestions and design input:** @handle (#issue)
-- **Reviews:** @handle
+- @handle (#PR or #issue)
 
 Ways to collect the list, none of which are complete on their own:
 
@@ -68,11 +65,9 @@ gh issue list --state closed --search "closed:>=<date-of-previous-release>" \
     --json number,title,author --limit 200
 ```
 
-Then read the issues the release closes and add the people who reported or
-diagnosed something without opening a PR — `git shortlog` will never show them,
-and they are usually the easiest contributors to lose track of. Check for
-co-authors in commit trailers too. When in doubt, thank someone: an unnecessary
-mention costs nothing, a missing one costs a contributor.
+Also add the people who reported or diagnosed something without opening a PR —
+`git shortlog` will never show them, and they are the easiest to lose track of.
+Check commit trailers for co-authors too.
 
 ### Full changelog
 
