@@ -277,60 +277,134 @@ See the [open issues](https://github.com/esa/torchquad/issues) for a list of pro
 <!-- PERFORMANCE -->
 ## Performance
 
-Using GPUs, torchquad scales particularly well with integration methods that offer easy parallelization. The benchmarks below demonstrate performance across challenging functions from 1D to 15D, comparing torchquad's GPU-accelerated methods against scipy's CPU implementations.
+All figures below were measured on an RTX 4060 Ti / i5-13400F. Accuracy is
+measured against closed-form integrals from the
+[Genz test-function family](benchmarking/genz_functions.py) in float64; runtimes
+are float32 and synchronize the GPU before the clock stops.
 
-<!-- TODO Update plot links -->
-### Convergence Analysis
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence.png?raw=true)
-*Convergence comparison across challenging test functions from 1D to 15D. GPU-accelerated torchquad methods demonstrate great performance, particularly for high-dimensional integration where scipy's nquad becomes computationally infeasible. Beyond 1D, torchquad significantly outperforms scipy in efficiency.*
+### Convergence
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence_3d.png?raw=true)
+*Relative error against the number of function evaluations, 3D, on the Genz oscillatory integrand. The higher-order Newton-Cotes rules separate cleanly — Trapezoid reaches 7.7e-04, Simpson 1.6e-07, Boole 2.4e-10 — and Gauss-Legendre hits double precision within a few hundred points. This is the plot to read first: it says what accuracy a given budget buys you.*
 
-### Runtime vs Error Efficiency  
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime_vs_error.png?raw=true)
-*Runtime-error trade-offs across dimensions. Lower-left positions indicate better performance. While scipy's traditional methods are competitive for simple 1D problems, torchquad's GPU acceleration provides orders of magnitude better performance for multi-dimensional integration, achieving both faster computation and lower errors.*
+### Quasi-Monte Carlo vs Monte Carlo
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_qmc_vs_mc_3d.png?raw=true)
+*Passing `rng=Sobol(...)` to `MonteCarlo` replaces pseudo-random points with a low-discrepancy sequence. On a non-separable integrand this is worth five to six orders of magnitude — 2.8e-09 against 1.0e-03 at the same budget — and converges faster than O(N⁻¹) where plain Monte Carlo tracks O(N⁻¹ᐟ²). Errors are the median over five seeds.*
 
-### Scaling Performance
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_scaling_analysis.png?raw=true)
-*Scaling investigation across problem sizes and dimensions of the different methods in torchquad.*
+### Scaling with dimension
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_dimension_scaling.png?raw=true)
+*Error at a fixed budget of N=2¹⁶ as the dimension grows, with per-dimension difficulty held constant so the curve shows the cost of dimension rather than of a harder integrand. Plain Monte Carlo is famously dimension-insensitive and stays near 1e-03 throughout; the quasi-random advantage is largest in low dimensions and narrows as the dimension climbs, though at d=10 Sobol is still around 5e-05 against 3.6e-03.*
 
-### Vectorized Integration Speedup
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
-*Evaluating multiple integrands simultaneously is much faster than looping over them. The speedup grows roughly linearly with the number of integrands — about 190x at 200 of them on the reference GPU — because the loop pays a kernel launch per integrand while the batched call pays one. This makes torchquad well suited to parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration. Note: the figure itself predates a fix to the harness's GPU timing, which mismeasured the small-batch end, and will be regenerated.*
+### Runtime: CPU vs GPU
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime_cpu_vs_gpu.png?raw=true)
+*Wall-clock time per integration, measured in separate processes because the backend's default device is global state. At N=1e8 the GPU is 33x faster for Monte Carlo and 13x for Simpson. The crossover is shown honestly rather than hidden: for Simpson the CPU is the faster choice below roughly 1e6 evaluations, where the problem is too small to cover kernel-launch overhead.*
 
-### Framework Comparison  
+### Framework comparison
 ![](https://github.com/esa/torchquad/blob/main/resources/torchquad_framework_comparison.png?raw=true)
-*Cross-framework performance comparison for 1D integration using Monte Carlo and Simpson methods. Demonstrates torchquad's consistent API across PyTorch, TensorFlow, JAX, and NumPy backends, with GPU acceleration providing significant performance advantages for large number of function evaluations. All frameworks achieve similar accuracy while showcasing the computational benefits of GPU acceleration for parallel integration methods.*
+*The same 1D integration through each backend, run in isolated subprocesses. PyTorch and TensorFlow land within about 10% of each other on the GPU (66 ms and 73 ms at N=1e8 for Monte Carlo), and all backends reach comparable accuracy — which is the point of a single API across four numerical libraries.*
+
+### Vectorized integration
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
+*Integrating many integrands in one batched call against looping over them one at a time. The speedup grows roughly linearly with the number of integrands, because the loop pays a kernel launch per integrand while the batched call pays one: about 16x at 20 integrands and 110x at 200 on this machine. The exact figure at the top end is platform-dependent — the batched side is only 1-2 ms, close to the measurement floor — so treat the shape rather than the peak number as the result.*
+
+### Comparison with SciPy
+
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vs_scipy_combined.png?raw=true)
+
+Earlier versions of this section compared torchquad against `scipy.integrate.nquad`
+and claimed a broad efficiency win. That was not a comparison we can stand behind,
+so here is one we can — against SciPy's *best* configuration rather than its
+weakest, on a deliberately hard integrand, measured both ways.
+
+The test function sums three Genz integrands, each normalised to contribute
+equally: one that oscillates, one whose mass concentrates in a corner, and one
+that is continuous but **not differentiable**. Each defeats a different method, so
+no single feature can flatter one library. Summing keeps the integral exact,
+because integration is linear.
+
+The top row of the figure is error against **function evaluations** — that
+compares algorithms and is independent of hardware. The bottom row is error
+against **runtime**, which is what you actually wait for but folds in the fact
+that SciPy runs on the CPU while torchquad here runs on a GPU.
+
+Both sides get the same 50-million-evaluation budget, so neither is being starved.
+
+| | best torchquad | best SciPy |
+|---|---|---|
+| **d=3** | Boole **8.3e-12** @ 38M evals, **0.10 s** | `nquad` **4.4e-16** @ 250k · Genz-Malik 1.0e-12 @ 7.3M, 7.9 s |
+| **d=6** | Boole **2.9e-05** @ 24M evals, **0.10 s** | Genz-Malik **1.8e-05** @ 1.7M evals, 0.41 s |
+| **d=10** | VEGAS **4.8e-04** @ 11M evals, 0.60 s | *none completed* |
+
+**SciPy's algorithms are more efficient per evaluation at low dimension.** At d=3
+`nquad` reaches machine precision from a quarter of a million points; torchquad
+needs 38 million to get to 8e-12 and never closes the last four orders. Adaptive
+subdivision is simply the right approach for a low-dimensional integrand with a
+localized feature, and torchquad does not implement it.
+
+**GPU throughput can offset that, but only in wall-clock.** At d=3 Boole reaches
+8.3e-12 in 0.10 s against Genz-Malik's 1.0e-12 in 7.9 s — comparable accuracy,
+about 80x faster. By d=6 the two are near parity: SciPy is 1.6x more accurate on
+14x fewer evaluations, torchquad is 4x faster in wall-clock. Which matters depends
+on whether your integrand is cheap or expensive to evaluate.
+
+**Past that, dimension decides it.** At d=10 every SciPy configuration here
+fails: the default `gk21` rule is a *product* rule needing 21^d nodes, an
+impossible 121 TiB allocation, and the other two exhaust the evaluation budget.
+torchquad returns 4.8e-04 in 0.6 s.
+
+Two things in this figure are worth knowing when picking a method:
+
+- **The highest-order rule is not the best one here.** Gauss-Legendre applies a
+  single global high-degree rule, which a kink defeats badly; Boole is composite,
+  applying a lower-order rule piecewise, and beats it by six orders of magnitude
+  at d=3 and nearly 300x at d=6. Reach for Boole on integrands that are not
+  smooth everywhere.
+- **VEGAS earns its keep as the dimension grows.** It is the *worst* torchquad
+  method at d=3 (1.3e-04, behind everything) because it spends its early
+  iterations learning the integrand, and the *best* at d=10, where adapting to
+  where the mass actually lies beats sampling uniformly.
+
+And the axis no SciPy comparison can capture at all: gradients through the
+integral, GPU throughput at large N, and the same API across four numerical
+backends.
 
 ### Running Benchmarks
 
 To reproduce these benchmarks or test performance on your hardware:
 
 ```bash
-# Run all benchmarks (convergence, framework comparison, scaling, vectorized)
-python benchmarking/modular_benchmark.py --dimensions 1,3,7,15
+# The accuracy figures: convergence, QMC vs MC, dimension scaling, CPU vs GPU
+python benchmarking/release_plots.py --plots all
+python benchmarking/release_plots.py --plots qmc,convergence   # or a subset
 
-# Run specific benchmark types
-python benchmarking/modular_benchmark.py --convergence-only --dimensions 1,3,7,15
+# The timing harness: scaling, framework comparison, vectorized
+python benchmarking/modular_benchmark.py --dimensions 1,3,7,15
 python benchmarking/modular_benchmark.py --scaling-only
 python benchmarking/modular_benchmark.py --framework-only
 
-# Generate all plots from results
+# Redraw the harness figures from the results of the run above
 python benchmarking/plot_results.py
 
 # Configure benchmark parameters
 # Edit benchmarking/benchmarking_cfg.toml to adjust:
 # - Evaluation point ranges
 # - Framework backends to test
-# - Timeout limits  
+# - Timeout limits
 # - Method selection
 # - scipy integration tolerances
 ```
 
-**New Features:**
-- **Analytic Reference Values**: Uses SymPy for exact analytic solutions where possible, providing highly accurate reference values for error calculations
-- **Enhanced Test Functions**: Analytically tractable but numerically challenging functions that better demonstrate convergence behavior
-- **Framework Comparison**: Cross-backend performance benchmarking across PyTorch, TensorFlow, JAX, and NumPy with GPU/CPU device comparisons
+Two notes if you re-measure:
 
-**Hardware:** RTX 4060 Ti 16GB, i5-13400F, Precision: float32
+- **Run the machine idle.** The harness synchronizes the device before stopping
+  its clock, so the numbers are real wall-clock time and will pick up anything
+  else competing for the GPU.
+- **TensorFlow and PyTorch cannot share one environment on the GPU.** They pin
+  conflicting versions of the bundled NVIDIA CUDA libraries, and whichever loses
+  falls back to the CPU silently, turning a GPU comparison into a CPU one. Give
+  each its own interpreter via the `[interpreters]` section of the config.
+
+**Hardware for the figures above:** RTX 4060 Ti 16GB, i5-13400F. Accuracy in
+float64, timings in float32.
 
 <!-- CONTRIBUTING -->
 ## Contributing
