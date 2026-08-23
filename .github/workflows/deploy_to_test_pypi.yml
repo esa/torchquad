@@ -18,7 +18,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install build twine
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Build and publish to Test PyPI
         env:
           TWINE_USERNAME: "__token__"

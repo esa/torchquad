@@ -24,7 +24,7 @@ conda activate torchquad
 pip install -e .
 ```
 
-The `environment.yml` is the runtime; `environment_all_backends.yml` adds PyTorch, JAX, and TensorFlow for full multi-backend test coverage. CI uses `environment_all_backends.yml`.
+The runtime dependencies are `loguru`, `scipy`, `numpy` and `autoray` (see `[project.dependencies]`); `environment.yml` is the base *development* environment and also carries test and docs tooling. `environment_all_backends.yml` adds PyTorch, JAX, and TensorFlow for full multi-backend test coverage. CI uses `environment_all_backends.yml`.
 
 ```bash
 # Run all tests (must be from tests/ — sys.path.append-based imports)
