@@ -19,23 +19,32 @@ on:
       - "release-*"
       - "release/**"
   pull_request:
-    # Only releases and hotfixes target main, so this stays off ordinary PRs;
-    # installing three backends across three Python versions is not cheap.
+    # Releases and hotfixes target main -- and so does Dependabot, since main is
+    # the default branch. The job below filters those out; installing three
+    # backends across three Python versions is not cheap enough to spend on a
+    # GitHub Actions version bump.
     branches:
       - main
   workflow_dispatch:
   release:
     types: [created]
 
-# A release branch with an open PR into main matches both push and
-# pull_request. One run per ref is the point; a second is waste.
+# A release branch with an open PR into main matches both push and pull_request,
+# and the two events report different github.ref values for the same commit, so
+# grouping by ref would run the whole matrix twice. Group by the commit actually
+# under test instead. The trade-off is that superseded commits are not cancelled;
+# release branches do not see rapid-fire pushes, so a duplicate run is the more
+# expensive of the two.
 concurrency:
-  group: release-testing-${{ github.ref }}
+  group: release-testing-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
   release-tests:
     runs-on: ubuntu-latest
+    # Dependabot opens its PRs against main, the default branch, which the
+    # pull_request trigger above cannot filter on its own.
+    if: github.actor != 'dependabot[bot]'
     strategy:
       # Keep going so one Python version failing still reports the others.
       fail-fast: false

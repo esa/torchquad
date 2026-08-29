@@ -99,6 +99,12 @@ uploaded to Test PyPI can never be reused, so review comes first.
 - [ ] Push any review fixes to the release branch and let CI go green again before
       moving on. Every later step consumes this tree; changing it afterwards means
       burning a version number.
+- [ ] In the `main` PR's body, repeat the keyword before **every** issue number:
+      `Closes #1, closes #2, closes #3`. GitHub links only the reference that
+      directly follows a closing keyword, so `Closes #1, #2, #3` silently closes
+      #1 and leaves the rest open — which is exactly what happened in 0.6.0.
+      Auto-closing works only from a PR merged into the default branch (`main`),
+      so put the list on that PR, not the `develop` one.
 
 ### 6. Test PyPI
 
@@ -143,12 +149,22 @@ uploaded to Test PyPI can never be reused, so review comes first.
       `recipe/meta.yaml` by hand. See
       https://conda-forge.org/docs/maintainer/updating_pkgs.html
 - [ ] Reconcile the feedstock's `host:`/`run:` requirements and its Python floor with
-      `[project]` in `pyproject.toml`, then merge.
+      `[project]` in `pyproject.toml`, then merge. The bot only bumps `version` and
+      `sha256`, so every dependency change made since the last release has to be
+      carried over by hand — including removals, which are easy to miss. `host:`
+      needs `setuptools >=77.0.3` for the PEP 639 license expression, or the build
+      fails outright. Note the recipe builds from the **GitHub tag tarball**, not
+      the PyPI sdist, so the tag must already be pushed.
 - [ ] Confirm `conda install torchquad -c conda-forge` resolves the new version.
 
 ### 9. Wrap up
 
 - [ ] Confirm Read the Docs built the new tag and that the version selector shows it.
+      Tag builds are not automatic: a version has to be activated in the RTD
+      dashboard (or matched by an automation rule for `v*`), otherwise
+      `/en/vX.Y.Z/` and `/en/stable/` 404 while `/en/main/` still renders.
 - [ ] Close the milestone and every issue this release fixes, linking the release notes.
+      Check them individually rather than trusting the PR's closing keywords — see
+      the note in section 5.
 - [ ] Thank contributors in the release notes (see the template).
 - [ ] Delete the release branch.
