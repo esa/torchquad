@@ -121,6 +121,13 @@ Imports
 
 Now let's get started! First, the general imports:
 
+.. note::
+
+   This tutorial uses ``matplotlib`` for its plots and ``scipy`` for benchmark
+   comparisons. ``scipy`` is a torchquad dependency and is already present, but
+   ``matplotlib`` is not — install it with ``pip install matplotlib`` if you are
+   following along in your own environment.
+
 .. code:: python
 
     import scipy
@@ -792,7 +799,7 @@ sample points for both functions:
 
     # The integration domain, dimensionality and number of evaluations
     # For the calculate_grid method we need a Tensor and not a list.
-    integration_domain = torch.Tensor([[0.0, 1.0], [-1.0, 1.0]])
+    integration_domain = torch.tensor([[0.0, 1.0], [-1.0, 1.0]])
     dim = 2
     N = 9409
 
@@ -884,15 +891,15 @@ As an example, here we evaluate a similar integrand many times for different val
 
     a_params = torch.arange(40)
     b_params = torch.arange(10, 20)
-    integration_domain = torch.Tensor([[0, 1]])
+    integration_domain = torch.tensor([[0.0, 1.0]])
     simp = Simpson()
-    result = torch.stack([torch.Tensor([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
+    result = torch.stack([torch.stack([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
 
 Now let's see how to do this a bit more simply, and in a way that provides signficant speedup as the size of the integrand's ``grid`` grows:
 
 .. code:: python
 
-    grid = torch.stack([torch.Tensor([a + b for a in a_params]) for b in b_params])
+    grid = (b_params[:, None] + a_params[None, :]).to(torch.get_default_dtype())
 
     def integrand(x):
         return torch.sqrt(torch.cos(torch.sin(torch.einsum("i,jk->ijk", x.flatten(), grid))))
@@ -903,6 +910,16 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
 
 .. note::
     VEGAS does not support multi-dimensional integrands.  If you would like this, please consider opening an issue or PR.
+
+.. note::
+    Build helper tensors with ``torch.tensor(...)``, not the legacy
+    ``torch.Tensor(...)`` constructor. On a GPU machine :func:`set_up_backend`
+    calls ``torch.set_default_device("cuda")``, which ``torch.tensor`` honours and
+    ``torch.Tensor`` ignores — the latter always allocates on the CPU. Mixing the
+    two gives ``RuntimeError: Expected all tensors to be on the same device`` as
+    soon as the helper meets the sample points. The same applies to combining
+    per-integration results: ``torch.stack`` keeps them on their original device,
+    while wrapping them in ``torch.Tensor([...])`` moves them to the CPU.
 
 Parametric Integration with Variable Domains
 --------------------------------------------

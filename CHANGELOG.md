@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- The tutorial's vectorized-integrand example crashed with `RuntimeError: Expected
+  all tensors to be on the same device` on any CUDA machine. It built its helper
+  tensors with the legacy `torch.Tensor(...)` constructor, which — unlike
+  `torch.tensor(...)` — ignores the `torch.set_default_device("cuda")` that
+  `set_up_backend` performs, so the helpers stayed on the CPU while the sample
+  points were on the GPU. A note now explains the distinction, since it bites in
+  user code as readily as in the docs.
+- The tutorial's import block used `matplotlib`, which is not a torchquad runtime
+  dependency, so it failed after the installation the README documents. Called out
+  as a prerequisite rather than added as a dependency.
+- The README logo used a repository-relative path, so it did not render on the
+  PyPI project page. It is now an absolute URL, matching the performance figures.
+
 ## [0.6.0] - 2026-08-23
 
 The 0.6 line is a modernization and credibility release: modern tooling, honest
