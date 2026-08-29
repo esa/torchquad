@@ -11,14 +11,14 @@ dependencies:
   - matplotlib>=3.3.3
   - pytest>=6.2.1
   - python==3.12
-  - scipy>=1.7.0
+  - scipy>=1.7.2
   - sphinx>=3.4.3
   - sphinx_rtd_theme>=0.5.1
   # Numerical backends. conda-forge now ships PyTorch directly, so the separate
   # `pytorch` channel (deprecated since torch 2.6) and the legacy `cudatoolkit`
   # pin are gone. This installs the CPU build; for a CUDA build use the
   # `pytorch-gpu` conda-forge package or follow https://pytorch.org/get-started.
-  - numpy>=1.19.5
+  - numpy>=1.21.3
   - pytorch>=2.1
   - pip:
       # JAX and TensorFlow come from PyPI (CPU wheels). The obsolete

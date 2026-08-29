@@ -2,7 +2,7 @@ import os
 
 from loguru import logger
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 # Disable torchquad's own log records by default so importing the library never
 # adds output to a host application's loguru configuration (issue #184).

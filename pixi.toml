@@ -17,8 +17,8 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 python = ">=3.10"
 autoray = ">=0.5.0"
 loguru = ">=0.5.3"
-scipy = ">=1.7.0"
-numpy = ">=1.19.5"
+scipy = ">=1.7.2"
+numpy = ">=1.21.3"
 
 [pypi-dependencies]
 torchquad = { path = ".", editable = true }

@@ -1,23 +1,28 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+# PEP 639 SPDX license expressions need setuptools 77.0.3; the wheel dependency
+# is obsolete for a PEP 517 build and was only ever inertia.
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchquad"
-version = "0.5.0"
+version = "0.6.0"
 description = "Package providing numerical integration methods for PyTorch, jax, TensorFlow and numpy."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.10, <4"
-license = { text = "GPL-3.0" }
+# SPDX expression (PEP 639). "-only", not "-or-later": the original setup.py
+# declared the GPLv3 classifier rather than GPLv3+, so this is the identifier
+# matching what torchquad has always shipped under.
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 authors = [
     { name = "ESA Advanced Concepts Team", email = "pablo.gomez@esa.int" },
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Mathematics",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -30,8 +35,11 @@ dependencies = [
     # installable on a Python this project supports.
     "scipy>=1.7.2",
     # numpy is imported directly (integration/gaussian.py), not merely pulled in
-    # behind SciPy, so it belongs here rather than arriving transitively.
-    "numpy>=1.19.5",
+    # behind SciPy, so it belongs here rather than arriving transitively. 1.21.3
+    # is the oldest release shipping cp310 wheels, and so the oldest that can be
+    # installed at all on a Python this project supports; the whole stack is
+    # verified against this floor on 3.10.
+    "numpy>=1.21.3",
     "autoray>=0.5.0",
 ]
 
@@ -57,7 +65,8 @@ dev = [
     "vulture>=2.14",
     "pre-commit>=3.5.0",
     "build>=1.0.0",
-    "twine>=4.0.0",
+    # 6.1.0 is the first twine that understands Metadata 2.4 (PEP 639).
+    "twine>=6.1.0",
 ]
 docs = [
     "sphinx>=3.4.3",

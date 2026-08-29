@@ -22,6 +22,10 @@ as you go.
 - [ ] Confirm every PR in scope is merged into `develop` and the milestone is empty.
 - [ ] Cut the release branch off `develop`:
       `git switch develop && git pull && git switch -c release/X.Y.Z`
+      On a case-insensitive filesystem this fails while the 2021-era `Release`
+      branch exists: git reads `refs/heads/Release` as occupying `refs/heads/release/`
+      and refuses the directory. Either delete that branch on origin, or name this
+      one `release-X.Y.Z` and use that name throughout.
 
 ### 2. Version bump (all six locations)
 
@@ -49,11 +53,11 @@ as you go.
 - [ ] `requires-python` matches the tested matrix (`>=3.10, <4` against CI 3.10–3.12) and
       the `Programming Language :: Python ::` classifiers list exactly those versions.
 - [ ] Build locally and check the output for packaging warnings: `uv build`
-      (or `python -m build`). One known set of `SetuptoolsDeprecationWarning`s is
-      outstanding — the pre-PEP-639 `license = { text = ... }` table and the
-      `License ::` classifier. Fixing it means committing to an SPDX identifier
-      (`GPL-3.0-only` vs `GPL-3.0-or-later`), which is bundled with the deferred
-      licensing decision. Anything *else* that warns is new and should be fixed.
+      (or `python -m build`). As of 0.6.0 this is clean — **any** warning is new
+      and should be fixed before shipping.
+- [ ] Confirm the built metadata still says what it should:
+      `twine check dist/*` passes, and the wheel's `METADATA` carries
+      `Metadata-Version: 2.4` with `License-Expression: GPL-3.0-only`.
 
 ### 4. Verify (CI is the gate — do not re-run green jobs by hand)
 
@@ -61,9 +65,11 @@ as you go.
       `test (all backends, py3.10|3.11|3.12)`, `test (jax isolated)`,
       `test (tensorflow isolated)`, `wheel-smoke`, `docs-build`.
 - [ ] `dead_code` workflow green (the `vulture` job, 100%-confidence tier).
-- [ ] Trigger [Release testing](https://github.com/esa/torchquad/actions/workflows/release_testing.yml)
-      on the release branch — this is the run against the *latest released* torch/JAX/
-      TensorFlow rather than the pinned CI versions. See
+- [ ] [Release testing](https://github.com/esa/torchquad/actions/workflows/release_testing.yml)
+      green on the release branch — this is the run against the *latest released*
+      torch/JAX/TensorFlow rather than the pinned CI versions. It fires by itself on
+      any push to a `release-*` / `release/**` branch and on any PR into `main`, so
+      there is normally nothing to trigger; just confirm it passed. See
       [`release_testing/README.md`](https://github.com/esa/torchquad/blob/develop/release_testing/README.md).
 - [ ] **GPU check — not covered by any CI.** In a CUDA runtime (e.g.
       [Colab](https://colab.research.google.com/drive/1lFpdtY5zV7VpW88aazedA3n4khedHDQP?usp=sharing)):
@@ -80,7 +86,21 @@ as you go.
 - [ ] Any changed numerical behaviour or loosened tolerance is called out explicitly in the
       changelog, not just in the diff.
 
-### 5. Test PyPI
+### 5. Open the release PRs for review
+
+Nothing is published anywhere until a human has read the diff. A version number
+uploaded to Test PyPI can never be reused, so review comes first.
+
+- [ ] Finalize the release branch, then open PRs `release/X.Y.Z` → `main` **and**
+      `release/X.Y.Z` → `develop`. Open both now; do not merge either yet.
+- [ ] Review both against [`REVIEW.md`](https://github.com/esa/torchquad/blob/develop/REVIEW.md),
+      and get the review addressed. The `main` PR is the one that matters — it is
+      the exact tree that becomes the release.
+- [ ] Push any review fixes to the release branch and let CI go green again before
+      moving on. Every later step consumes this tree; changing it afterwards means
+      burning a version number.
+
+### 6. Test PyPI
 
 - [ ] Run [Upload Python Package to Test PyPI](https://github.com/esa/torchquad/actions/workflows/deploy_to_test_pypi.yml)
       and **select the release branch** in the "Run workflow" dropdown — it defaults to the
@@ -97,12 +117,9 @@ as you go.
       reads that data here — `wheel-smoke` and `_deployment_test()` do not touch it, so a
       missing `[tool.setuptools.package-data]` entry is invisible until a user hits it.
 
-### 6. Ship
+### 7. Ship
 
-- [ ] Finalize the release branch, then open PRs `release/X.Y.Z` → `main` **and**
-      `release/X.Y.Z` → `develop`.
-- [ ] Review both PRs against [`REVIEW.md`](https://github.com/esa/torchquad/blob/develop/REVIEW.md).
-      Merge, but do not delete the branch yet.
+- [ ] Merge both release PRs from section 5. Do not delete the branch yet.
 - [ ] Tag the merge commit on `main`. Switch first — the previous step leaves you on
       the release branch, and tagging there tags the wrong commit:
       `git switch main && git pull && git tag -a vX.Y.Z -m "torchquad vX.Y.Z" && git push origin vX.Y.Z`.
@@ -118,7 +135,7 @@ as you go.
         "import torchquad; print(torchquad.__version__); torchquad._deployment_test()"
       ```
 
-### 7. conda-forge
+### 8. conda-forge
 
 - [ ] Wait for the regro-cf-autotick-bot PR on
       [`conda-forge/torchquad-feedstock`](https://github.com/conda-forge/torchquad-feedstock)
@@ -129,7 +146,7 @@ as you go.
       `[project]` in `pyproject.toml`, then merge.
 - [ ] Confirm `conda install torchquad -c conda-forge` resolves the new version.
 
-### 8. Wrap up
+### 9. Wrap up
 
 - [ ] Confirm Read the Docs built the new tag and that the version selector shows it.
 - [ ] Close the milestone and every issue this release fixes, linking the release notes.

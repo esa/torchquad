@@ -14,7 +14,9 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: |
-          pip install build twine
+          # twine >=6.1.0 understands Metadata 2.4, which the PEP 639 license
+          # expression in pyproject.toml produces.
+          pip install build "twine>=6.1.0"
       - name: Build and publish to Test PyPI
         env:
           TWINE_USERNAME: "__token__"

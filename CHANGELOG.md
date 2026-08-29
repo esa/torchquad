@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-23
+
 The 0.6 line is a modernization and credibility release: modern tooling, honest
 packaging, and closing long-open fixed issues.
+
+**No changes to numerical results.** Every integrator returns what it returned
+under 0.5.0 for the same function, method, `N` and seed, and no existing test
+tolerance was loosened. The additions below are new entry points (`Sobol`,
+`return_error`, `args`); the removals were code that could not run on a
+supported Python or PyTorch. The one behavioural change is that `GaussLegendre`
+now raises on impossible node counts instead of exhausting memory.
 
 ### Added
 - `Sobol` quasi-Monte Carlo sampler, usable via
@@ -23,7 +32,13 @@ packaging, and closing long-open fixed issues.
 - Optional-dependency extras: `dev`, `docs`, and CPU-convenience backend extras
   `torch`, `jax`, `tensorflow`, `all`.
 - `release_testing/` suite — slower end-to-end checks run against the latest
-  released backends (not the pinned CI env), grounded in real-world usage.
+  released backends (not the pinned CI env), grounded in real-world usage. It
+  runs automatically on any push to a `release-*` / `release/**` branch and on
+  any PR into `main`, so it gates a release before it ships. `workflow_dispatch`
+  alone could not: GitHub registers a workflow only once it exists on the default
+  branch or has already run, so a suite added on `develop` is undispatchable
+  until it reaches `main`, leaving `release: created` — after shipping — as its
+  first possible run.
 - `uv` as the primary dev/CI toolchain, with `uv.lock` for reproducible envs.
 - Experimental `pixi.toml` with per-backend environments.
 - CI quality gates: a Python 3.10–3.12 backend matrix, isolated JAX/TensorFlow
@@ -78,13 +93,28 @@ packaging, and closing long-open fixed issues.
 - Rewrote the release checklist (`.github/ISSUE_TEMPLATE/release.md`): it now
   lists all six places the version lives, adds the missing tagging step, defers
   to CI instead of asking for manual re-runs, and covers conda-forge and
-  Read the Docs.
+  Read the Docs. Review of the release PRs now comes *before* the Test PyPI
+  upload rather than after it: a version number uploaded to an index can never
+  be reused, so anything found in review after publishing costs a version.
 - Raised the SciPy floor to `>=1.7.2` and declared `numpy` explicitly. The
   `Sobol` sampler uses `scipy.stats.qmc` on the non-torch backends, and that
   module only exists from SciPy 1.7.0 onward; 1.7.0 and 1.7.1 are themselves
   capped at Python <3.10, so 1.7.2 is the oldest release that is both new
   enough and installable on a supported Python. `numpy` is imported directly by
   `integration/gaussian.py` and previously arrived only as a SciPy transitive.
+  Its floor is `>=1.21.3` on the same reasoning: 1.21.3 is the oldest release
+  shipping cp310 wheels. The conda and pixi manifests, which had drifted to
+  `scipy>=1.7.0`, now carry the same floors — pyproject remains the single
+  source of truth. The whole stack is verified working at these floors on
+  Python 3.10.
+- License metadata moved to a PEP 639 SPDX expression, `GPL-3.0-only`, replacing
+  the deprecated `license = { text = ... }` table and the `License ::` trove
+  classifier. `-only` rather than `-or-later` because the original `setup.py`
+  declared the `GPLv3` classifier, not `GPLv3+` — this records what torchquad has
+  always shipped under and does not change the licence itself. Builds are now
+  clean: the three `SetuptoolsDeprecationWarning`s are gone, and the published
+  metadata is version 2.4 with a `License-Expression` field. Building from the
+  sdist now needs `setuptools>=77.0.3`, and uploading needs `twine>=6.1.0`.
 
 ### Fixed
 - A CI bug where `pytest | tee` masked a non-zero exit code, hiding failing
@@ -110,7 +140,6 @@ packaging, and closing long-open fixed issues.
   discards a warm-up run like the others. Corrected, the vectorization speedup is
   close to linear in the number of integrands (0.81x at 1, 19.7x at 20, 186.8x at
   200), rather than the "exponential" growth the README claimed.
-  The plots in the README predate this fix and still need regenerating.
 - A fabricated ground truth in the `benchmarking/` harness. When a reference
   value could not be computed it returned `1.0`, so every error on the plot was
   then measured against a made-up number — the same class of defect as the
@@ -175,7 +204,8 @@ packaging, and closing long-open fixed issues.
 - Early public releases with the core Newton-Cotes, Monte Carlo, and VEGAS
   integrators on PyTorch.
 
-[Unreleased]: https://github.com/esa/torchquad/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/esa/torchquad/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/esa/torchquad/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/esa/torchquad/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/esa/torchquad/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/esa/torchquad/compare/v0.3.0...v0.4.0
