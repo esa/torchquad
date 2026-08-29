@@ -49,6 +49,21 @@ def _v_function_parameterized(x, c):
     return 2 * anp.abs(x + c)
 
 
+def _exponential_function_parameterized(x, a):
+    """
+    1D test function exp(a x_0).
+
+    Over the [0, 1] domain the integral is (e^a - 1) / a and its derivative with
+    respect to a is (e^a (a - 1) + 1) / a^2, which is exactly 1 at a = 1.
+
+    Unlike the polynomial and V-shaped integrands above, the last operation here
+    is an exponential, whose backward pass needs its own *output*. That makes this
+    the only integrand in this file that notices if an integrator mutates the
+    tensor the integrand returned.
+    """
+    return anp.exp(a * x[:, 0])
+
+
 def _calculate_gradient(backend, param, func, dtype_name):
     """Backend-specific gradient calculation
 
@@ -173,8 +188,16 @@ def _run_gradient_tests(backend, dtype_name):
         VEGAS(),
         GaussLegendre(),
     ]
-    Ns_1d = [149, 149, 149, 99997, 99997]
-    Ns_2d = [549, 121, 81, 99997, 99997]
+    # One entry per integrator above. These lists used to be one short, and zip
+    # silently dropped GaussLegendre -- the only integrator that passes weights
+    # through evaluate_integrand -- from every gradient test.
+    # GaussLegendre gets more 1D points than the Newton-Cotes rules because the
+    # V-shaped integrands below have a kink, which is the one thing Gauss-Legendre
+    # is bad at: it is spectrally accurate on the smooth exponential at any of
+    # these N, but only O(N^-2) on |x|.
+    Ns_1d = [149, 149, 149, 99997, 99997, 499]
+    Ns_2d = [549, 121, 81, 99997, 99997, 81]
+    assert len(Ns_1d) == len(Ns_2d) == len(integrators)
     for integrator, N_1d, N_2d in zip(integrators, Ns_1d, Ns_2d):
         integrator_name = type(integrator).__name__
         requires_seed = integrator_name in ["MonteCarlo", "VEGAS"]
@@ -257,6 +280,33 @@ def _run_gradient_tests(backend, dtype_name):
         # Check if the integral and gradient are accurate enough
         assert np.abs(integral - 34.0) < 0.2
         assert np.abs(gradient - 4.0) < 0.15
+
+        print("Calculating gradients of an exponential over its rate")
+        # Regression test: an in-place `result *= weights` in evaluate_integrand
+        # raised "one of the variables needed for gradient computation has been
+        # modified by an inplace operation" here, because exp's backward pass
+        # reads its own output. Only the Gaussian family passes weights, so this
+        # went unnoticed while GaussLegendre was missing from these tests.
+        param = 1.0
+        integrate_kwargs = {
+            "integration_domain": [[0.0, 1.0]],
+            "dim": 1,
+            "N": N_1d,
+            "backend": backend,
+        }
+        if requires_seed:
+            integrate_kwargs["seed"] = 0
+        gradient, integral = _calculate_gradient_over_param(
+            backend,
+            param,
+            _exponential_function_parameterized,
+            integrator.integrate,
+            integrate_kwargs,
+            dtype_name,
+        )
+        # Check if the integral and gradient are accurate enough
+        assert np.abs(integral - (np.e - 1.0)) < 5e-2
+        assert np.abs(gradient - 1.0) < 5e-2
 
 
 test_gradients_torch = setup_test_for_backend(_run_gradient_tests, "torch", "float64")

@@ -84,7 +84,7 @@ class BaseIntegrator:
         if weights is not None:
             if (
                 len(result.shape) > 1
-            ):  # if the the integrand is multi-dimensional, we need to reshape/repeat weights so they can be broadcast in the *=
+            ):  # if the the integrand is multi-dimensional, we need to reshape/repeat weights so they can be broadcast against the result
                 integrand_shape = anp.array(
                     [dim if isinstance(dim, int) else dim.as_list() for dim in result.shape[1:]],
                     like=infer_backend(points),
@@ -93,7 +93,13 @@ class BaseIntegrator:
                 weights = anp.repeat(
                     anp.expand_dims(weights, axis=1), anp.prod(integrand_shape)
                 ).reshape((weights.shape[0], *(integrand_shape)))
-            result *= weights
+            # Deliberately out-of-place: `result` is the tensor the user's integrand
+            # returned and torchquad does not own it. An in-place `*=` mutates it,
+            # which breaks PyTorch autograd whenever the integrand's last operation
+            # needs its own output in the backward pass (exp, sqrt, tanh, sigmoid,
+            # div, pow) and corrupts any tensor the integrand caches and reuses.
+            # It also silently downcast the weights to the integrand's dtype.
+            result = result * weights
 
         return result, num_points
 
