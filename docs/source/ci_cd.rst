@@ -87,7 +87,9 @@ The CI/CD pipeline consists of six main workflows:
 
 5. **Release Testing** (``release_testing.yml``)
 
-   **Triggers**: Manual workflow dispatch, GitHub releases
+   **Triggers**: Any push to a ``release-*`` or ``release/**`` branch, manual
+   workflow dispatch, and GitHub releases. A hotfix branch named otherwise has to
+   be dispatched by hand.
 
    The slower end-to-end suite in ``release_testing/``, run against the *latest
    released* backends rather than the versions pinned in CI, so a release cannot

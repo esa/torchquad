@@ -6,45 +6,39 @@ name: Release testing
 # environment, so a release cannot silently ship broken against a new PyTorch,
 # JAX, or TensorFlow.
 #
-# The push and pull_request triggers are what make this a *pre*-ship gate.
-# workflow_dispatch alone was not enough: GitHub only registers a workflow that
-# exists on the default branch or has already run, so a suite introduced on
-# develop cannot be dispatched at all until it reaches main -- which for the
-# first release meant the only run happened on `release: created`, after
-# shipping. push and pull_request are evaluated from the workflow file in the
-# ref being tested, so they need no registration and fire immediately.
+# The push trigger is what makes this a *pre*-ship gate. workflow_dispatch alone
+# was not enough: GitHub only registers a workflow that exists on the default
+# branch or has already run, so a suite introduced on develop cannot be
+# dispatched at all until it reaches main -- which for the first release meant
+# the only run happened on `release: created`, after shipping. push is evaluated
+# from the workflow file in the ref being pushed, so it needs no registration and
+# fires immediately.
+#
+# There is deliberately no pull_request trigger. A release branch already matches
+# push, and a push run reports as a check on the PR opened from that branch, so
+# pull_request only ran the whole matrix a second time. It also fired on
+# Dependabot, which targets main because main is the default branch. A hotfix
+# branch not named release-* therefore needs a manual workflow_dispatch; the
+# release checklist says so.
 on:
   push:
     branches:
       - "release-*"
       - "release/**"
-  pull_request:
-    # Releases and hotfixes target main -- and so does Dependabot, since main is
-    # the default branch. The job below filters those out; installing three
-    # backends across three Python versions is not cheap enough to spend on a
-    # GitHub Actions version bump.
-    branches:
-      - main
   workflow_dispatch:
   release:
     types: [created]
 
-# A release branch with an open PR into main matches both push and pull_request,
-# and the two events report different github.ref values for the same commit, so
-# grouping by ref would run the whole matrix twice. Group by the commit actually
-# under test instead. The trade-off is that superseded commits are not cancelled;
-# release branches do not see rapid-fire pushes, so a duplicate run is the more
-# expensive of the two.
+# Only one event type now reaches a given branch, so grouping by ref no longer
+# double-counts the same commit -- it just cancels a run superseded by a newer
+# push to the same release branch.
 concurrency:
-  group: release-testing-${{ github.event.pull_request.head.sha || github.sha }}
+  group: release-testing-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   release-tests:
     runs-on: ubuntu-latest
-    # Dependabot opens its PRs against main, the default branch, which the
-    # pull_request trigger above cannot filter on its own.
-    if: github.actor != 'dependabot[bot]'
     strategy:
       # Keep going so one Python version failing still reports the others.
       fail-fast: false

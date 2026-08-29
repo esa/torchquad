@@ -68,8 +68,9 @@ as you go.
 - [ ] [Release testing](https://github.com/esa/torchquad/actions/workflows/release_testing.yml)
       green on the release branch — this is the run against the *latest released*
       torch/JAX/TensorFlow rather than the pinned CI versions. It fires by itself on
-      any push to a `release-*` / `release/**` branch and on any PR into `main`, so
-      there is normally nothing to trigger; just confirm it passed. See
+      any push to a `release-*` / `release/**` branch, so there is normally nothing
+      to trigger; just confirm it passed. A hotfix branch named anything else has
+      to be dispatched by hand. See
       [`release_testing/README.md`](https://github.com/esa/torchquad/blob/develop/release_testing/README.md).
 - [ ] **GPU check — not covered by any CI.** In a CUDA runtime (e.g.
       [Colab](https://colab.research.google.com/drive/1lFpdtY5zV7VpW88aazedA3n4khedHDQP?usp=sharing)):
@@ -93,18 +94,18 @@ uploaded to Test PyPI can never be reused, so review comes first.
 
 - [ ] Finalize the release branch, then open PRs `release/X.Y.Z` → `main` **and**
       `release/X.Y.Z` → `develop`. Open both now; do not merge either yet.
-- [ ] Review both against [`REVIEW.md`](https://github.com/esa/torchquad/blob/develop/REVIEW.md),
-      and get the review addressed. The `main` PR is the one that matters — it is
-      the exact tree that becomes the release.
-- [ ] Push any review fixes to the release branch and let CI go green again before
-      moving on. Every later step consumes this tree; changing it afterwards means
-      burning a version number.
 - [ ] In the `main` PR's body, repeat the keyword before **every** issue number:
       `Closes #1, closes #2, closes #3`. GitHub links only the reference that
       directly follows a closing keyword, so `Closes #1, #2, #3` silently closes
       #1 and leaves the rest open — which is exactly what happened in 0.6.0.
       Auto-closing works only from a PR merged into the default branch (`main`),
       so put the list on that PR, not the `develop` one.
+- [ ] Review both against [`REVIEW.md`](https://github.com/esa/torchquad/blob/develop/REVIEW.md),
+      and get the review addressed. The `main` PR is the one that matters — it is
+      the exact tree that becomes the release.
+- [ ] Push any review fixes to the release branch and let CI go green again before
+      moving on. Every later step consumes this tree; changing it afterwards means
+      burning a version number.
 
 ### 6. Test PyPI
 
