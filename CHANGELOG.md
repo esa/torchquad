@@ -18,8 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The tutorial's import block used `matplotlib`, which is not a torchquad runtime
   dependency, so it failed after the installation the README documents. Called out
   as a prerequisite rather than added as a dependency.
-- The README logo used a repository-relative path, so it did not render on the
-  PyPI project page. It is now an absolute URL, matching the performance figures.
+- The README logo and five file links used repository-relative paths, which PyPI
+  resolves against `pypi.org`, so the logo did not render and the links 404ed on
+  the project page. All are now absolute URLs, matching the performance figures.
 
 ## [0.6.0] - 2026-08-23
 

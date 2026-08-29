@@ -156,6 +156,14 @@ Now let's get started! First, the general imports:
     # Use this to enable GPU support and set the floating point precision
     set_up_backend("torch", data_type="float32")
 
+.. note::
+
+   On a GPU machine this also makes CUDA the default device for newly created
+   tensors. If you build your own tensors alongside torchquad's, use
+   ``torch.tensor(...)`` rather than the legacy ``torch.Tensor(...)``, which
+   ignores that default and allocates on the CPU — see
+   :ref:`this note <tensor_vs_Tensor>`.
+
 
 
 
@@ -911,15 +919,18 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
 .. note::
     VEGAS does not support multi-dimensional integrands.  If you would like this, please consider opening an issue or PR.
 
+.. _tensor_vs_Tensor:
+
 .. note::
     Build helper tensors with ``torch.tensor(...)``, not the legacy
-    ``torch.Tensor(...)`` constructor. On a GPU machine :func:`set_up_backend`
-    calls ``torch.set_default_device("cuda")``, which ``torch.tensor`` honours and
-    ``torch.Tensor`` ignores — the latter always allocates on the CPU. Mixing the
-    two gives ``RuntimeError: Expected all tensors to be on the same device`` as
-    soon as the helper meets the sample points. The same applies to combining
-    per-integration results: ``torch.stack`` keeps them on their original device,
-    while wrapping them in ``torch.Tensor([...])`` moves them to the CPU.
+    ``torch.Tensor(...)`` constructor. On a GPU machine
+    :func:`torchquad.set_up_backend` calls ``torch.set_default_device("cuda")``,
+    which ``torch.tensor`` honours and ``torch.Tensor`` ignores — the latter
+    always allocates on the CPU. Mixing the two gives ``RuntimeError: Expected all
+    tensors to be on the same device`` as soon as the helper meets the sample
+    points. The same applies to combining per-integration results:
+    ``torch.stack`` keeps them on their original device, while wrapping them in
+    ``torch.Tensor([...])`` moves them to the CPU.
 
 Parametric Integration with Variable Domains
 --------------------------------------------

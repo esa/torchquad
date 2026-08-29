@@ -98,7 +98,7 @@ torchquad has no backend pinned as a hard dependency — install the numerical b
 Note that torchquad also works on the CPU; however, it is optimized for GPU usage. GPU support is tested only on NVIDIA cards with CUDA. For GPU installs, follow each framework's own install guide — the CPU-only convenience extras below cannot select GPU wheels, and JAX/TensorFlow GPU builds are Linux/WSL2-only.
 
 For a detailed list of required packages and packages for numerical backends,
-please refer to the conda environment files [environment.yml](/environment.yml) and [environment_all_backends.yml](/environment_all_backends.yml).
+please refer to the conda environment files [environment.yml](https://github.com/esa/torchquad/blob/main/environment.yml) and [environment_all_backends.yml](https://github.com/esa/torchquad/blob/main/environment_all_backends.yml).
 torchquad requires Python 3.10 or newer. Its CI suite runs on Python 3.12 with JAX 0.4.35, NumPy 2.3, PyTorch 2.5 and TensorFlow 2.18 on Linux; other versions of the backends should work as well but some may require additional setup on other platforms such as Windows.
 
 
@@ -136,7 +136,7 @@ GPU support install the backend from its own guide, then `pip install torchquad`
    - TensorFlow (Linux/WSL2 only): <https://www.tensorflow.org/install/gpu>
 
 For a full multi-backend setup, the conda file
-[environment_all_backends.yml](/environment_all_backends.yml) installs every
+[environment_all_backends.yml](https://github.com/esa/torchquad/blob/main/environment_all_backends.yml) installs every
 backend (CPU) in one step:
    ```sh
    conda env create -f environment_all_backends.yml
@@ -279,7 +279,7 @@ See the [open issues](https://github.com/esa/torchquad/issues) for a list of pro
 
 All figures below were measured on an RTX 4060 Ti / i5-13400F. Accuracy is
 measured against closed-form integrals from the
-[Genz test-function family](benchmarking/genz_functions.py) in float64; runtimes
+[Genz test-function family](https://github.com/esa/torchquad/blob/main/benchmarking/genz_functions.py) in float64; runtimes
 are float32 and synchronize the GPU before the clock stops.
 
 ### Convergence
@@ -411,7 +411,7 @@ float64, timings in float32.
 
 The project is open to community contributions. Feel free to open an [issue](https://github.com/esa/torchquad/issues) or write us an email if you would like to discuss a problem or idea first.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide — how to set up a
+See [CONTRIBUTING.md](https://github.com/esa/torchquad/blob/main/CONTRIBUTING.md) for the full guide — how to set up a
 development environment, the checks CI runs, and the review process. In short:
 fork the repo, branch off `develop`, and open your pull request against
 `develop` (not `main`). Documentation fixes for the *current release* are the
