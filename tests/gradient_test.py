@@ -49,6 +49,21 @@ def _v_function_parameterized(x, c):
     return 2 * anp.abs(x + c)
 
 
+def _exponential_function_parameterized(x, a):
+    """
+    1D test function exp(a x_0).
+
+    Over the [0, 1] domain the integral is (e^a - 1) / a and its derivative with
+    respect to a is (e^a (a - 1) + 1) / a^2, which is exactly 1 at a = 1.
+
+    Unlike the polynomial and V-shaped integrands above, the last operation here
+    is an exponential, whose backward pass needs its own *output*. That makes this
+    the only integrand in this file that notices if an integrator mutates the
+    tensor the integrand returned.
+    """
+    return anp.exp(a * x[:, 0])
+
+
 def _calculate_gradient(backend, param, func, dtype_name):
     """Backend-specific gradient calculation
 
@@ -164,18 +179,23 @@ def _run_gradient_tests(backend, dtype_name):
     Test if the implemented integrators
     maintain gradients and if the gradients are consistent and correct
     """
-    # Define integrators and numbers of evaluation points
+    # (integrator, evaluation points for the 1D cases, for the 2D cases). Kept as
+    # one tuple per integrator rather than three parallel lists: the lists drifted
+    # out of sync, and zip silently dropped GaussLegendre -- the only integrator
+    # that passes weights through evaluate_integrand -- from every gradient test.
     integrators = [
-        Trapezoid(),
-        Simpson(),
-        Boole(),
-        MonteCarlo(),
-        VEGAS(),
-        GaussLegendre(),
+        (Trapezoid(), 149, 549),
+        (Simpson(), 149, 121),
+        (Boole(), 149, 81),
+        (MonteCarlo(), 99997, 99997),
+        (VEGAS(), 99997, 99997),
+        # GaussLegendre needs more 1D points than the Newton-Cotes rules because
+        # the V-shaped integrands below have a kink, the one thing Gauss-Legendre
+        # is bad at: it is spectrally accurate on the smooth exponential at any of
+        # these N, but only O(N^-2) on |x|.
+        (GaussLegendre(), 499, 81),
     ]
-    Ns_1d = [149, 149, 149, 99997, 99997]
-    Ns_2d = [549, 121, 81, 99997, 99997]
-    for integrator, N_1d, N_2d in zip(integrators, Ns_1d, Ns_2d):
+    for integrator, N_1d, N_2d in integrators:
         integrator_name = type(integrator).__name__
         requires_seed = integrator_name in ["MonteCarlo", "VEGAS"]
         if backend != "torch" and integrator_name == "VEGAS":
@@ -257,6 +277,41 @@ def _run_gradient_tests(backend, dtype_name):
         # Check if the integral and gradient are accurate enough
         assert np.abs(integral - 34.0) < 0.2
         assert np.abs(gradient - 4.0) < 0.15
+
+        if requires_seed:
+            # The remaining case is a regression test for the weights branch of
+            # evaluate_integrand, which MonteCarlo and VEGAS never reach --
+            # GridIntegrator._weights returns None for them. Their gradient paths
+            # are already covered by the four integrands above, so skip a fifth
+            # N=99997 run that would add no coverage.
+            continue
+
+        print("Calculating gradients of an exponential over its rate")
+        # Regression test: an in-place `result *= weights` in evaluate_integrand
+        # raised "one of the variables needed for gradient computation has been
+        # modified by an inplace operation" here, because exp's backward pass
+        # reads its own output. Only the Gaussian family passes weights, so this
+        # went unnoticed while GaussLegendre was missing from these tests.
+        param = 1.0
+        integrate_kwargs = {
+            "integration_domain": [[0.0, 1.0]],
+            "dim": 1,
+            "N": N_1d,
+            "backend": backend,
+        }
+        gradient, integral = _calculate_gradient_over_param(
+            backend,
+            param,
+            _exponential_function_parameterized,
+            integrator.integrate,
+            integrate_kwargs,
+            dtype_name,
+        )
+        # Tight bounds on purpose. These are the deterministic rules on a smooth
+        # integrand, so a misapplied weight shows up immediately; the limiting
+        # case is Trapezoid at 1.7e-5, while Boole and GaussLegendre reach 1e-15.
+        assert np.abs(integral - (np.e - 1.0)) < 1e-4
+        assert np.abs(gradient - 1.0) < 1e-4
 
 
 test_gradients_torch = setup_test_for_backend(_run_gradient_tests, "torch", "float64")

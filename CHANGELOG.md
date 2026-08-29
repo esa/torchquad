@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The quadrature weights are no longer truncated to the integrand's dtype, and a
+  mismatch now warns instead of passing silently. An integrand returning
+  `float32` under `float64` precision yields a `float64` result rather than
+  discarding the weights' precision.
+
+### Fixed
+- `evaluate_integrand` applies the quadrature weights out of place, so it no
+  longer mutates the tensor the integrand returned. The in-place multiply broke
+  PyTorch autograd through `GaussLegendre` and any `Gaussian` subclass for
+  integrands whose backward pass reads its own output (`exp`, `sqrt`, `tanh`,
+  `sigmoid`, `div`, `pow`), including gradients with respect to the integration
+  domain. Newton–Cotes, Monte Carlo and JAX were unaffected. Present since
+  Gaussian quadrature arrived in 0.4.0 (#141). Integration results are otherwise
+  unchanged.
+
 ## [0.6.0] - 2026-08-23
 
 The 0.6 line is a modernization and credibility release: modern tooling, honest
