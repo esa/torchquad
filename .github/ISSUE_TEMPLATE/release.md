@@ -68,8 +68,9 @@ as you go.
 - [ ] [Release testing](https://github.com/esa/torchquad/actions/workflows/release_testing.yml)
       green on the release branch — this is the run against the *latest released*
       torch/JAX/TensorFlow rather than the pinned CI versions. It fires by itself on
-      any push to a `release-*` / `release/**` branch and on any PR into `main`, so
-      there is normally nothing to trigger; just confirm it passed. See
+      any push to a `release-*` / `release/**` branch, so there is normally nothing
+      to trigger; just confirm it passed. A hotfix branch named anything else has
+      to be dispatched by hand. See
       [`release_testing/README.md`](https://github.com/esa/torchquad/blob/develop/release_testing/README.md).
 - [ ] **GPU check — not covered by any CI.** In a CUDA runtime (e.g.
       [Colab](https://colab.research.google.com/drive/1lFpdtY5zV7VpW88aazedA3n4khedHDQP?usp=sharing)):
@@ -93,6 +94,12 @@ uploaded to Test PyPI can never be reused, so review comes first.
 
 - [ ] Finalize the release branch, then open PRs `release/X.Y.Z` → `main` **and**
       `release/X.Y.Z` → `develop`. Open both now; do not merge either yet.
+- [ ] In the `main` PR's body, repeat the keyword before **every** issue number:
+      `Closes #1, closes #2, closes #3`. GitHub links only the reference that
+      directly follows a closing keyword, so `Closes #1, #2, #3` silently closes
+      #1 and leaves the rest open — which is exactly what happened in 0.6.0.
+      Auto-closing works only from a PR merged into the default branch (`main`),
+      so put the list on that PR, not the `develop` one.
 - [ ] Review both against [`REVIEW.md`](https://github.com/esa/torchquad/blob/develop/REVIEW.md),
       and get the review addressed. The `main` PR is the one that matters — it is
       the exact tree that becomes the release.
@@ -143,12 +150,22 @@ uploaded to Test PyPI can never be reused, so review comes first.
       `recipe/meta.yaml` by hand. See
       https://conda-forge.org/docs/maintainer/updating_pkgs.html
 - [ ] Reconcile the feedstock's `host:`/`run:` requirements and its Python floor with
-      `[project]` in `pyproject.toml`, then merge.
+      `[project]` in `pyproject.toml`, then merge. The bot only bumps `version` and
+      `sha256`, so every dependency change made since the last release has to be
+      carried over by hand — including removals, which are easy to miss. `host:`
+      needs `setuptools >=77.0.3` for the PEP 639 license expression, or the build
+      fails outright. Note the recipe builds from the **GitHub tag tarball**, not
+      the PyPI sdist, so the tag must already be pushed.
 - [ ] Confirm `conda install torchquad -c conda-forge` resolves the new version.
 
 ### 9. Wrap up
 
 - [ ] Confirm Read the Docs built the new tag and that the version selector shows it.
+      Tag builds are not automatic: a version has to be activated in the RTD
+      dashboard (or matched by an automation rule for `v*`), otherwise
+      `/en/vX.Y.Z/` and `/en/stable/` 404 while `/en/main/` still renders.
 - [ ] Close the milestone and every issue this release fixes, linking the release notes.
+      Check them individually rather than trusting the PR's closing keywords — see
+      the note in section 5.
 - [ ] Thank contributors in the release notes (see the template).
 - [ ] Delete the release branch.
