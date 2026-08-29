@@ -11,7 +11,7 @@ class Boole(NewtonCotes):
     def __init__(self):
         super().__init__()
 
-    def integrate(self, fn, dim, N=None, integration_domain=None, backend=None):
+    def integrate(self, fn, dim, N=None, integration_domain=None, backend=None, args=None):
         """Integrates the passed function on the passed domain using Boole's rule.
 
         Args:
@@ -20,11 +20,12 @@ class Boole(NewtonCotes):
             N (int, optional): Total number of sample points to use for the integration. N has to be such that N^(1/dim) - 1 % 4 == 0. Defaults to 5 points per dimension if None is given.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
             backend (string, optional): Numerical backend. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+            args (list or tuple, optional): Extra arguments passed to the integrand as ``fn(points, *args)``. Defaults to None.
 
         Returns:
             backend-specific number: Integral value
         """
-        return super().integrate(fn, dim, N, integration_domain, backend)
+        return super().integrate(fn, dim, N, integration_domain, backend, args=args)
 
     @staticmethod
     def _apply_composite_rule(cur_dim_areas, dim, hs, domain):
@@ -70,7 +71,7 @@ class Boole(NewtonCotes):
         # where n is a positive integer, for correctness.
         if n_per_dim < 5:
             warnings.warn(
-                "N per dimension cannot be lower than 5. " "N per dim will now be changed to 5."
+                "N per dimension cannot be lower than 5. N per dim will now be changed to 5."
             )
             N = 5**dim
         elif (n_per_dim - 1) % 4 != 0:

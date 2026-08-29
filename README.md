@@ -72,7 +72,7 @@ The software is free to use and is designed for the machine learning community a
 This project is built with the following packages:
 
 * [autoray](https://github.com/jcmgray/autoray), which means the implemented quadrature supports [NumPy](https://numpy.org/) and can be used for machine learning with modules such as [PyTorch](https://pytorch.org/), [JAX](https://github.com/google/jax/) and [Tensorflow](https://www.tensorflow.org/), where it is fully differentiable
-* [conda](https://docs.conda.io/en/latest/), which will take care of all requirements for you
+* [uv](https://docs.astral.sh/uv/) or [conda](https://docs.conda.io/en/latest/), either of which can set up the required environment for you
 
 
 If torchquad proves useful to you, please consider citing the [accompanying paper](https://joss.theoj.org/papers/10.21105/joss.03439).
@@ -93,49 +93,55 @@ This is a brief guide for how to set up torchquad.
 
 ### Prerequisites
 
-We recommend using [conda](https://anaconda.org/conda-forge/torchquad), especially if you want to utilize the GPU.
-With PyTorch it will automatically set up CUDA and the cudatoolkit for you, for example.
-Note that torchquad also works on the CPU; however, it is optimized for GPU usage. torchquad's GPU support is tested only on NVIDIA cards with CUDA. We are investigating future support for AMD cards through [ROCm](https://pytorch.org/blog/pytorch-for-amd-rocm-platform-now-available-as-python-package/).
+torchquad has no backend pinned as a hard dependency — install the numerical backend(s) you want (PyTorch, JAX, TensorFlow) alongside it. It also runs on NumPy alone. Any of pip, [uv](https://docs.astral.sh/uv/), or conda works; pick whichever fits your workflow.
+
+Note that torchquad also works on the CPU; however, it is optimized for GPU usage. GPU support is tested only on NVIDIA cards with CUDA. For GPU installs, follow each framework's own install guide — the CPU-only convenience extras below cannot select GPU wheels, and JAX/TensorFlow GPU builds are Linux/WSL2-only.
 
 For a detailed list of required packages and packages for numerical backends,
 please refer to the conda environment files [environment.yml](/environment.yml) and [environment_all_backends.yml](/environment_all_backends.yml).
-torchquad has been tested with JAX 0.2.25, NumPy 1.19.5, PyTorch 1.10.0 and Tensorflow 2.7.0 on Linux; other versions of the backends should work as well but some may require additional setup on other platforms such as Windows.
+torchquad requires Python 3.10 or newer. Its CI suite runs on Python 3.12 with JAX 0.4.35, NumPy 2.3, PyTorch 2.5 and TensorFlow 2.18 on Linux; other versions of the backends should work as well but some may require additional setup on other platforms such as Windows.
 
 
 ### Installation
 
-The easiest way to install torchquad is simply to
+Install torchquad from PyPI:
+   ```sh
+   pip install torchquad
+   # or, with uv:
+   uv pip install torchquad
+   ```
+
+It is also available on conda-forge:
    ```sh
    conda install torchquad -c conda-forge
    ```
 
-Alternatively, it is also possible to use
+**Adding a backend.** torchquad ships convenience extras that pull a backend
+from the default package index:
    ```sh
-   pip install torchquad
+   pip install "torchquad[torch]"        # PyTorch — CPU on macOS/Windows, CUDA on Linux
+   pip install "torchquad[jax]"          # JAX (CPU)
+   pip install "torchquad[tensorflow]"   # TensorFlow (CPU)
+   pip install "torchquad[all]"          # all three
    ```
+`jax` and `tensorflow` install CPU builds; `torch`, however, resolves to the
+CUDA build on Linux, because that is what PyTorch publishes to PyPI. For a
+guaranteed-CPU torch, install it from the PyTorch CPU index first.
 
-The PyTorch backend with CUDA support can be installed with
+**Adding a backend (GPU).** These extras cannot select GPU wheels (a Python
+package cannot encode the CUDA-specific index URLs each framework needs), so for
+GPU support install the backend from its own guide, then `pip install torchquad`:
+   - PyTorch: <https://pytorch.org/get-started/locally/>
+   - JAX (Linux/WSL2 only): <https://docs.jax.dev/en/latest/installation.html>
+   - TensorFlow (Linux/WSL2 only): <https://www.tensorflow.org/install/gpu>
+
+For a full multi-backend setup, the conda file
+[environment_all_backends.yml](/environment_all_backends.yml) installs every
+backend (CPU) in one step:
    ```sh
-   conda install "cudatoolkit>=11.1" "pytorch>=1.9=*cuda*" -c conda-forge -c pytorch
+   conda env create -f environment_all_backends.yml
+   conda activate torchquad
    ```
-
-Note that since PyTorch is not yet on *conda-forge* for Windows, we have explicitly included it here using `-c pytorch`.
-Note also that installing PyTorch with *pip* may **not** set it up with CUDA support. Therefore, we recommend to use *conda*.
-
-Here are installation instructions for other numerical backends:
-   ```sh
-   conda install "tensorflow>=2.6.0=cuda*" -c conda-forge
-   pip install "jax[cuda]>=0.4.17" --find-links https://storage.googleapis.com/jax-releases/jax_cuda_releases.html # linux only
-   conda install "numpy>=1.19.5" -c conda-forge
-   ```
-
-More installation instructions for numerical backends can be found in
-[environment_all_backends.yml](/environment_all_backends.yml) and at the
-backend documentations, for example
-https://pytorch.org/get-started/locally/,
-https://github.com/google/jax/#installation and
-https://www.tensorflow.org/install/gpu, and often there are multiple ways to
-install them.
 
 
 ### Test
@@ -195,20 +201,44 @@ integral_value = mc.integrate(
 ```
 ## Logging Configuration
 
-By default, torchquad disables its internal logging when installed from PyPI to avoid interfering with other loggers in your application. To enable logging change `TORCHQUAD_DISABLE_LOGGING` in `__init__.py`:
+torchquad is silent by default so that importing it never interferes with the
+logging of the application using it. Turn its log records on in either of two ways:
 
-1. **Set the log level**: Use the `TORCHQUAD_LOG_LEVEL` environment variable:
+1. **Set the `TORCHQUAD_LOG_LEVEL` environment variable** before importing torchquad:
    ```bash
-   export TORCHQUAD_LOG_LEVEL=DEBUG   # For detailed debugging
-   export TORCHQUAD_LOG_LEVEL=INFO    # For general information  
-   export TORCHQUAD_LOG_LEVEL=WARNING # For warnings only (default when enabled)
+   export TORCHQUAD_LOG_LEVEL=DEBUG
+   export TORCHQUAD_LOG_LEVEL=INFO
+   export TORCHQUAD_LOG_LEVEL=WARNING
    ```
+   Leaving it unset — or setting it to the empty string — keeps torchquad silent.
+   An unrecognised level raises at import rather than being ignored.
 
 2. **Enable logging programmatically**:
    ```python
    import torchquad
    torchquad.set_log_level("DEBUG")  # This will enable and configure logging
    ```
+
+torchquad only ever adds its own handler, filtered to its own records, and never
+removes one your application registered.
+
+One consequence is worth knowing: the level applies to torchquad's own handler,
+which is the only one it owns. Once records are enabled they also reach every
+other sink [loguru](https://github.com/Delgan/loguru) has registered — including
+loguru's default stderr handler, which is unfiltered and sits at `DEBUG`. So in a
+plain interpreter you will see torchquad's records twice, and below the level you
+asked for. That is loguru's global state, not something a library can change
+without disturbing its host ([#184](https://github.com/esa/torchquad/issues/184)).
+To control it, configure loguru yourself:
+
+```python
+from loguru import logger
+logger.remove()                      # drop loguru's default handler
+logger.add(sys.stderr, level="WARNING")
+
+import torchquad
+torchquad.set_log_level("WARNING")
+```
 
 ## Multi-GPU Usage
 
@@ -247,98 +277,145 @@ See the [open issues](https://github.com/esa/torchquad/issues) for a list of pro
 <!-- PERFORMANCE -->
 ## Performance
 
-Using GPUs, torchquad scales particularly well with integration methods that offer easy parallelization. The benchmarks below demonstrate performance across challenging functions from 1D to 15D, comparing torchquad's GPU-accelerated methods against scipy's CPU implementations.
+All figures below were measured on an RTX 4060 Ti / i5-13400F. Accuracy is
+measured against closed-form integrals from the
+[Genz test-function family](benchmarking/genz_functions.py) in float64; runtimes
+are float32 and synchronize the GPU before the clock stops.
 
-<!-- TODO Update plot links -->
-### Convergence Analysis
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence.png?raw=true)
-*Convergence comparison across challenging test functions from 1D to 15D. GPU-accelerated torchquad methods demonstrate great performance, particularly for high-dimensional integration where scipy's nquad becomes computationally infeasible. Beyond 1D, torchquad significantly outperforms scipy in efficiency.*
+### Convergence
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_convergence_3d.png?raw=true)
+*Relative error against the number of function evaluations, 3D, on the Genz oscillatory integrand. The higher-order Newton-Cotes rules separate cleanly — Trapezoid reaches 7.7e-04, Simpson 1.6e-07, Boole 2.4e-10 — and Gauss-Legendre hits double precision within a few hundred points. This is the plot to read first: it says what accuracy a given budget buys you.*
 
-### Runtime vs Error Efficiency  
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime_vs_error.png?raw=true)
-*Runtime-error trade-offs across dimensions. Lower-left positions indicate better performance. While scipy's traditional methods are competitive for simple 1D problems, torchquad's GPU acceleration provides orders of magnitude better performance for multi-dimensional integration, achieving both faster computation and lower errors.*
+### Quasi-Monte Carlo vs Monte Carlo
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_qmc_vs_mc_3d.png?raw=true)
+*Passing `rng=Sobol(...)` to `MonteCarlo` replaces pseudo-random points with a low-discrepancy sequence. On a non-separable integrand this is worth five to six orders of magnitude — 2.8e-09 against 1.0e-03 at the same budget — and converges faster than O(N⁻¹) where plain Monte Carlo tracks O(N⁻¹ᐟ²). Errors are the median over five seeds.*
 
-### Scaling Performance
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_scaling_analysis.png?raw=true)
-*Scaling investigation across problem sizes and dimensions of the different methods in torchquad.*
+### Scaling with dimension
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_dimension_scaling.png?raw=true)
+*Error at a fixed budget of N=2¹⁶ as the dimension grows, with per-dimension difficulty held constant so the curve shows the cost of dimension rather than of a harder integrand. Plain Monte Carlo is famously dimension-insensitive and stays near 1e-03 throughout; the quasi-random advantage is largest in low dimensions and narrows as the dimension climbs, though at d=10 Sobol is still around 5e-05 against 3.6e-03.*
 
-### Vectorized Integration Speedup
-![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
-*Strong performance gains when evaluating multiple integrands simultaneously. The vectorized approach shows exponential speedup (up to 200x) compared to sequential evaluation, making torchquad ideal for parameter sweeps, uncertainty quantification, and machine learning applications requiring batch integration.*
+### Runtime: CPU vs GPU
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_runtime_cpu_vs_gpu.png?raw=true)
+*Wall-clock time per integration, measured in separate processes because the backend's default device is global state. At N=1e8 the GPU is 33x faster for Monte Carlo and 13x for Simpson. The crossover is shown honestly rather than hidden: for Simpson the CPU is the faster choice below roughly 1e6 evaluations, where the problem is too small to cover kernel-launch overhead.*
 
-### Framework Comparison  
+### Framework comparison
 ![](https://github.com/esa/torchquad/blob/main/resources/torchquad_framework_comparison.png?raw=true)
-*Cross-framework performance comparison for 1D integration using Monte Carlo and Simpson methods. Demonstrates torchquad's consistent API across PyTorch, TensorFlow, JAX, and NumPy backends, with GPU acceleration providing significant performance advantages for large number of function evaluations. All frameworks achieve similar accuracy while showcasing the computational benefits of GPU acceleration for parallel integration methods.*
+*The same 1D integration through each backend, run in isolated subprocesses. PyTorch and TensorFlow land within about 10% of each other on the GPU (66 ms and 73 ms at N=1e8 for Monte Carlo), and all backends reach comparable accuracy — which is the point of a single API across four numerical libraries.*
+
+### Vectorized integration
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vectorized_speedup.png?raw=true)
+*Integrating many integrands in one batched call against looping over them one at a time. The speedup grows roughly linearly with the number of integrands, because the loop pays a kernel launch per integrand while the batched call pays one: about 16x at 20 integrands and 110x at 200 on this machine. The exact figure at the top end is platform-dependent — the batched side is only 1-2 ms, close to the measurement floor — so treat the shape rather than the peak number as the result.*
+
+### Comparison with SciPy
+
+![](https://github.com/esa/torchquad/blob/main/resources/torchquad_vs_scipy_combined.png?raw=true)
+
+Earlier versions of this section compared torchquad against `scipy.integrate.nquad`
+and claimed a broad efficiency win. That was not a comparison we can stand behind,
+so here is one we can — against SciPy's *best* configuration rather than its
+weakest, on a deliberately hard integrand, measured both ways.
+
+The test function sums three Genz integrands, each normalised to contribute
+equally: one that oscillates, one whose mass concentrates in a corner, and one
+that is continuous but **not differentiable**. Each defeats a different method, so
+no single feature can flatter one library. Summing keeps the integral exact,
+because integration is linear.
+
+The top row of the figure is error against **function evaluations** — that
+compares algorithms and is independent of hardware. The bottom row is error
+against **runtime**, which is what you actually wait for but folds in the fact
+that SciPy runs on the CPU while torchquad here runs on a GPU.
+
+Both sides get the same 50-million-evaluation budget, so neither is being starved.
+
+| | best torchquad | best SciPy |
+|---|---|---|
+| **d=3** | Boole **8.3e-12** @ 38M evals, **0.10 s** | `nquad` **4.4e-16** @ 250k · Genz-Malik 1.0e-12 @ 7.3M, 7.9 s |
+| **d=6** | Boole **2.9e-05** @ 24M evals, **0.10 s** | Genz-Malik **1.8e-05** @ 1.7M evals, 0.41 s |
+| **d=10** | VEGAS **4.8e-04** @ 11M evals, 0.60 s | *none completed* |
+
+**SciPy's algorithms are more efficient per evaluation at low dimension.** At d=3
+`nquad` reaches machine precision from a quarter of a million points; torchquad
+needs 38 million to get to 8e-12 and never closes the last four orders. Adaptive
+subdivision is simply the right approach for a low-dimensional integrand with a
+localized feature, and torchquad does not implement it.
+
+**GPU throughput can offset that, but only in wall-clock.** At d=3 Boole reaches
+8.3e-12 in 0.10 s against Genz-Malik's 1.0e-12 in 7.9 s — comparable accuracy,
+about 80x faster. By d=6 the two are near parity: SciPy is 1.6x more accurate on
+14x fewer evaluations, torchquad is 4x faster in wall-clock. Which matters depends
+on whether your integrand is cheap or expensive to evaluate.
+
+**Past that, dimension decides it.** At d=10 every SciPy configuration here
+fails: the default `gk21` rule is a *product* rule needing 21^d nodes, an
+impossible 121 TiB allocation, and the other two exhaust the evaluation budget.
+torchquad returns 4.8e-04 in 0.6 s.
+
+Two things in this figure are worth knowing when picking a method:
+
+- **The highest-order rule is not the best one here.** Gauss-Legendre applies a
+  single global high-degree rule, which a kink defeats badly; Boole is composite,
+  applying a lower-order rule piecewise, and beats it by six orders of magnitude
+  at d=3 and nearly 300x at d=6. Reach for Boole on integrands that are not
+  smooth everywhere.
+- **VEGAS earns its keep as the dimension grows.** It is the *worst* torchquad
+  method at d=3 (1.3e-04, behind everything) because it spends its early
+  iterations learning the integrand, and the *best* at d=10, where adapting to
+  where the mass actually lies beats sampling uniformly.
+
+And the axis no SciPy comparison can capture at all: gradients through the
+integral, GPU throughput at large N, and the same API across four numerical
+backends.
 
 ### Running Benchmarks
 
 To reproduce these benchmarks or test performance on your hardware:
 
 ```bash
-# Run all benchmarks (convergence, framework comparison, scaling, vectorized)
-python benchmarking/modular_benchmark.py --dimensions 1,3,7,15
+# The accuracy figures: convergence, QMC vs MC, dimension scaling, CPU vs GPU
+python benchmarking/release_plots.py --plots all
+python benchmarking/release_plots.py --plots qmc,convergence   # or a subset
 
-# Run specific benchmark types
-python benchmarking/modular_benchmark.py --convergence-only --dimensions 1,3,7,15
+# The timing harness: scaling, framework comparison, vectorized
+python benchmarking/modular_benchmark.py --dimensions 1,3,7,15
 python benchmarking/modular_benchmark.py --scaling-only
 python benchmarking/modular_benchmark.py --framework-only
 
-# Generate all plots from results
+# Redraw the harness figures from the results of the run above
 python benchmarking/plot_results.py
 
 # Configure benchmark parameters
 # Edit benchmarking/benchmarking_cfg.toml to adjust:
 # - Evaluation point ranges
 # - Framework backends to test
-# - Timeout limits  
+# - Timeout limits
 # - Method selection
 # - scipy integration tolerances
 ```
 
-**New Features:**
-- **Analytic Reference Values**: Uses SymPy for exact analytic solutions where possible, providing highly accurate reference values for error calculations
-- **Enhanced Test Functions**: Analytically tractable but numerically challenging functions that better demonstrate convergence behavior
-- **Framework Comparison**: Cross-backend performance benchmarking across PyTorch, TensorFlow, JAX, and NumPy with GPU/CPU device comparisons
+Two notes if you re-measure:
 
-**Hardware:** RTX 4060 Ti 16GB, i5-13400F, Precision: float32
+- **Run the machine idle.** The harness synchronizes the device before stopping
+  its clock, so the numbers are real wall-clock time and will pick up anything
+  else competing for the GPU.
+- **TensorFlow and PyTorch cannot share one environment on the GPU.** They pin
+  conflicting versions of the bundled NVIDIA CUDA libraries, and whichever loses
+  falls back to the CPU silently, turning a GPU comparison into a CPU one. Give
+  each its own interpreter via the `[interpreters]` section of the config.
+
+**Hardware for the figures above:** RTX 4060 Ti 16GB, i5-13400F. Accuracy in
+float64, timings in float32.
 
 <!-- CONTRIBUTING -->
 ## Contributing
 
 The project is open to community contributions. Feel free to open an [issue](https://github.com/esa/torchquad/issues) or write us an email if you would like to discuss a problem or idea first.
 
-If you want to contribute, please
-
-1. Fork the project on [GitHub](https://github.com/esa/torchquad).
-2. Get the most up-to-date code by following this quick guide for installing torchquad from source:
-     1. Get [miniconda](https://docs.conda.io/en/latest/miniconda.html) or similar
-     2. Clone the repo
-      ```sh
-      git clone https://github.com/esa/torchquad.git
-      ```
-     3. With the default configuration, all numerical backends with CUDA
-       support are installed.
-       If this should not happen, comment out unwanted packages in
-       `environment_all_backends.yml`.
-     4. Set up the environment. This creates a conda environment called
-      `torchquad` and installs the required dependencies.
-      ```sh
-      conda env create -f environment_all_backends.yml
-      conda activate torchquad
-      ```
-
-Once the installation is done, you are ready to contribute.
-Please note that PRs should be created from and into the `develop` branch. For each release the develop branch is merged into main.
-
-3. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-4. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-5. Push to the Branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request on the `develop` branch, *not* `main`
-
-and we will have a look at your contribution as soon as we can.
-
-Furthermore, please make sure that your PR passes all automated tests, you can ping `@gomezzz` to run the CI. Review will only happen after that.
-Only PRs created on the `develop` branch with all tests passing will be considered. The only exception to this rule is if you want to update the documentation in relation to the current release on conda / pip. In that case you open a PR directly into `main`.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide — how to set up a
+development environment, the checks CI runs, and the review process. In short:
+fork the repo, branch off `develop`, and open your pull request against
+`develop` (not `main`). Documentation fixes for the *current release* are the
+only exception and may target `main` directly.
 
 <!-- LICENSE -->
 ## License
@@ -349,7 +426,7 @@ Distributed under the GPL-3.0 License. See [LICENSE](https://github.com/esa/torc
 <!-- FAQ -->
 ## FAQ
 
-  1. Q: `Error enabling CUDA. cuda.is_available() returned False. CPU will be used.`  <br/>A: This error indicates that PyTorch could not find a CUDA-compatible GPU. Either you have no compatible GPU or the necessary CUDA requirements are missing. Using `conda`, you can install them with `conda install cudatoolkit`. For more detailed installation instructions, please refer to the [PyTorch documentation](https://pytorch.org/get-started/locally/).
+  1. Q: `Error enabling CUDA. cuda.is_available() returned False. CPU will be used.`  <br/>A: This error indicates that PyTorch could not find a CUDA-compatible GPU. Either you have no compatible GPU or your PyTorch build has no CUDA support. Install a CUDA-enabled PyTorch build following the [PyTorch install guide](https://pytorch.org/get-started/locally/).
 
 
 

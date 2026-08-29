@@ -47,9 +47,9 @@ class MockIntegrator(GridIntegrator):
 
 def _check_grid_validity(grid, integration_domain, N, eps):
     """Check if a specific grid object contains illegal values"""
-    assert grid._N == int(
-        N ** (1 / len(integration_domain)) + 1e-8
-    ), "Incorrect number of points per dimension"
+    assert grid._N == int(N ** (1 / len(integration_domain)) + 1e-8), (
+        "Incorrect number of points per dimension"
+    )
     assert grid.points.shape == (
         int(N),
         integration_domain.shape[0],
@@ -59,12 +59,12 @@ def _check_grid_validity(grid, integration_domain, N, eps):
     for dim in range(len(integration_domain)):
         domain_width = integration_domain[dim][1] - integration_domain[dim][0]
         assert anp.abs(grid.h[dim] - domain_width / (grid._N - 1)) < eps, "Incorrect mesh width"
-        assert (
-            anp.min(grid.points[:, dim]) >= integration_domain[dim][0]
-        ), "Points are outside of the integration domain"
-        assert (
-            anp.max(grid.points[:, dim]) <= integration_domain[dim][1]
-        ), "Points are outside of the integration domain"
+        assert anp.min(grid.points[:, dim]) >= integration_domain[dim][0], (
+            "Points are outside of the integration domain"
+        )
+        assert anp.max(grid.points[:, dim]) <= integration_domain[dim][1], (
+            "Points are outside of the integration domain"
+        )
 
 
 def _run_integration_grid_tests(backend, dtype_name):

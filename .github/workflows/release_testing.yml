@@ -1,0 +1,66 @@
+name: Release testing
+
+# Heavier, slower end-to-end checks that mirror how torchquad is actually used
+# in the wild (see release_testing/README.md). Unlike the per-PR test suite these
+# install the *latest* released backend versions instead of the pinned CI
+# environment, so a release cannot silently ship broken against a new PyTorch,
+# JAX, or TensorFlow.
+#
+# The push and pull_request triggers are what make this a *pre*-ship gate.
+# workflow_dispatch alone was not enough: GitHub only registers a workflow that
+# exists on the default branch or has already run, so a suite introduced on
+# develop cannot be dispatched at all until it reaches main -- which for the
+# first release meant the only run happened on `release: created`, after
+# shipping. push and pull_request are evaluated from the workflow file in the
+# ref being tested, so they need no registration and fire immediately.
+on:
+  push:
+    branches:
+      - "release-*"
+      - "release/**"
+  pull_request:
+    # Only releases and hotfixes target main, so this stays off ordinary PRs;
+    # installing three backends across three Python versions is not cheap.
+    branches:
+      - main
+  workflow_dispatch:
+  release:
+    types: [created]
+
+# A release branch with an open PR into main matches both push and
+# pull_request. One run per ref is the point; a second is waste.
+concurrency:
+  group: release-testing-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      # Keep going so one Python version failing still reports the others.
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    name: release-tests (py${{ matrix.python-version }}, latest backends)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install latest released backends
+        run: |
+          python -m pip install --upgrade pip
+          # CPU-only PyTorch wheels keep the job small; the default index ships
+          # the multi-GB CUDA build.
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install "jax[cpu]" tensorflow
+          pip install -e .
+          pip install pytest pytest-error-for-skips
+      - name: Report resolved backend versions
+        run: pip list | grep -iE "^(torch|jax|jaxlib|tensorflow|numpy|autoray|scipy) "
+      - name: Run release test suite
+        # No `| tee`, so pytest's exit code fails the job directly. --error-for-skips
+        # turns a missing/broken backend into a failure instead of a silent skip,
+        # which is the whole point of running against the latest releases.
+        run: pytest release_testing/ -v -ra --error-for-skips --durations=15

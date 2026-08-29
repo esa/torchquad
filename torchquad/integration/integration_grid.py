@@ -11,6 +11,23 @@ from .utils import (
 
 
 def grid_func(integration_domain, N, requires_grad=False, backend=None):
+    """Generate N uniformly spaced grid points across a 1D integration domain.
+
+    This is the default node placement for Newton-Cotes rules and the single
+    shared definition used by both :class:`IntegrationGrid` and
+    :class:`~torchquad.integration.grid_integrator.GridIntegrator`.
+
+    Args:
+        integration_domain (backend tensor): 1D domain as ``[a, b]``.
+        N (int): Number of grid points to place.
+        requires_grad (bool, optional): Whether the points should track
+            gradients. Defaults to False.
+        backend (str, optional): Unused; kept for a uniform grid-function
+            signature so subclasses can override with backend-aware placement.
+
+    Returns:
+        backend tensor: The N grid points spanning ``[a, b]``.
+    """
     a = integration_domain[0]
     b = integration_domain[1]
     return _linspace_with_grads(a, b, N, requires_grad=requires_grad)

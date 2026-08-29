@@ -9,6 +9,7 @@ from torchquad.integration.utils import (
     _add_at_indices,
     _setup_integration_domain,
     _is_compiling,
+    expand_func_values_and_squeeze_integral,
 )
 from torchquad.utils.set_precision import set_precision
 from torchquad.utils.enable_cuda import enable_cuda
@@ -157,21 +158,21 @@ def _run_setup_integration_domain_tests(dtype_name, backend):
     # Backend specified with both backend and integration_domain parameters
     custom_np_domain = anp.array([[0.0, 1.0], [1.0, 2.0]], like="numpy", dtype="float16")
     domain = _setup_integration_domain(2, custom_np_domain, backend)
-    assert (
-        infer_backend(domain) == backend
-    ), "A specified backend argument should take precedence over the integration_domain argument's backend"
+    assert infer_backend(domain) == backend, (
+        "A specified backend argument should take precedence over the integration_domain argument's backend"
+    )
     if backend == "numpy":
-        assert (
-            get_dtype_name(domain) == "float16"
-        ), "With a specified backend argument set to integration_domain's backend, the integration_domain's dtype should be used"
+        assert get_dtype_name(domain) == "float16", (
+            "With a specified backend argument set to integration_domain's backend, the integration_domain's dtype should be used"
+        )
     else:
-        assert (
-            get_dtype_name(domain) == dtype_name
-        ), "With a specified backend argument different from integration_domain's backend, the integration_domain's dtype should be ignored"
+        assert get_dtype_name(domain) == dtype_name, (
+            "With a specified backend argument different from integration_domain's backend, the integration_domain's dtype should be ignored"
+        )
     domain = _setup_integration_domain(2, custom_domain, "numpy")
-    assert (
-        infer_backend(domain) == "numpy"
-    ), 'If backend is explicitly set to "numpy", a numpy array should be produced'
+    assert infer_backend(domain) == "numpy", (
+        'If backend is explicitly set to "numpy", a numpy array should be produced'
+    )
 
     # Tests for invalid arguments
     with pytest.raises(ValueError, match=r".*domain.*"):
@@ -217,6 +218,33 @@ def test_is_compiling():
     _run_tests_with_all_backends(_run_is_compiling_tests)
 
 
+def test_expand_func_values_and_squeeze_integral_kwargs():
+    """Regression test for #203: the decorator must handle function_values whether
+    it is passed positionally or as a keyword argument, and must no longer emit the
+    removed (N,)->(N,1) deprecation warning."""
+
+    @expand_func_values_and_squeeze_integral
+    def identity(self, function_values, integration_domain):
+        # Assert the decorator expanded the 1D input to a trailing integrand dim
+        assert function_values.shape[1] == 1
+        return function_values
+
+    class _Dummy:
+        pass
+
+    values_1d = anp.array([1.0, 2.0, 3.0], like="numpy")
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # any warning (e.g. the old deprecation) fails the test
+        result_positional = identity(_Dummy(), values_1d, None)
+        result_keyword = identity(_Dummy(), function_values=values_1d, integration_domain=None)
+
+    # The squeeze restores the original 1D shape in both cases
+    assert result_positional.shape == (3,)
+    assert result_keyword.shape == (3,)
+    assert anp.max(anp.abs(result_positional - result_keyword)) == 0.0
+
+
 if __name__ == "__main__":
     try:
         # used to run this test individually
@@ -224,5 +252,6 @@ if __name__ == "__main__":
         test_add_at_indices()
         test_setup_integration_domain()
         test_is_compiling()
+        test_expand_func_values_and_squeeze_integral_kwargs()
     except KeyboardInterrupt:
         pass

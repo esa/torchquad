@@ -8,6 +8,7 @@ from .utils import _setup_integration_domain
 from .rng import RNG
 from .vegas_map import VEGASMap
 from .vegas_stratification import VEGASStratification
+from .vegas_result import VEGASResult, goodness_of_fit_q
 
 
 class VEGAS(BaseIntegrator):
@@ -41,6 +42,8 @@ class VEGAS(BaseIntegrator):
         max_iterations=20,
         use_warmup=True,
         backend=None,
+        return_error=False,
+        args=None,
     ):
         """Integrates the passed function on the passed domain using VEGAS.
 
@@ -60,12 +63,15 @@ class VEGAS(BaseIntegrator):
             max_iterations (int, optional): Maximum number of vegas iterations to perform. The number of performed iterations is usually lower than this value because the number of sample points per iteration increases every fifth iteration. Defaults to 20.
             use_warmup (bool, optional): If True, execute a warmup to initialize the vegas map. Defaults to True.
             backend (string, optional): Numerical backend. "jax" and "tensorflow" are unsupported. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+            return_error (bool, optional): If True, return a :class:`VEGASResult` bundling the integral with its error estimate (standard deviation, chi-squared, degrees of freedom and goodness-of-fit Q) instead of the bare integral value. Defaults to False.
+            args (list or tuple, optional): Extra arguments passed to the integrand as ``fn(points, *args)``. Defaults to None.
 
         Raises:
             ValueError: If the integration_domain or backend argument is invalid
 
         Returns:
-            backend-specific float: Integral value
+            backend-specific float or VEGASResult: Integral value, or a
+            :class:`VEGASResult` with the error estimate if ``return_error`` is True.
         """
 
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
@@ -105,9 +111,13 @@ class VEGAS(BaseIntegrator):
         domain_starts = integration_domain[:, 0]
         domain_sizes = integration_domain[:, 1] - domain_starts
         domain_volume = anp.prod(domain_sizes)
+        # VEGAS bakes the integrand into a closure and evaluates it via _eval
+        # rather than passing args through evaluate_integrand, so it repeats the
+        # None -> () normalization here. Keep the two in sync if either changes.
+        extra_args = () if args is None else args
 
         def transformed_integrand(x):
-            return fn(x * domain_sizes + domain_starts) * domain_volume
+            return fn(x * domain_sizes + domain_starts, *extra_args) * domain_volume
 
         self._fn = transformed_integrand
 
@@ -156,7 +166,22 @@ class VEGAS(BaseIntegrator):
         logger.info(
             f"Computed integral after {self._nr_of_fevals} evals was {self._get_result():.8e}."
         )
-        return self._get_result()
+        if not return_error:
+            return self._get_result()
+
+        # The result/variance windows are reset every fifth iteration, so these
+        # errors reflect the same final window of iterations that _get_result
+        # combines (dof = combined iterations minus one).
+        dof = max(len(self.results) - 1, 0)
+        chi2 = self._get_chisq()
+        return VEGASResult(
+            integral=self._get_result(),
+            sdev=self._get_error(),
+            chi2=chi2,
+            dof=dof,
+            Q=goodness_of_fit_q(chi2, dof),
+            nr_of_fevals=self._nr_of_fevals,
+        )
 
     def _check_abort_conditions(self):
         """Test if VEGAS should execute more iterations or stop,
@@ -352,11 +377,14 @@ class VEGAS(BaseIntegrator):
             backend-specific float: Chi squared.
         """
         I_final = self._get_result()
+        # Skip zero-variance iterations (as _get_result and _get_error do): a
+        # zero divisor would make chi-squared inf, which return_error now exposes
+        # to users as chi2/Q.
         return sum(
             (
                 (res - I_final) ** 2 / sig2
                 for res, sig2 in zip(self.results, self.sigma2)
-                if res != I_final
+                if res != I_final and sig2 != 0.0
             ),
             start=self.results[0] * 0.0,
         )

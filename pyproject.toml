@@ -1,31 +1,87 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+# PEP 639 SPDX license expressions need setuptools 77.0.3; the wheel dependency
+# is obsolete for a PEP 517 build and was only ever inertia.
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchquad"
-version = "0.5.0"
+version = "0.6.0"
 description = "Package providing numerical integration methods for PyTorch, jax, TensorFlow and numpy."
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.8, <4"
-license = { text = "GPL-3.0" }
+requires-python = ">=3.10, <4"
+# SPDX expression (PEP 639). "-only", not "-or-later": the original setup.py
+# declared the GPLv3 classifier rather than GPLv3+, so this is the identifier
+# matching what torchquad has always shipped under.
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
 authors = [
     { name = "ESA Advanced Concepts Team", email = "pablo.gomez@esa.int" },
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Mathematics",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
     "loguru>=0.5.3",
-    "matplotlib>=3.3.3",
-    "scipy>=1.6.0",
-    "tqdm>=4.56.1",
+    # scipy.stats.qmc, which the Sobol sampler uses on the non-torch backends,
+    # arrived in SciPy 1.7.0 -- but 1.7.0 and 1.7.1 are themselves capped at
+    # Python <3.10, so 1.7.2 is the oldest release both new enough and
+    # installable on a Python this project supports.
+    "scipy>=1.7.2",
+    # numpy is imported directly (integration/gaussian.py), not merely pulled in
+    # behind SciPy, so it belongs here rather than arriving transitively. 1.21.3
+    # is the oldest release shipping cp310 wheels, and so the oldest that can be
+    # installed at all on a Python this project supports; the whole stack is
+    # verified against this floor on 3.10.
+    "numpy>=1.21.3",
     "autoray>=0.5.0",
+]
+
+# PEP 508 cannot encode per-index URLs, so the backend extras below install
+# from the default package index. `jax[cpu]` and `tensorflow` are CPU builds;
+# `torch`, however, is CPU on macOS/Windows but the CUDA build on Linux (that is
+# how PyTorch publishes to PyPI). For a guaranteed-CPU torch, or for any GPU
+# build, follow each framework's own install guide (they need CUDA/ROCm-specific
+# wheels and index URLs a plain extra cannot express). JAX and TensorFlow GPU
+# wheels are Linux/WSL2-only.
+[project.optional-dependencies]
+# Development toolchain for the CI lint + test gates. ruff, pydoclint, vulture,
+# and pytest floors match the versions pinned in the CI workflows; the rest are
+# reasonable minimums, not lockstep pins.
+dev = [
+    "pytest>=6.2.1",
+    # Only the benchmarking harness plots; the library itself never imports it.
+    "matplotlib>=3.3.3",
+    "pytest-cov>=4.0.0",
+    "pytest-error-for-skips>=2.0.2",
+    "ruff>=0.14.6",
+    "pydoclint>=0.8.3",
+    "vulture>=2.14",
+    "pre-commit>=3.5.0",
+    "build>=1.0.0",
+    # 6.1.0 is the first twine that understands Metadata 2.4 (PEP 639).
+    "twine>=6.1.0",
+]
+docs = [
+    "sphinx>=3.4.3",
+    "sphinx_rtd_theme>=0.5.1",
+]
+# Default-index backend conveniences (see the note above: torch is CUDA on
+# Linux). For a guaranteed CPU torch or any GPU build, use the framework's guide.
+torch = ["torch>=2.1"]
+jax = ["jax[cpu]>=0.4.17"]
+tensorflow = ["tensorflow>=2.18.0"]
+# Recursive extras keep the backend floors defined in exactly one place each.
+all = [
+    "torchquad[torch]",
+    "torchquad[jax]",
+    "torchquad[tensorflow]",
 ]
 
 [project.urls]
@@ -35,13 +91,48 @@ Source = "https://github.com/esa/torchquad/"
 [tool.setuptools]
 packages = ["torchquad", "torchquad.integration", "torchquad.utils"]
 
+[tool.ruff]
+line-length = 100
+# .vulture_whitelist.py is a vulture artifact (bare-name references), not runnable code
+extend-exclude = ["my_notebooks", "build", "dist", ".vulture_whitelist.py"]
+
+[tool.ruff.lint]
+# The default selection (E4/E7/E9/F) already covers the severe-error gate
+# (E9, F63, F7, F82) that flake8 enforced. These three are intentionally
+# relaxed, matching the retired .flake8 config:
+#   E402 - numerical backends are imported lazily, not at top of file
+#   E501 - line length is handled by the formatter, not the linter
+#   E203 - conflicts with the formatter's slice-spacing style
+ignore = ["E203", "E402", "E501"]
+
+[tool.pydoclint]
+style = "google"
+# Argument type hints are not required in signatures; the docstrings carry the
+# types. Only docstring completeness and consistency (missing Args/Returns/Raises)
+# is checked, not signature annotations.
+arg-type-hints-in-signature = false
+check-return-types = false
+check-yield-types = false
+skip-checking-short-docstrings = true
+# torchquad documents constructor arguments in the __init__ docstring rather
+# than the class docstring, so allow that. Class-attribute cross-checking is
+# too format-sensitive to enforce and is out of scope for the docstring gate.
+allow-init-docstring = true
+check-class-attributes = false
+
+[tool.vulture]
+paths = ["torchquad"]
+# The blocking CI tier runs at 100% confidence; a 60% advisory tier runs
+# non-blocking. Symbols used implicitly (autoray registrations, API hooks)
+# that vulture cannot see belong in .vulture_whitelist.py, but prefer
+# deleting dead code over whitelisting it.
+min_confidence = 100
+
 [tool.pytest.ini_options]
 filterwarnings = [
-    "ignore::UserWarning:torchquad.integration.utils:256",                                       # Our own deprecation warning
-    "ignore:torch.meshgrid:UserWarning",                                                         # PyTorch meshgrid warning 
+    "ignore:torch.meshgrid:UserWarning",                                                         # PyTorch meshgrid warning
     "ignore:Explicitly requested dtype.*truncated:UserWarning",                                  # JAX dtype warnings
     "ignore:In the next release:UserWarning",                                                    # TensorFlow warnings
-    "ignore:DEPRECATION WARNING.*In future versions of torchquad:UserWarning",                   # Our deprecation warnings in TF autograph
     "ignore:integration_domain should be a list:RuntimeWarning",                                 # Intentional warning for conflicting backend arguments
     "ignore:To copy construct from a tensor.*recommended to use sourceTensor.clone:UserWarning", # PyTorch tensor copy warnings
     "ignore:Cannot update the VEGASMap.*integrand which evaluates to zero:RuntimeWarning",       # VEGAS warning for zero integrands

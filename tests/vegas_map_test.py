@@ -111,15 +111,15 @@ def _run_vegas_map_checks(backend, dtype_name):
         N_intervals,
     ), "Invalid number of edge distances"
     assert vegasmap.dx_edges.dtype == dtype_float
-    assert (
-        anp.max(anp.abs(anp.sum(vegasmap.dx_edges, axis=1) - 1.0)) < 3e-7
-    ), "In each dimension the edge distances should sum up to one."
+    assert anp.max(anp.abs(anp.sum(vegasmap.dx_edges, axis=1) - 1.0)) < 3e-7, (
+        "In each dimension the edge distances should sum up to one."
+    )
     assert anp.min(vegasmap.dx_edges) > 0.0, "Non-positive edge distance"
     # The absolute value of the given integrand is monotonically increasing in
     # each dimension, so calculated interval sizes should monotonically decrease
-    assert (
-        anp.max(vegasmap.dx_edges[:, 1:] - vegasmap.dx_edges[:, :-1]) < 0.0
-    ), "Edge distances should shrink towards the peak"
+    assert anp.max(vegasmap.dx_edges[:, 1:] - vegasmap.dx_edges[:, :-1]) < 0.0, (
+        "Edge distances should shrink towards the peak"
+    )
 
     # Test if the new mapping of points works correctly
     x = vegasmap.get_X(y)

@@ -10,7 +10,7 @@ This tutorial gives a more detailed look at its functionality and explores some 
 Minimal working example
 -----------------------
 
-.. code:: ipython3
+.. code:: python
 
     # To avoid copying things to GPU memory,
     # ideally allocate everything in torch on the GPU
@@ -42,8 +42,10 @@ Minimal working example
         backend="torch",
     )
 
-To set the default logger verbosity, change the ``TORCHQUAD_LOG_LEVEL``
-environment variable; for example ``export TORCHQUAD_LOG_LEVEL=DEBUG``.
+torchquad is silent by default. To see its log records, set the
+``TORCHQUAD_LOG_LEVEL`` environment variable before importing it -- for example
+``export TORCHQUAD_LOG_LEVEL=DEBUG`` -- or call
+:func:`torchquad.set_log_level` at runtime.
 A :ref:`later section <tutorial_backend_selection>` in this tutorial shows how
 to choose a different numerical backend.
 
@@ -119,7 +121,7 @@ Imports
 
 Now let's get started! First, the general imports:
 
-.. code:: ipython3
+.. code:: python
 
     import scipy
     import numpy as np
@@ -142,7 +144,7 @@ Now let's get started! First, the general imports:
     from torchquad.utils.set_precision import set_precision
     import torchquad
 
-.. code:: ipython3
+.. code:: python
 
     # Use this to enable GPU support and set the floating point precision
     set_up_backend("torch", data_type="float32")
@@ -172,7 +174,7 @@ Let ``f(x)`` be the function :math:`f(x) = e^{x} \cdot x^{2}`. Over the domain
 Let's declare the function and a simple function to print the absolute error,
 as well as remember the correct result.
 
-.. code:: ipython3
+.. code:: python
 
     def f(x):
 
@@ -191,7 +193,7 @@ are and stay on the GPU.**
 
 Let's plot the function briefly.
 
-.. code:: ipython3
+.. code:: python
 
     points = torch.linspace(0, 2, 100)
     # Note that for plotting we have to move the values to the CPU first
@@ -202,7 +204,7 @@ Let's plot the function briefly.
 
 Let's define the integration domain, set the precision to double, and initialize the integrator - let's start with the trapezoid rule.
 
-.. code:: ipython3
+.. code:: python
 
     # Integration domain is a list of lists to allow arbitrary dimensionality.
     integration_domain = [[0, 2]]
@@ -211,7 +213,7 @@ Let's define the integration domain, set the precision to double, and initialize
 
 Now we are all set to compute the integral. Let's try it with just 101 sample points for now.
 
-.. code:: ipython3
+.. code:: python
 
     result = tp.integrate(f, dim=1, N=101, integration_domain=integration_domain)
     print_error(result, solution)
@@ -226,7 +228,7 @@ Now we are all set to compute the integral. Let's try it with just 101 sample po
 This is quite close already, as 1-D integrals are comparatively easy.
 Let's see what type of value we get for different integrators.
 
-.. code:: ipython3
+.. code:: python
 
     simp = Simpson()
     result = simp.integrate(f, dim=1, N=101, integration_domain=integration_domain)
@@ -240,7 +242,7 @@ Let's see what type of value we get for different integrators.
             Rel. Error: 0.00000000e+00
 
 
-.. code:: ipython3
+.. code:: python
 
     mc = MonteCarlo()
     result = mc.integrate(f, dim=1, N=101, integration_domain=integration_domain)
@@ -254,7 +256,7 @@ Let's see what type of value we get for different integrators.
             Rel. Error: 4.30584885e-02
 
 
-.. code:: ipython3
+.. code:: python
 
     vegas = VEGAS()
     result = vegas.integrate(f, dim=1, N=101, integration_domain=integration_domain)
@@ -271,7 +273,21 @@ Let's see what type of value we get for different integrators.
 Notably, Simpson's method is already sufficient for a perfect solution here with 101 points.
 Monte Carlo methods do not perform so well; they are more suited to higher-dimensional integrals.
 VEGAS currently requires a larger number of samples to function correctly (as it performs several
-iterations).
+iterations). As a rule of thumb, give VEGAS at least a few thousand points (``N``); it splits the
+budget across warmup and roughly ``max_iterations`` refinement iterations, so a too-small ``N``
+leaves each iteration with too few samples to adapt. If VEGAS returns a poor estimate, increasing
+``N`` is usually the first thing to try.
+
+VEGAS also estimates its own error. Pass ``return_error=True`` to get a ``VEGASResult`` bundling the
+integral with its standard deviation, chi-squared, degrees of freedom and goodness-of-fit ``Q``
+(a ``Q`` close to 1 means the per-iteration estimates are consistent):
+
+.. code:: python
+
+    vegas = VEGAS()
+    result = vegas.integrate(f, dim=1, N=10000, integration_domain=integration_domain, return_error=True)
+    print(result)                       # VEGASResult(..., chi2/dof = ..., Q = ...)
+    print(result.integral, result.sdev)
 
 Let's step things up now and move to a ten-dimensional problem.
 
@@ -287,7 +303,7 @@ Over the domain :math:`[0,1]^{10}`, the integral of ``f_2`` is
 
 Plotting this is tricky, so let's directly move to the integrals.
 
-.. code:: ipython3
+.. code:: python
 
     def f_2(x):
         return torch.sum(torch.sin(x), dim=1)
@@ -300,13 +316,13 @@ Let's start with just 3 points per dimension, i.e., :math:`3^{10}=59,049` sampl
 **Note**: *torchquad* currently only supports equal numbers of points per dimension.
 We are working on giving the user more flexibility on this point.
 
-.. code:: ipython3
+.. code:: python
 
     # Integration domain is a list of lists to allow arbitrary dimensionality
     integration_domain = [[0, 1]] * 10
     N = 3 ** 10
 
-.. code:: ipython3
+.. code:: python
 
     tp = Trapezoid()  # Initialize a trapezoid solver
     result = tp.integrate(f_2, dim=10, N=N, integration_domain=integration_domain)
@@ -319,7 +335,7 @@ We are working on giving the user more flexibility on this point.
             Abs. Error: 9.61723328e-02
             Rel. Error: 2.09207758e-02
 
-.. code:: ipython3
+.. code:: python
 
     simp = Simpson()  # Initialize Simpson solver
     result = simp.integrate(f_2, dim=10, N=N, integration_domain=integration_domain)
@@ -332,7 +348,7 @@ We are working on giving the user more flexibility on this point.
             Abs. Error: 1.64651871e-03
             Rel. Error: 3.58174206e-04
 
-.. code:: ipython3
+.. code:: python
 
     boole = Boole()  # Initialize Boole solver
     result = boole.integrate(f_2, dim=10, N=N, integration_domain=integration_domain)
@@ -341,13 +357,13 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.596974849700928
-            Abs. Error: 2.38418579e-06
-            Rel. Error: 5.18642082e-07
+    **Output:** Results: 4.596975326538086
+            Abs. Error: 1.90734863e-06
+            Rel. Error: 4.14913643e-07
             
 
 
-.. code:: ipython3
+.. code:: python
 
     mc = MonteCarlo()
     result = mc.integrate(f_2, dim=10, N=N, integration_domain=integration_domain, seed=42)
@@ -356,11 +372,11 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.598303318023682
-            Abs. Error: 1.32608414e-03
-            Rel. Error: 2.88468727e-04
+    **Output:** Results: 4.6036553382873535
+            Abs. Error: 6.67810440e-03
+            Rel. Error: 1.45271642e-03
 
-.. code:: ipython3
+.. code:: python
 
     vegas = VEGAS()
     result = vegas.integrate(f_2, dim=10, N=N, integration_domain=integration_domain)
@@ -369,13 +385,24 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.598696708679199
-            Abs. Error: 1.71947479e-03
-            Rel. Error: 3.74044670e-04
+    **Output:** Results: 4.598339080810547
+            Abs. Error: 1.36184692e-03
+            Rel. Error: 2.96248356e-04
 
-Note that the Monte Carlo methods are much more competitive in this case. 
-The bad convergence properties of the trapezoid method are visible while Simpson's 
-and Boole's rule are still OK given the comparatively smooth integrand. 
+Note that the Monte Carlo methods are much more competitive in this case.
+The bad convergence properties of the trapezoid method are visible while Simpson's
+and Boole's rule are still OK given the comparatively smooth integrand.
+
+.. note::
+
+   Do not expect the last digits of the two stochastic results above to match on
+   your machine. ``VEGAS`` is called without a ``seed`` here, so it draws a fresh
+   sample every run and its value moves in the third decimal from one call to the
+   next. ``MonteCarlo`` *is* seeded, and a seeded run is reproducible bit-for-bit
+   — but only against one backend version: PyTorch does not promise a stable
+   random bit-stream across releases, so the printed digits drift when you
+   upgrade. The deterministic rules are stable except in the last float32 digits.
+   Judge these numbers by their order of magnitude, not by their digits.
 
 If you have been repeating the examples from this tutorial on your own computer, you 
 might get ``RuntimeError: CUDA out of memory`` if you have a small GPU.
@@ -395,7 +422,7 @@ we will stick to a 5-D version of the :math:`\sin(x)` of the previous
 section. Let's declare it with numpy and torch. NumPy arrays will
 remain on the CPU and torch tensor on the GPU.
 
-.. code:: ipython3
+.. code:: python
 
     dimension = 5
     integration_domain = [[0, 1]] * dimension
@@ -409,7 +436,7 @@ remain on the CPU and torch tensor on the GPU.
 
 Now let's evaluate the integral using the scipy function ``nquad``.
 
-.. code:: ipython3
+.. code:: python
 
     start = time.time()
     opts = {"limit": 10, "epsabs": 1, "epsrel": 1}
@@ -437,7 +464,7 @@ machine (this might take shorter or longer on your machine). The integral was co
 In any event, *torchquad* can reach the same accuracy much, much quicker
 by utilizing the GPU.
 
-.. code:: ipython3
+.. code:: python
 
     N = 37 ** dimension
     simp = Simpson()  # Initialize Simpson solver
@@ -486,7 +513,7 @@ Using different backends with torchquad
 This section shows how to select a different numerical backend for the quadrature.
 Let's change the minimal working example so that it uses Tensorflow instead of PyTorch:
 
-.. code:: ipython3
+.. code:: python
 
     import tensorflow as tf
     from torchquad import MonteCarlo, set_up_backend
@@ -536,7 +563,7 @@ Computing gradients with respect to the integration domain
 We selected the composite Trapezoid rule and the Monte Carlo method to showcase that getting gradients is possible for both deterministic and stochastic methods.
 
 
-.. code:: ipython3
+.. code:: python
 
     import torch
     from torchquad import MonteCarlo, Trapezoid, set_up_backend
@@ -590,6 +617,54 @@ The output of the print statements is as follows:
     Gradient result for Trapezoid: tensor([[-2.0000,  2.0000]])
 
 
+Training a neural network through an integral
+---------------------------------------------
+
+Because the whole quadrature is differentiable, an integral can appear directly in a loss function and
+gradients will flow back through it to a model's parameters. This lets you train a neural network on a
+quantity that is only defined as an integral.
+
+As a minimal example, we fit a small network :math:`f_\theta` to a target function :math:`g` by
+minimizing the integrated squared error :math:`\int_0^1 (f_\theta(x) - g(x))^2 \, dx`, where the
+loss integral itself is evaluated with torchquad:
+
+.. code:: python
+
+    import torch
+    from torchquad import Trapezoid, set_up_backend
+
+    set_up_backend("torch", "float64")
+    integrator = Trapezoid()
+    integration_domain = [[0.0, 1.0]]
+
+    # Target function the network should learn.
+    def target(x):
+        return torch.sin(2 * torch.pi * x[:, 0])
+
+    model = torch.nn.Sequential(
+        torch.nn.Linear(1, 32), torch.nn.Tanh(), torch.nn.Linear(32, 1)
+    ).double()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
+
+    # The loss is the integrated squared error, computed differentiably.
+    def squared_error(x):
+        prediction = model(x[:, :1]).squeeze(-1)
+        return (prediction - target(x)) ** 2
+
+    for step in range(300):
+        optimizer.zero_grad()
+        loss = integrator.integrate(
+            squared_error, dim=1, N=201, integration_domain=integration_domain
+        )
+        loss.backward()          # gradients flow through the integral into the network
+        optimizer.step()
+
+    print(f"Final integrated L2 error: {loss.item():.4f}")
+
+Calling ``loss.backward()`` differentiates through every integrand evaluation, so ``model``'s weights
+are updated to reduce the integral. The same pattern extends to physics-style losses (for example
+fitting a potential to its integrated field) and to higher dimensions with ``MonteCarlo`` or ``VEGAS``.
+
 Speedups for repeated quadrature
 --------------------------------
 
@@ -601,7 +676,7 @@ same number of points ``N``, dimensionality ``dim``, and shape of the ``integran
 (see :ref:`the next section <multi_dim_integrand>` for more information on integrands),
 we can JIT-compile the performance-relevant parts of the integrate method:
 
-.. code:: ipython3
+.. code:: python
 
     import time
     import torch
@@ -704,7 +779,7 @@ However, separate sample point calculation has some disadvantages:
 Here is an example where we integrate two functions with Boole and use the same
 sample points for both functions:
 
-.. code:: ipython3
+.. code:: python
 
     import torch
     from torchquad import Boole
@@ -736,6 +811,62 @@ sample points for both functions:
 
     print(f"Quadrature results: {integral1}, {integral2}")
 
+Passing parameters to the integrand
+-----------------------------------
+
+Integrands often depend on extra parameters besides the integration variable. Rather than closing
+over them in a ``lambda``, pass them through the ``args`` argument, which every integrator forwards
+to the integrand as ``fn(points, *args)``:
+
+.. code:: python
+
+    from torchquad import Simpson
+
+    def parametrized_integrand(x, a, b):
+        return a * x[:, 0] + b
+
+    simpson = Simpson()
+    integration_domain = [[0.0, 1.0]]
+    result = simpson.integrate(
+        parametrized_integrand, dim=1, N=101, integration_domain=integration_domain, args=(3.0, 2.0)
+    )
+    # equivalent to integrating lambda x: parametrized_integrand(x, 3.0, 2.0)
+
+``args`` works with every integrator (``Trapezoid``, ``Simpson``, ``Boole``, ``GaussLegendre``,
+``MonteCarlo`` and ``VEGAS``) and defaults to ``None`` (no extra arguments).
+
+Quasi-Monte Carlo with Sobol points
+-----------------------------------
+
+Plain Monte Carlo draws points at random, so its error shrinks only as :math:`O(1/\sqrt{N})`.
+For smooth integrands a low-discrepancy (quasi-random) Sobol sequence covers the domain far more
+evenly, pushing the error closer to :math:`O(1/N)`. Pass a :class:`~torchquad.Sobol` sampler as the
+``rng`` argument of ``MonteCarlo.integrate``:
+
+.. code:: python
+
+    import torch
+    from torchquad import MonteCarlo, Sobol, set_up_backend
+
+    set_up_backend("torch", "float64")
+
+    # A smooth 3-D integrand: prod_i cos(pi/2 * x_i).
+    def smooth_integrand(x):
+        return torch.prod(torch.cos(x * (torch.pi / 2)), dim=1)
+
+    mc = MonteCarlo()
+    integration_domain = [[0.0, 1.0]] * 3
+    result = mc.integrate(
+        smooth_integrand,
+        dim=3,
+        N=2**13,                       # a power of two keeps the Sobol balance properties
+        integration_domain=integration_domain,
+        rng=Sobol(backend="torch", seed=0),
+    )
+
+The sample points are constants, so gradients still flow through the integrand and the domain exactly
+as for plain Monte Carlo. Sobol points are reproducible for a fixed ``seed`` within a backend.
+
 .. _multi_dim_integrand:
 
 Multidimensional/Vectorized Integrands
@@ -746,7 +877,7 @@ Our inspiration for this came from scipy's own vectorization capabilities e.g., 
 
 As an example, here we evaluate a similar integrand many times for different values of ``a`` and ``b``. This is an example that could be sped up by a vectorized evaluation of all integrals:
 
-.. code:: ipython3
+.. code:: python
 
     def parametrized_integrand(x, a, b):
         return torch.sqrt(torch.cos(torch.sin((a + b) * x)))
@@ -759,7 +890,7 @@ As an example, here we evaluate a similar integrand many times for different val
 
 Now let's see how to do this a bit more simply, and in a way that provides signficant speedup as the size of the integrand's ``grid`` grows:
 
-.. code:: ipython3
+.. code:: python
 
     grid = torch.stack([torch.Tensor([a + b for a in a_params]) for b in b_params])
 
@@ -788,7 +919,7 @@ for multiple values of :math:`a` and :math:`b` simultaneously.
 
 Currently, torchquad doesn't have built-in support for parametric domains, but you can extend the existing integrators to handle this case. Below is an example of how to create a custom integrator that supports batch 1D integration with variable domains:
 
-.. code:: ipython3
+.. code:: python
 
     import torch
     from loguru import logger
@@ -889,7 +1020,7 @@ Currently, torchquad doesn't have built-in support for parametric domains, but y
 
 Now let's see a concrete example of using this for parametric integration:
 
-.. code:: ipython3
+.. code:: python
 
     # Example 1: Compute multiple integrals in ONE call
     # I(a) = integral from 0 to a of x^2 dx = a^3/3
@@ -938,7 +1069,7 @@ Output:
 
 The key advantage of this approach is that all integrals are computed in a single vectorized operation, which can provide significant speedups:
 
-.. code:: ipython3
+.. code:: python
 
     # Performance comparison - batch vs sequential
     import time
@@ -1023,7 +1154,7 @@ Parallel Processing with Multiple GPUs
 
 For compute-intensive workloads that can be parallelized, you can spawn multiple processes, each using a different GPU:
 
-.. code:: ipython3
+.. code:: python
 
     import multiprocessing as mp
     import os
@@ -1110,39 +1241,43 @@ Use Cases for Multi-GPU Integration
 Example: Monte Carlo Error Estimation
 ``````````````````````````````````````
 
-.. code:: ipython3
+.. code:: python
 
     import subprocess
+    import textwrap
     import numpy as np
-    
+
     def monte_carlo_error_estimation():
         """Estimate integration error using multiple independent Monte Carlo runs"""
         
-        # Script content for each GPU process
-        script_template = '''
-import os
-import torch
-from torchquad import MonteCarlo, set_up_backend
+        # Script content for each GPU process. textwrap.dedent strips the
+        # leading indentation at runtime, so the generated script is column-0
+        # valid Python while the source stays inside the RST code block.
+        script_template = textwrap.dedent('''\
+            import os
+            import torch
+            from torchquad import MonteCarlo, set_up_backend
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '{gpu_id}'
-set_up_backend("torch", data_type="float32")
+            os.environ['CUDA_VISIBLE_DEVICES'] = '{gpu_id}'
+            set_up_backend("torch", data_type="float32")
 
-def integrand(x):
-    return torch.sin(x[:, 0]) + torch.exp(x[:, 1])
+            def integrand(x):
+                return torch.sin(x[:, 0]) + torch.exp(x[:, 1])
 
-mc = MonteCarlo()
-result = mc.integrate(
-    integrand,
-    dim=2,
-    N=50000,
-    integration_domain=[[0, 1], [-1, 1]],
-    seed={seed},
-    backend="torch"
-)
+            mc = MonteCarlo()
+            result = mc.integrate(
+                integrand,
+                dim=2,
+                N=50000,
+                integration_domain=[[0, 1], [-1, 1]],
+                seed={seed},
+                backend="torch"
+            )
 
-print(result.item())
-'''
-        
+            print(result.item())
+            ''')
+
+
         num_gpus = torch.cuda.device_count()
         runs_per_gpu = 5
         
@@ -1200,7 +1335,7 @@ Custom Integrators
 
 It is of course possible to extend our provided Integrators, perhaps for a special class of functions or for a new algorithm.
 
-.. code:: ipython3
+.. code:: python
 
     import scipy
     from torchquad import Gaussian

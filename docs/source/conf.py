@@ -22,7 +22,7 @@ copyright = "2021, Gabriele Meoni, Håvard Hem Toftevaag, Pablo Gómez  ."
 author = "ESA Advanced Concepts Team"
 
 # The full version, including alpha/beta/rc tags
-release = "0.5.0"
+release = "0.6.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -34,7 +34,9 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
-    "sphinx.ext.imgmath",
+    # mathjax renders math client-side and needs no local LaTeX toolchain,
+    # unlike imgmath — keeps the docs build self-contained on CI and RTD.
+    "sphinx.ext.mathjax",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -57,7 +59,6 @@ html_logo = "Torchquad_logo_white_background.png"
 
 html_theme_options = {
     "logo_only": True,
-    "display_version": True,
     "prev_next_buttons_location": "bottom",
     "style_nav_header_background": "white",
 }

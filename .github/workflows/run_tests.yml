@@ -1,5 +1,5 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+# Installs dependencies with uv, then runs the test suite, lint, docs, and
+# packaging gates. See https://docs.astral.sh/uv/ for the toolchain.
 
 name: Running tests
 
@@ -11,58 +11,65 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  lint_flake8:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.9
-      - name: Lint with flake8
-        run: |
-          pip install flake8
-          flake8 . --count --show-source --statistics
+          python-version: "3.11"
+      - name: Install lint tools
+        run: pip install ruff==0.14.6 pydoclint==0.8.3
+      - name: Check formatting with ruff
+        run: ruff format --check .
+      - name: Lint with ruff
+        run: ruff check --output-format=github .
+      - name: Check docstrings with pydoclint
+        run: pydoclint torchquad/
 
-  build:
+  # Authoritative correctness job: every backend installed (CPU) across the
+  # supported Python range, so skipped tests are treated as errors. Every leg
+  # enforces the coverage floor; the 3.12 leg additionally posts the PR coverage
+  # comment. The severe-error gate is not duplicated here — the parallel lint
+  # job's full `ruff check` already covers E9/F63/F7/F82.
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    name: test (all backends, py${{ matrix.python-version }})
     permissions:
       pull-requests: write
       contents: read
-      id-token: write
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.9
-      - name: Search for severe code errors with flake8
+          enable-cache: true
+      - name: Install torchquad and all backends (CPU)
         run: |
-          # stop the build if there are Python syntax errors or undefined names
-          pip install flake8
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-      #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      - name: provision-with-micromamba
-        uses: mamba-org/setup-micromamba@v1
-        with:
-          environment-file: environment_all_backends.yml
-          environment-name: torchquad
-          cache-downloads: true
-      - name: Test with pytest
-        shell: bash -l {0}
+          uv venv --python ${{ matrix.python-version }}
+          # torch's CPU wheels live on a dedicated index; the rest are on PyPI.
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+          uv pip install "jax[cpu]" tensorflow numpy
+          uv pip install -e ".[dev]"
+      - name: Test with pytest (coverage + skip-as-error)
         run: |
-          micromamba activate torchquad
-          pip install -e .
+          # Fail the step if pytest fails: without pipefail the pipe to tee
+          # below would mask pytest's non-zero exit code and report success.
+          set -o pipefail
+          source .venv/bin/activate
           cd tests/
-          pip install pytest
-          pip install pytest-error-for-skips
-          pip install pytest-cov
-          pytest -ra --error-for-skips --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=../torchquad . | tee pytest-coverage.txt
+          pytest -ra --error-for-skips --junitxml=pytest.xml \
+            --cov-report=term-missing:skip-covered --cov=../torchquad \
+            --cov-fail-under=85 . | tee pytest-coverage.txt
       - name: pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
         continue-on-error: true
         with:
           pytest-coverage-path: ./tests/pytest-coverage.txt
@@ -74,3 +81,98 @@ jobs:
           hide-comment: false
           report-only-changed-files: false
           junitxml-path: ./tests/pytest.xml
+
+  # Single-backend isolation: pins one backend so a breaking release of it is
+  # caught in isolation. A CPU torch baseline is co-installed because several
+  # test modules import torch at collection time; the pinned backend is the one
+  # actually exercised for integration. Skips are allowed here (the other
+  # backends are absent by design), so --error-for-skips lives only in `test`.
+  test-single-backend:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [jax, tensorflow]
+    name: test (${{ matrix.backend }} isolated)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install torchquad + ${{ matrix.backend }} (CPU)
+        run: |
+          uv venv --python 3.12
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+          if [ "${{ matrix.backend }}" = "jax" ]; then
+            uv pip install "jax[cpu]"
+          else
+            uv pip install tensorflow
+          fi
+          uv pip install -e ".[dev]"
+      - name: Verify ${{ matrix.backend }} imports
+        # Without --error-for-skips here, a pinned backend that fails to import
+        # would make every one of its tests importorskip and the job pass green
+        # for exactly the failure mode this job exists to catch. Fail explicitly
+        # if the pinned release cannot even be imported.
+        run: |
+          source .venv/bin/activate
+          python -c "import ${{ matrix.backend }}"
+      - name: Test ${{ matrix.backend }}
+        run: |
+          source .venv/bin/activate
+          cd tests/
+          pytest -ra .
+
+  # Packaging smoke test: build the wheel, install it into a clean environment,
+  # and run the built-in deployment self-test (needs only NumPy, pulled in as a
+  # transitive dependency).
+  wheel-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Install built wheel and run deployment self-test
+        run: |
+          uv venv --python 3.12
+          source .venv/bin/activate
+          uv pip install dist/*.whl
+          python -c "import torchquad; assert torchquad._deployment_test()"
+      # The self-test above never reaches scipy.stats.qmc, so a too-low SciPy
+      # floor would pass it. Exercise the Sobol path that the floor exists for,
+      # and assert the packages dropped from the runtime set stay dropped.
+      - name: Check the declared runtime dependencies are correct and minimal
+        run: |
+          source .venv/bin/activate
+          python -c "
+          import importlib.util as util
+          for name in ('matplotlib', 'tqdm'):
+              assert util.find_spec(name) is None, name + ' is back in the runtime install'
+          "
+          python -c "
+          from torchquad import MonteCarlo, Sobol
+          value = MonteCarlo().integrate(
+              lambda x: x[:, 0] ** 2, dim=1, N=1024,
+              integration_domain=[[0.0, 1.0]], backend='numpy',
+              rng=Sobol('numpy', seed=0),
+          )
+          assert abs(float(value) - 1.0 / 3.0) < 1e-6, value
+          "
+
+  # Documentation build gate: warnings are errors so doc rot fails the PR
+  # instead of silently shipping to Read the Docs.
+  docs-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+      - name: Build docs (warnings as errors)
+        run: |
+          uv venv --python 3.12
+          source .venv/bin/activate
+          uv pip install -e ".[docs]"
+          sphinx-build -W -b html docs/source docs/_build/html

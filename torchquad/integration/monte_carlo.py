@@ -26,6 +26,7 @@ class MonteCarlo(BaseIntegrator):
         seed=None,
         rng=None,
         backend=None,
+        args=None,
     ):
         """Integrates the passed function on the passed domain using vanilla Monte Carlo Integration.
 
@@ -37,9 +38,7 @@ class MonteCarlo(BaseIntegrator):
             seed (int, optional): Random number generation seed to the sampling point creation, only set if provided. Defaults to None.
             rng (RNG, optional): An initialised RNG; this can be used when compiling the function for Tensorflow
             backend (string, optional): Numerical backend. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
-
-        Raises:
-            ValueError: If len(integration_domain) != dim
+            args (list or tuple, optional): Extra arguments passed to the integrand as ``fn(points, *args)``. Defaults to None.
 
         Returns:
             backend-specific number: Integral value
@@ -54,7 +53,7 @@ class MonteCarlo(BaseIntegrator):
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)
         sample_points = self.calculate_sample_points(N, integration_domain, seed, rng)
         logger.debug("Evaluating integrand")
-        function_values, self._nr_of_fevals = self.evaluate_integrand(fn, sample_points)
+        function_values, self._nr_of_fevals = self.evaluate_integrand(fn, sample_points, args=args)
         return self.calculate_result(function_values, integration_domain)
 
     @expand_func_values_and_squeeze_integral
@@ -92,6 +91,9 @@ class MonteCarlo(BaseIntegrator):
 
         Returns:
             backend tensor: Sample points
+
+        Raises:
+            ValueError: If both ``seed`` and ``rng`` are passed.
         """
         if rng is None:
             rng = RNG(backend=infer_backend(integration_domain), seed=seed)
@@ -122,6 +124,9 @@ class MonteCarlo(BaseIntegrator):
 
         Returns:
             function(fn, integration_domain): JIT compiled integrate function where all parameters except the integrand and domain are fixed
+
+        Raises:
+            ValueError: If JIT compilation is not implemented for the selected numerical backend.
         """
         self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)

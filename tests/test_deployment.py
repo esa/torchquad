@@ -31,6 +31,14 @@ def test_deployment_test_imports():
 
     assert callable(_deployment_test)
 
+    # It stays reachable as torchquad._deployment_test (used by the wheel-smoke CI
+    # job and the README install check) but is deliberately kept private: out of
+    # __all__ so it does not surface in the public API or user autocomplete.
+    import torchquad
+
+    assert torchquad._deployment_test is _deployment_test
+    assert "_deployment_test" not in torchquad.__all__
+
     # Test that deployment test helper functions exist
     from torchquad.utils.deployment_test import _get_exp_func, _get_sin_func
     from torchquad.utils.deployment_test import _infer_backend_from_tensor, _is_finite_result

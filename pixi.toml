@@ -1,0 +1,63 @@
+# EXPERIMENTAL pixi manifest (https://pixi.sh). Provides per-backend
+# environments for conda-ecosystem users who prefer pixi over conda/uv. This is
+# a convenience path, not a CI dependency: uv (see uv.lock) is the primary
+# dev/CI toolchain and the conda environment_*.yml files remain the maintained
+# conda path. Regenerate the lock with `pixi install` after editing.
+[project]
+name = "torchquad"
+description = "Numerical integration for PyTorch, JAX, TensorFlow and NumPy."
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+# Core runtime dependencies (backend-agnostic). These floors mirror
+# pyproject.toml's [project.dependencies] so pixi prefers conda-forge binaries;
+# keep them in sync with pyproject (bump both together) — pyproject stays the
+# single source of truth for the pip/uv install.
+[dependencies]
+python = ">=3.10"
+autoray = ">=0.5.0"
+loguru = ">=0.5.3"
+scipy = ">=1.7.2"
+numpy = ">=1.21.3"
+
+[pypi-dependencies]
+torchquad = { path = ".", editable = true }
+
+# --- Optional backend features (CPU builds) --------------------------------
+# GPU builds are out of scope here, exactly as for the pip extras: follow each
+# framework's own guide instead.
+[feature.torch.dependencies]
+pytorch = ">=2.1"
+
+[feature.jax.pypi-dependencies]
+jax = { version = ">=0.4.17", extras = ["cpu"] }
+
+[feature.tensorflow.pypi-dependencies]
+tensorflow = ">=2.18.0"
+
+# --- Development + docs features -------------------------------------------
+[feature.dev.dependencies]
+pytest = ">=6.2.1"
+# Only the benchmarking harness plots; the library itself never imports it.
+matplotlib = ">=3.3.3"
+[feature.dev.pypi-dependencies]
+pytest-cov = ">=4.0.0"
+pytest-error-for-skips = ">=2.0.2"
+ruff = ">=0.14.6"
+pydoclint = ">=0.8.3"
+vulture = ">=2.14"
+pre-commit = ">=3.5.0"
+
+[feature.docs.dependencies]
+sphinx = ">=3.4.3"
+sphinx_rtd_theme = ">=0.5.1"
+
+# --- Environments -----------------------------------------------------------
+# `pixi run -e <name> <cmd>` selects one. `all` mirrors the CI all-backends job.
+[environments]
+default = { features = ["torch", "dev"] }
+torch = { features = ["torch", "dev"] }
+jax = { features = ["jax", "dev"] }
+tensorflow = { features = ["tensorflow", "dev"] }
+docs = { features = ["docs"] }
+all = { features = ["torch", "jax", "tensorflow", "dev", "docs"] }

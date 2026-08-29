@@ -2,9 +2,8 @@ from loguru import logger
 from autoray import numpy as anp, infer_backend
 
 from .base_integrator import BaseIntegrator
-from .integration_grid import IntegrationGrid
+from .integration_grid import IntegrationGrid, grid_func
 from .utils import (
-    _linspace_with_grads,
     expand_func_values_and_squeeze_integral,
     _setup_integration_domain,
     _torch_trace_without_warnings,
@@ -19,19 +18,29 @@ class GridIntegrator(BaseIntegrator):
 
     @property
     def _grid_func(self):
-        def f(integration_domain, N, requires_grad=False, backend=None):
-            a = integration_domain[0]
-            b = integration_domain[1]
-            return _linspace_with_grads(a, b, N, requires_grad=requires_grad)
+        """Grid-point generator used to build the integration grid.
 
-        return f
+        Newton-Cotes rules integrate over a uniform grid, so the default is the
+        shared :func:`~torchquad.integration.integration_grid.grid_func`.
+        Subclasses such as Gaussian override this to place points at
+        rule-specific nodes instead of a uniform linspace.
+        """
+        return grid_func
 
     def _weights(self, N, dim, backend, requires_grad=False):
         return None
 
-    def integrate(self, fn, dim, N, integration_domain, backend):
+    def integrate(self, fn, dim, N, integration_domain, backend, args=None):
         """Integrate the passed function on the passed domain using a Composite Newton Cotes rule.
-        The argument meanings are explained in the sub-classes.
+        The argument meanings are explained in more detail in the sub-classes.
+
+        Args:
+            fn (func): The function to integrate over.
+            dim (int): Dimensionality of the integration domain.
+            N (int): Total number of sample points to use for the integration.
+            integration_domain (list or backend tensor): Integration domain, e.g. [[-1,1],[0,1]]. It can also determine the numerical backend.
+            backend (string): Numerical backend. Ignored if it can be inferred from integration_domain.
+            args (list or tuple, optional): Extra arguments passed to the integrand as ``fn(points, *args)``. Defaults to None.
 
         Returns:
             float: integral value
@@ -48,7 +57,7 @@ class GridIntegrator(BaseIntegrator):
 
         logger.debug("Evaluating integrand on the grid.")
         function_values, num_points = self.evaluate_integrand(
-            fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
+            fn, grid_points, weights=self._weights(n_per_dim, dim, backend), args=args
         )
         self._nr_of_fevals = num_points
 
@@ -63,6 +72,7 @@ class GridIntegrator(BaseIntegrator):
             dim (int): Dimensionality
             n_per_dim (int): Number of grid slices per dimension
             hs (backend tensor): Distances between grid slices for each dimension
+            integration_domain (backend tensor): Integration domain
 
         Returns:
             backend tensor: Quadrature result
@@ -80,9 +90,9 @@ class GridIntegrator(BaseIntegrator):
         )  # chr(i + 65) generates an alphabetical character
         reshaped_function_values = anp.einsum(f"{einsum}->{einsum[1:]}{einsum[0]}", function_values)
         reshaped_function_values = reshaped_function_values.reshape(new_shape)
-        assert new_shape == list(
-            reshaped_function_values.shape
-        ), f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
+        assert new_shape == list(reshaped_function_values.shape), (
+            f"reshaping produced shape {reshaped_function_values.shape}, expected shape was {new_shape}"
+        )
         logger.debug("Computing areas.")
 
         result = self._apply_composite_rule(reshaped_function_values, dim, hs, integration_domain)
@@ -145,6 +155,9 @@ class GridIntegrator(BaseIntegrator):
 
         Returns:
             function(fn, integration_domain): JIT compiled integrate function where all parameters except the integrand and domain are fixed
+
+        Raises:
+            ValueError: If JIT compilation is not implemented for the selected numerical backend.
         """
         # If N is None, use the minimal required number of points per dimension
         if N is None:

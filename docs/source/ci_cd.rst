@@ -17,38 +17,52 @@ Torchquad uses GitHub Actions for CI/CD with the following key objectives:
 GitHub Actions Workflows
 -------------------------
 
-The CI/CD pipeline consists of five main workflows:
+The CI/CD pipeline consists of six main workflows:
 
 1. **Test Suite** (``run_tests.yml``)
-   
+
    **Triggers**: Push to main/develop branches, pull requests, manual dispatch
-   
-   This is the core testing workflow that runs on every code change:
-   
-   * **Linting Stage**: Uses flake8 to check code quality and style
-   * **Testing Stage**: 
-     - Sets up Python 3.9 environment
-     - Installs all backend dependencies via micromamba
-     - Runs full pytest suite with coverage reporting
-     - Posts coverage reports as PR comments
-   
+
+   This is the core testing workflow that runs on every code change. All jobs
+   install dependencies with `uv <https://docs.astral.sh/uv/>`_ (CPU wheels),
+   which is much faster than conda in CI:
+
+   * **Lint**: `ruff <https://docs.astral.sh/ruff/>`_ formatting
+     (``ruff format --check``) and code quality (``ruff check``), plus
+     `pydoclint <https://github.com/jsh9/pydoclint>`_ Google-style docstring
+     checks.
+   * **test**: all four backends installed across a Python 3.10/3.11/3.12
+     matrix (``fail-fast: false``). Skipped tests are errors
+     (``--error-for-skips``), so a silently-missing backend fails the build.
+     The 3.12 leg enforces the coverage floor (``--cov-fail-under``) and posts
+     the PR coverage comment.
+   * **test-single-backend**: pins JAX or TensorFlow in isolation (with a CPU
+     torch baseline for collection) so a breaking release of one backend is
+     caught on its own.
+   * **wheel-smoke**: builds the wheel, installs it clean, and runs the
+     built-in deployment self-test — catches packaging breakage before release.
+   * **docs-build**: ``sphinx-build -W`` (warnings as errors) so documentation
+     rot fails the PR instead of shipping silently to Read the Docs.
+
    **Key Features**:
-   
-   * Multi-backend testing (all numerical backends)
-   * Coverage tracking with pytest-cov
+
+   * Multi-backend testing across a Python version matrix
+   * Coverage tracking with pytest-cov and an enforced floor
    * JUnit XML output for CI integration
    * Automated PR comments with test results
 
-2. **Code Formatting** (``autoblack.yml``)
-   
-   **Triggers**: Pull requests only
-   
-   Ensures consistent code formatting across the project:
-   
-   * Uses Black formatter with 100-character line length
-   * Python 3.11 environment
-   * Checks formatting without modifying files
-   * Fails if reformatting is needed
+2. **Dead Code** (``dead_code.yml``)
+
+   **Triggers**: Push to main/develop branches, pull requests, manual dispatch
+
+   Detects unused code with `vulture <https://github.com/jendrikseipp/vulture>`_
+   in two tiers:
+
+   * A blocking tier at 100% confidence (near-certain dead code fails the build)
+   * An advisory tier at 60% confidence (reported but non-blocking)
+
+   Genuine implicit uses go in ``.vulture_whitelist.py``, but deleting dead code
+   is preferred over whitelisting it.
 
 3. **PyPI Deployment** (``deploy_to_pypi.yml``)
    
@@ -56,14 +70,14 @@ The CI/CD pipeline consists of five main workflows:
    
    Production deployment to PyPI:
    
-   * Python 3.10 environment
+   * Python 3.11 environment
    * Builds source distribution and wheel packages
    * Uploads to PyPI using stored authentication token
    * Manual trigger ensures controlled releases
 
 4. **Test PyPI Deployment** (``deploy_to_test_pypi.yml``)
    
-   **Triggers**: Manual workflow dispatch, GitHub releases
+   **Triggers**: Manual workflow dispatch only
    
    Test deployment for validation:
    
@@ -71,7 +85,18 @@ The CI/CD pipeline consists of five main workflows:
    * Targets Test PyPI for safe testing
    * Used to validate packages before production release
 
-5. **Documentation** (``draft-pdf.yml``)
+5. **Release Testing** (``release_testing.yml``)
+
+   **Triggers**: Manual workflow dispatch, GitHub releases
+
+   The slower end-to-end suite in ``release_testing/``, run against the *latest
+   released* backends rather than the versions pinned in CI, so a release cannot
+   silently break on a new torch/JAX/TensorFlow:
+
+   * Python 3.10/3.11/3.12 matrix
+   * Accuracy, seeded determinism, autodiff and JIT-vs-eager parity checks
+
+6. **Documentation** (``draft-pdf.yml``)
    
    **Triggers**: Changes to paper directory
    
@@ -84,24 +109,34 @@ The CI/CD pipeline consists of five main workflows:
 Environment Setup
 -----------------
 
-The CI system uses conda/micromamba for dependency management:
+CI installs dependencies with `uv <https://docs.astral.sh/uv/>`_ (CPU wheels),
+which is the primary dev/CI toolchain:
 
 .. code-block:: yaml
 
    # From run_tests.yml
-   - name: provision-with-micromamba
-     uses: mamba-org/setup-micromamba@v1
+   - name: Set up uv
+     uses: astral-sh/setup-uv@v5
      with:
-       environment-file: environment_all_backends.yml
-       environment-name: torchquad
-       cache-downloads: true
+       enable-cache: true
+   - name: Install torchquad and all backends (CPU)
+     run: |
+       uv venv --python 3.12
+       uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+       uv pip install "jax[cpu]" tensorflow numpy
+       uv pip install -e ".[dev]"
 
-Environment Files
-~~~~~~~~~~~~~~~~~
+Dependency management paths
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* ``environment.yml`` - Basic PyTorch setup for development
-* ``environment_all_backends.yml`` - Complete backend support for CI
+* ``uv`` + ``uv.lock`` - primary reproducible dev/CI toolchain
+* ``environment.yml`` - basic conda setup for development
+* ``environment_all_backends.yml`` - complete backend support (conda path)
+* ``pixi.toml`` - experimental per-backend environments for pixi users
 * ``rtd_environment.yml`` - ReadTheDocs documentation builds
+
+Locally, ``uv sync --extra all`` (or ``uv pip install -e ".[dev]"`` plus the
+backend of your choice) reproduces the dev environment.
 
 Test Execution
 --------------
@@ -126,37 +161,65 @@ The test suite runs with comprehensive coverage:
 Code Quality Standards
 ----------------------
 
-Linting with Flake8
-~~~~~~~~~~~~~~~~~~~
+Linting and Formatting with Ruff
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Two-stage linting process:
+`ruff <https://docs.astral.sh/ruff/>`_ replaces the previous flake8 + black
+setup with a single, much faster tool. Configuration lives in the ``[tool.ruff]``
+section of ``pyproject.toml`` (line length 100).
 
-1. **Critical Errors**: Check for syntax errors and undefined names
-   
+1. **Formatting**: Check (or apply) the code style
+
    .. code-block:: bash
-   
-      flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
-2. **Full Analysis**: Complete code quality check using project ``.flake8`` configuration
-   
+      ruff format --check .   # check only (CI)
+      ruff format .           # apply
+
+2. **Critical Errors**: Syntax errors and undefined names (the severe gate)
+
    .. code-block:: bash
-   
-      flake8 . --count --show-source --statistics
 
-Formatting with Black
-~~~~~~~~~~~~~~~~~~~~~
+      ruff check --select=E9,F63,F7,F82 .
 
-Consistent code style enforcement:
+3. **Full Analysis**: Complete lint check
+
+   .. code-block:: bash
+
+      ruff check .
+
+Docstrings with Pydoclint
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`pydoclint <https://github.com/jsh9/pydoclint>`_ enforces Google-style docstring
+completeness and consistency (missing ``Args``/``Returns``/``Raises``) on the
+``torchquad`` package. Configuration lives in ``[tool.pydoclint]`` in
+``pyproject.toml``.
 
 .. code-block:: bash
 
-   black --check --line-length 100 .
+   pydoclint torchquad/
 
-**Configuration**:
+Dead Code with Vulture
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Line length: 100 characters
-* Target: Python 3.11+
-* Complies with project style guide
+`vulture <https://github.com/jendrikseipp/vulture>`_ flags unused code. The
+blocking CI tier runs at 100% confidence; a 60% advisory tier is non-blocking.
+
+.. code-block:: bash
+
+   vulture torchquad .vulture_whitelist.py --min-confidence 100
+
+Pre-commit Hooks
+~~~~~~~~~~~~~~~~~
+
+All of the above are wired into `pre-commit <https://pre-commit.com/>`_ via
+``.pre-commit-config.yaml``. Install them once so issues are caught before pushing:
+
+.. code-block:: bash
+
+   pip install pre-commit
+   pre-commit install
+   pre-commit run --all-files   # run against the whole repo
 
 Coverage Reporting
 ------------------
@@ -182,15 +245,16 @@ Before pushing changes, run these checks locally:
 .. code-block:: bash
 
    # Format code
-   black . --line-length 100
-   
-   # Check linting
-   flake8 . --count --show-source --statistics
-   
+   ruff format .
+
+   # Check linting and docstrings
+   ruff check .
+   pydoclint torchquad/
+
    # Run tests
    cd tests/
    pytest
-   
+
    # Run with coverage
    pytest --cov=../torchquad
 
@@ -263,12 +327,12 @@ Common CI Failures
 ~~~~~~~~~~~~~~~~~~
 
 1. **Formatting Issues**:
-   
+
    .. code-block:: bash
-   
+
       # Fix locally
-      black . --line-length 100
-      git add . && git commit -m "Fix formatting"
+      ruff format .
+      git add . && git commit -m "style: fix formatting"
 
 2. **Import Errors**:
    
@@ -292,7 +356,7 @@ Common CI Failures
    
    * Update ``environment_all_backends.yml`` for new dependencies
    * Check for version conflicts between backends
-   * Verify micromamba cache invalidation
+   * Verify the ``uv`` cache is invalidated when ``uv.lock`` changes
 
 Building Documentation Locally
 ------------------------------

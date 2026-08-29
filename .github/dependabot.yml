@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # Keep GitHub Actions pinned to current majors automatically. Grouped so all
+  # action bumps arrive in a single weekly PR instead of one per action.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

@@ -7,20 +7,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Install dependencies
         run: |
-          pip install build twine
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          # twine >=6.1.0 understands Metadata 2.4, which the PEP 639 license
+          # expression in pyproject.toml produces.
+          pip install build "twine>=6.1.0"
       - name: Build and publish to PyPI
         env:
           TWINE_USERNAME: "__token__"
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-          TORCHQUAD_RELEASE_BUILD: "True"
         run: |
           python -m build
           twine upload dist/*

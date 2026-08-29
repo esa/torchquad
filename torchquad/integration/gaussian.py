@@ -2,6 +2,19 @@ import numpy
 from autoray import numpy as anp
 from .grid_integrator import GridIntegrator
 
+#: Largest number of nodes *per dimension* a Gaussian rule will build.
+#:
+#: The nodes come from the eigenvalues of an ``n x n`` companion matrix, so the
+#: cost is quadratic in memory and cubic in time: 2 000 nodes take 0.16 s and
+#: 32 MB, 10 000 take about 20 s and 0.75 GiB, and 200 000 raise a bare
+#: ``MemoryError: Unable to allocate 298. GiB``. Without this limit a caller who
+#: asks for ``GaussLegendre().integrate(..., dim=1, N=10**6)`` gets that NumPy
+#: error, which names neither torchquad nor a way forward, after an unbounded
+#: wait. Passing the limit is nearly always a mistake rather than a real need:
+#: Gauss-Legendre converges exponentially on smooth integrands and reaches
+#: double precision within a few hundred nodes, so more nodes buy nothing.
+MAX_NODES_PER_DIMENSION = 10_000
+
 
 class Gaussian(GridIntegrator):
     """
@@ -13,7 +26,6 @@ class Gaussian(GridIntegrator):
     The primary methods/attributes of interest to override are `_root_fn` (for different polynomials, like `numpy.polynomial.legendre.leggauss`), `_apply_composite_rule` (as in other integration methods), and `_resize_roots` (for handling different integration domains).
 
     Attributes:
-        name  (str): A human-readable name for the integral.
         _root_fn (function): A function that returns roots and weights like `numpy.polynomial.legendre.leggauss`.
         _root_args (tuple): a way of adding information to be passed into `_root_fn` as needed.  This is then used when caching roots/weights to potentially distinguish different calls to `_root_fn` based on arguments.
         _cache (dict): a cache for roots and weights, used internally.
@@ -21,12 +33,11 @@ class Gaussian(GridIntegrator):
 
     def __init__(self):
         super().__init__()
-        self.name = "Gauss-Legendre"
         self._root_fn = numpy.polynomial.legendre.leggauss
         self._root_args = ()
         self._cache = {}
 
-    def integrate(self, fn, dim, N=8, integration_domain=None, backend=None):
+    def integrate(self, fn, dim, N=8, integration_domain=None, backend=None, args=None):
         """Integrates the passed function on the passed domain using a Gaussian rule (Gauss-Legendre on [-1,1] as a default).
 
         Args:
@@ -35,11 +46,12 @@ class Gaussian(GridIntegrator):
             N (int, optional): Total number of sample points to use for the integration. Should be odd. Defaults to 3 points per dimension if None is given.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.   It also determines the numerical backend if possible.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
+            args (list or tuple, optional): Extra arguments passed to the integrand as ``fn(points, *args)``. Defaults to None.
 
         Returns:
             backend-specific number: Integral value
         """
-        return super().integrate(fn, dim, N, integration_domain, backend)
+        return super().integrate(fn, dim, N, integration_domain, backend, args=args)
 
     def _weights(self, N, dim, backend, requires_grad=False):
         """return the weights, broadcast across the dimensions, generated from the polynomial of choice
@@ -48,6 +60,7 @@ class Gaussian(GridIntegrator):
             N (int): number of nodes
             dim (int): number of dimensions
             backend (string): which backend array to return
+            requires_grad (bool, optional): whether the returned weights should track gradients (torch only). Defaults to False.
 
         Returns:
             backend tensor: the weights
@@ -74,6 +87,7 @@ class Gaussian(GridIntegrator):
         Args:
             N (int): number of nodes
             backend (string): which backend array to return
+            requires_grad (bool, optional): whether the returned roots should track gradients (torch only). Defaults to False.
 
         Returns:
             backend tensor: the roots
@@ -112,10 +126,14 @@ class Gaussian(GridIntegrator):
 
         Args:
             N (int): number of nodes to return
-            backend (string): which backend to use
 
         Returns:
             tuple: nodes and weights
+
+        Raises:
+            NotImplementedError: If N is not an int and has no ``item`` method to convert it to one.
+            ValueError: If N exceeds :data:`MAX_NODES_PER_DIMENSION`, since building
+                that many nodes needs a quadratically large intermediate matrix.
         """
         _root_args = (N, *self._root_args)
         if not isinstance(N, int):
@@ -125,6 +143,25 @@ class Gaussian(GridIntegrator):
                 raise NotImplementedError(f"N {N} is not an int and lacks an `item` method")
         if _root_args in self._cache:
             return self._cache[_root_args]
+
+        # Check before calling _root_fn: past a few tens of thousands of nodes it
+        # raises a bare NumPy MemoryError about an n x n array, which says
+        # nothing about which argument caused it or what to do instead.
+        nodes_per_dimension = _root_args[0]
+        if nodes_per_dimension > MAX_NODES_PER_DIMENSION:
+            required_gib = 8 * nodes_per_dimension**2 / 1024**3
+            raise ValueError(
+                f"Gaussian quadrature needs {nodes_per_dimension} nodes per dimension, above "
+                f"the limit of {MAX_NODES_PER_DIMENSION}. The nodes are the eigenvalues of an "
+                f"n x n matrix, so this one would need about {required_gib:.1f} GiB and "
+                "correspondingly long to diagonalize. Note that N is divided across the "
+                "dimensions, so this is N**(1/dim) rather than N itself. Gauss-Legendre "
+                "converges exponentially on smooth integrands and reaches double precision "
+                "within a few hundred nodes, so a lower N is very likely to be just as "
+                "accurate; for a genuinely large number of points, use a Newton-Cotes rule "
+                "(Trapezoid, Simpson, Boole) or MonteCarlo instead."
+            )
+
         self._cache[_root_args] = self._root_fn(*_root_args)
         return self._cache[_root_args]
 

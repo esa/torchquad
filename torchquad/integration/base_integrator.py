@@ -34,6 +34,9 @@ class BaseIntegrator:
             points (backend tensor): Integration points
             weights (backend tensor, optional): Integration weights. Defaults to None.
             args (list or tuple, optional): Any arguments required by the function. Defaults to None.
+
+        Returns:
+            backend tensor: Integrand function output
         """
         result, num_points = self.evaluate_integrand(self._fn, points, weights=weights, args=args)
         self._nr_of_fevals += num_points
@@ -52,6 +55,10 @@ class BaseIntegrator:
         Returns:
             backend tensor: Integrand function output
             int: Number of evaluated points
+
+        Raises:
+            ValueError: If the integrand does not return one value per integration point,
+                i.e. if it is not vectorized along the first dimension.
         """
         num_points = points.shape[0]
 

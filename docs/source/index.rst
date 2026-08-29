@@ -14,48 +14,48 @@
    :target: https://torchquad.readthedocs.io/en/main/?badge=main
    :alt: Documentation Status
 
-.. image:: https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/develop
-   :target: https://img.shields.io/github/workflow/status/esa/torchquad/Running%20tests/develop
-   :alt: GitHub Workflow Status (branch)
+.. image:: https://github.com/esa/torchquad/actions/workflows/run_tests.yml/badge.svg
+   :target: https://github.com/esa/torchquad/actions/workflows/run_tests.yml
+   :alt: Tests
 
 .. image:: https://img.shields.io/github/last-commit/esa/torchquad
-   :target: https://img.shields.io/github/last-commit/esa/torchquad
+   :target: https://github.com/esa/torchquad/commits/main
    :alt: GitHub last commit
 
 .. image:: https://img.shields.io/github/license/esa/torchquad
-   :target: https://img.shields.io/github/license/esa/torchquad
+   :target: https://github.com/esa/torchquad/blob/main/LICENSE
    :alt: GitHub license
 
 .. image:: https://img.shields.io/conda/vn/conda-forge/torchquad
-   :target: https://img.shields.io/conda/vn/conda-forge/torchquad
+   :target: https://anaconda.org/conda-forge/torchquad
    :alt: Conda (channel only)
 
 .. image:: https://img.shields.io/pypi/v/torchquad
-   :target: https://img.shields.io/pypi/v/torchquad
+   :target: https://pypi.org/project/torchquad/
    :alt: PyPI Version
 
 .. image:: https://img.shields.io/pypi/pyversions/torchquad
-   :target: https://img.shields.io/pypi/pyversions/torchquad
+   :target: https://pypi.org/project/torchquad/
    :alt: PyPI - Python Version
 
 .. image:: https://img.shields.io/github/contributors/esa/torchquad
-   :target: https://img.shields.io/github/contributors/esa/torchquad
+   :target: https://github.com/esa/torchquad/graphs/contributors
    :alt: GitHub contributors
 
 .. image:: https://img.shields.io/github/issues/esa/torchquad
-   :target: https://img.shields.io/github/issues/esa/torchquad
+   :target: https://github.com/esa/torchquad/issues
    :alt: GitHub issues
 
 .. image:: https://img.shields.io/github/issues-pr/esa/torchquad
-   :target: https://img.shields.io/github/issues-pr/esa/torchquad
+   :target: https://github.com/esa/torchquad/pulls
    :alt: GitHub pull requests
 
 .. image:: https://img.shields.io/conda/dn/conda-forge/torchquad
-   :target: https://img.shields.io/conda/dn/conda-forge/torchquad
+   :target: https://anaconda.org/conda-forge/torchquad
    :alt: Conda
 
 .. image:: https://img.shields.io/pypi/dm/torchquad
-   :target: https://img.shields.io/pypi/dm/torchquad
+   :target: https://pypi.org/project/torchquad/
    :alt: PyPI - Downloads
 
 .. image:: https://joss.theoj.org/papers/d6f22f83f1a889ddf83b3c2e0cd0919c/status.svg

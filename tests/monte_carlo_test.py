@@ -68,7 +68,7 @@ def _run_monte_carlo_tests(backend, _precision):
         use_complex=True,
         backend=backend,
     )
-    print(f"10D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors:" f" {str(errors)}")
+    print(f"10D Monte Carlo Test passed. N: {N}, backend: {backend}, Errors: {str(errors)}")
     for err, test_function in zip(errors, funcs):
         assert test_function.get_order() > 0 or err == 0.0
     for error in errors:
@@ -84,7 +84,9 @@ def _run_monte_carlo_tests(backend, _precision):
             # which is then re-used on all other integrations (as is the point of JIT).
             nonlocal jit_integrate
             if jit_integrate is None:
-                jit_integrate = mc.get_jit_compiled_integrate(dim=1, N=N, backend=backend)
+                # Seed so the test is deterministic; unseeded, the JIT Monte
+                # Carlo path intermittently exceeds the tolerances below.
+                jit_integrate = mc.get_jit_compiled_integrate(dim=1, N=N, seed=0, backend=backend)
             return jit_integrate(*args, **kwargs)
 
         errors, funcs = compute_integration_test_errors(

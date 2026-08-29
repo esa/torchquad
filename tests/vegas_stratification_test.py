@@ -25,9 +25,9 @@ def _run_vegas_stratification_checks(backend, dtype_name):
     neval = strat.get_NH(4000)
     assert neval.dtype == dtype_int
     assert neval.shape == (strat.N_cubes,)
-    assert (
-        anp.max(anp.abs(neval - neval[0])) == 0
-    ), "Varying number of evaluations per hypercube for a fresh VEGASStratification"
+    assert anp.max(anp.abs(neval - neval[0])) == 0, (
+        "Varying number of evaluations per hypercube for a fresh VEGASStratification"
+    )
 
     # Test if sample point calculation works correctly for a
     # fresh VEGASStratification
@@ -51,9 +51,9 @@ def _run_vegas_stratification_checks(backend, dtype_name):
     assert strat.dh.dtype == dtype_float
     assert anp.min(strat.dh) >= 0.0, "Invalid probabilities for hypercubes"
     assert anp.abs(strat.dh.sum() - 1.0) < 4e-7, "Invalid probabilities for hypercubes"
-    assert (
-        strat.dh[-1] > strat.dh[0]
-    ), "The hypercube at the peak should have a higher probability to get points"
+    assert strat.dh[-1] > strat.dh[0], (
+        "The hypercube at the peak should have a higher probability to get points"
+    )
 
     # Test if get_NH still works correctly
     neval = strat.get_NH(4000)

@@ -3,6 +3,7 @@
 Additional integration tests to check if dtypes, shapes and similar
 backend-specific properties
 """
+
 from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name, to_backend_dtype
 from itertools import product
@@ -104,9 +105,9 @@ def _run_simple_integrations(backend):
         )
 
         assert infer_backend(result) == backend
-        assert (
-            get_dtype_name(result) == expected_dtype_name
-        ), f"Expected dtype {expected_dtype_name}, got {get_dtype_name(result)}"
+        assert get_dtype_name(result) == expected_dtype_name, (
+            f"Expected dtype {expected_dtype_name}, got {get_dtype_name(result)}"
+        )
 
         # VEGAS seems to be bad at integrating constant functions currently
         max_error = 0.03 if integrator_name == "VEGAS" else 1e-5

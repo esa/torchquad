@@ -1,24 +1,28 @@
+# Full multi-backend environment (PyTorch, JAX, TensorFlow, NumPy) used by CI
+# and for local all-backends development. CPU builds throughout — see the GPU
+# notes below. pip/uv is the primary path (see README); this conda file is the
+# maintained conda path.
 name: torchquad
 channels:
   - conda-forge
-  - pytorch
 dependencies:
   - autoray>=0.5.0
   - loguru>=0.5.3
   - matplotlib>=3.3.3
   - pytest>=6.2.1
   - python==3.12
-  - scipy>=1.6.0
+  - scipy>=1.7.2
   - sphinx>=3.4.3
   - sphinx_rtd_theme>=0.5.1
-  - tqdm>=4.56.0
-  # Numerical backend installations with CUDA support where possible:
-  - numpy>=1.19.5
-  - cudatoolkit>=11.1
-  - pytorch>=1.9 # CPU version
-  # jaxlib with CUDA support is not available for conda
+  # Numerical backends. conda-forge now ships PyTorch directly, so the separate
+  # `pytorch` channel (deprecated since torch 2.6) and the legacy `cudatoolkit`
+  # pin are gone. This installs the CPU build; for a CUDA build use the
+  # `pytorch-gpu` conda-forge package or follow https://pytorch.org/get-started.
+  - numpy>=1.21.3
+  - pytorch>=2.1
   - pip:
-      - --find-links https://storage.googleapis.com/jax-releases/jax_releases.html
-      - tensorflow>=2.18.0 # CPU version
-      - jax[cpu]>=0.4.17 # this will only work on linux. for win see e.g. https://github.com/cloudhan/jax-windows-builder
-        # CPU version
+      # JAX and TensorFlow come from PyPI (CPU wheels). The obsolete
+      # jax_releases find-links is no longer needed; for JAX/TF GPU (Linux/WSL2
+      # only) follow their own install guides.
+      - tensorflow>=2.18.0
+      - jax[cpu]>=0.4.17
