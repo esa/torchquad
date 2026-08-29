@@ -1,9 +1,22 @@
 import warnings
 from autoray import numpy as anp
-from autoray import infer_backend
+from autoray import get_dtype_name, infer_backend
 from loguru import logger
 
 from .utils import _check_integration_domain
+
+# Mantissa width of each supported dtype. A complex type carries the precision of
+# its real component, so complex128 is as precise as float64 and pairing the two
+# loses nothing. Anything absent is treated as unknown and left alone rather than
+# guessed at.
+_DTYPE_PRECISION_BITS = {
+    "float16": 16,
+    "bfloat16": 16,
+    "float32": 32,
+    "float64": 64,
+    "complex64": 32,
+    "complex128": 64,
+}
 
 
 class BaseIntegrator:
@@ -46,6 +59,13 @@ class BaseIntegrator:
     def evaluate_integrand(fn, points, weights=None, args=None):
         """Evaluate the integrand function at the passed points
 
+        The tensor ``fn`` returns is never modified: the quadrature weights are
+        applied out of place. Integrands may therefore cache and reuse a buffer,
+        and autograd graphs survive even when an integrand's final operation needs
+        its own output in the backward pass. When weights are applied, the returned
+        dtype is the promotion of the integrand's and the weights' dtypes, and a
+        warning is issued if the integrand's is the less precise of the two.
+
         Args:
             fn (function): Integrand function
             points (backend tensor): Integration points
@@ -59,6 +79,10 @@ class BaseIntegrator:
         Raises:
             ValueError: If the integrand does not return one value per integration point,
                 i.e. if it is not vectorized along the first dimension.
+
+        Warns:
+            UserWarning: If the integrand's return value uses a different numerical
+                backend than the points, or a less precise dtype than the weights.
         """
         num_points = points.shape[0]
 
@@ -93,12 +117,21 @@ class BaseIntegrator:
                 weights = anp.repeat(
                     anp.expand_dims(weights, axis=1), anp.prod(integrand_shape)
                 ).reshape((weights.shape[0], *(integrand_shape)))
+            result_bits = _DTYPE_PRECISION_BITS.get(get_dtype_name(result))
+            weight_bits = _DTYPE_PRECISION_BITS.get(get_dtype_name(weights))
+            if result_bits is not None and weight_bits is not None and result_bits < weight_bits:
+                warnings.warn(
+                    f"The passed function returned {get_dtype_name(result)} values while the "
+                    f"quadrature weights are {get_dtype_name(weights)}. The result is promoted to "
+                    f"{get_dtype_name(weights)}, but the integrand was only evaluated at "
+                    f"{get_dtype_name(result)} precision, so the extra digits are not meaningful. "
+                    "Return the same precision the integrator was set up with."
+                )
             # Deliberately out-of-place: `result` is the tensor the user's integrand
             # returned and torchquad does not own it. An in-place `*=` mutates it,
             # which breaks PyTorch autograd whenever the integrand's last operation
             # needs its own output in the backward pass (exp, sqrt, tanh, sigmoid,
             # div, pow) and corrupts any tensor the integrand caches and reuses.
-            # It also silently downcast the weights to the integrand's dtype.
             result = result * weights
 
         return result, num_points

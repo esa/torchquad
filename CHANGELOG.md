@@ -7,31 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The quadrature weights are no longer truncated to the integrand's dtype, and a
+  mismatch now warns instead of passing silently. An integrand returning
+  `float32` under `float64` precision yields a `float64` result rather than
+  discarding the weights' precision.
+
 ### Fixed
-- `evaluate_integrand` no longer applies the quadrature weights in place, so it
-  no longer mutates the tensor the user's integrand returned. The in-place
-  `result *= weights` broke PyTorch autograd through `GaussLegendre` (and any
-  `Gaussian` subclass) for every integrand whose last operation needs its own
-  output in the backward pass — `exp`, `sqrt`, `tanh`, `sigmoid`, `div`, `pow` —
-  raising `RuntimeError: one of the variables needed for gradient computation has
-  been modified by an inplace operation`. It failed identically for gradients
-  with respect to the integration domain, on CPU and GPU. Only the Gaussian
-  family passes weights through this path, so Newton–Cotes and Monte Carlo were
-  unaffected, as was JAX. Present since Gaussian quadrature was added in 0.4.0
-  (#141).
-
-  As a side effect the weights are no longer silently downcast to the integrand's
-  dtype: an integrand returning `float32` under `float64` precision now yields a
-  `float64` result instead of discarding the weights' precision.
-
-  Numerical results are otherwise unchanged — the multiplication is the same, only
-  its destination differs.
-- `gradient_test.py` listed six integrators but only five point counts, so `zip`
-  silently dropped `GaussLegendre` from every gradient test. That is why the bug
-  above went unnoticed. The lists are now length-checked, and a smooth
-  exponential integrand was added because the existing V-shaped and polynomial
-  test functions have backward passes that do not read their own output and so
-  could never have caught it.
+- `evaluate_integrand` applies the quadrature weights out of place, so it no
+  longer mutates the tensor the integrand returned. The in-place multiply broke
+  PyTorch autograd through `GaussLegendre` and any `Gaussian` subclass for
+  integrands whose backward pass reads its own output (`exp`, `sqrt`, `tanh`,
+  `sigmoid`, `div`, `pow`), including gradients with respect to the integration
+  domain. Newton–Cotes, Monte Carlo and JAX were unaffected. Present since
+  Gaussian quadrature arrived in 0.4.0 (#141). Integration results are otherwise
+  unchanged.
 
 ## [0.6.0] - 2026-08-23
 

@@ -1,12 +1,17 @@
+import warnings
+
 import numpy as np
+import pytest
 from autoray import numpy as anp
 from autoray import to_backend_dtype, to_numpy
 
 from torchquad.integration.base_integrator import BaseIntegrator
 from helper_functions import setup_test_for_backend
 
+NUM_POINTS = 16
 
-def _make_points_and_weights(backend, dtype_name, num_points=16):
+
+def _make_points_and_weights(backend, dtype_name, num_points=NUM_POINTS):
     """Build sample points and quadrature weights for the given backend.
 
     Args:
@@ -49,7 +54,7 @@ def _run_no_mutation_tests(backend, dtype_name):
     result, num_points = BaseIntegrator.evaluate_integrand(integrand, points, weights=weights)
 
     unweighted = np.exp(to_numpy(points)[:, 0])
-    assert num_points == 16
+    assert num_points == points.shape[0]
     # The tensor the integrand handed over is still what it returned.
     assert np.allclose(to_numpy(returned["tensor"]), unweighted)
     # ...and the weights were nonetheless applied to the value torchquad returns.
@@ -78,7 +83,7 @@ def _run_no_mutation_multidim_tests(backend, dtype_name):
 
     x = to_numpy(points)[:, 0]
     unweighted = np.stack([np.exp(x), np.exp(2.0 * x)], axis=1)
-    assert to_numpy(result).shape == (16, 2)
+    assert to_numpy(result).shape == (NUM_POINTS, 2)
     assert np.allclose(to_numpy(returned["tensor"]), unweighted)
     assert np.allclose(to_numpy(result), unweighted * to_numpy(weights)[:, None])
 
@@ -88,23 +93,51 @@ def _run_weight_dtype_tests(backend, dtype_name):
 
     An in-place multiply takes the dtype of its left operand, so an integrand
     returning float32 under float64 precision silently discarded the weights'
-    precision. Restricted to numpy and torch: TensorFlow refuses to multiply
-    mixed dtypes outright, and JAX arrays are immutable, so neither can reach
-    this failure mode.
+    precision. The result now keeps the wider dtype, and the mismatch is warned
+    about rather than passed over in silence.
+
+    Restricted to numpy and torch: TensorFlow refuses to multiply mixed dtypes
+    outright, so the mismatch cannot be constructed there at all.
 
     Args:
         backend (string): Numerical backend, e.g. "torch"
         dtype_name ("float32" or "float64"): Floating point precision
     """
     points, weights = _make_points_and_weights(backend, dtype_name)
-    float32 = to_backend_dtype("float32", like=backend)
+    narrower = to_backend_dtype("float32", like=backend)
 
     def integrand(x):
-        return anp.astype(anp.exp(x[:, 0]), float32)
+        return anp.astype(anp.exp(x[:, 0]), narrower)
 
-    result, _ = BaseIntegrator.evaluate_integrand(integrand, points, weights=weights)
-    assert to_numpy(weights).dtype == np.float64
-    assert to_numpy(result).dtype == np.float64
+    with pytest.warns(UserWarning, match="quadrature weights"):
+        result, _ = BaseIntegrator.evaluate_integrand(integrand, points, weights=weights)
+    # The weights' precision survives rather than being truncated to the integrand's.
+    assert to_numpy(result).dtype == to_numpy(weights).dtype
+
+
+def _run_matching_dtype_is_quiet_tests(backend, dtype_name):
+    """An integrand that matches the configured precision must not warn.
+
+    The mismatch warning has to stay off the ordinary path, including for complex
+    integrands: complex128 carries the same precision as the float64 weights it is
+    multiplied by, so pairing them loses nothing and must not be flagged.
+
+    Args:
+        backend (string): Numerical backend, e.g. "torch"
+        dtype_name ("float32" or "float64"): Floating point precision
+    """
+    points, weights = _make_points_and_weights(backend, dtype_name)
+
+    def real_integrand(x):
+        return anp.exp(x[:, 0])
+
+    def complex_integrand(x):
+        return anp.astype(anp.exp(x[:, 0]), to_backend_dtype("complex128", like=backend))
+
+    for integrand in (real_integrand, complex_integrand):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            BaseIntegrator.evaluate_integrand(integrand, points, weights=weights)
 
 
 test_no_mutation_numpy = setup_test_for_backend(_run_no_mutation_tests, "numpy", "float64")
@@ -130,6 +163,13 @@ test_no_mutation_multidim_tensorflow = setup_test_for_backend(
 test_weight_dtype_numpy = setup_test_for_backend(_run_weight_dtype_tests, "numpy", "float64")
 test_weight_dtype_torch = setup_test_for_backend(_run_weight_dtype_tests, "torch", "float64")
 
+test_matching_dtype_is_quiet_numpy = setup_test_for_backend(
+    _run_matching_dtype_is_quiet_tests, "numpy", "float64"
+)
+test_matching_dtype_is_quiet_torch = setup_test_for_backend(
+    _run_matching_dtype_is_quiet_tests, "torch", "float64"
+)
+
 if __name__ == "__main__":
     # used to run this test individually
     test_no_mutation_numpy()
@@ -142,3 +182,5 @@ if __name__ == "__main__":
     test_no_mutation_multidim_tensorflow()
     test_weight_dtype_numpy()
     test_weight_dtype_torch()
+    test_matching_dtype_is_quiet_numpy()
+    test_matching_dtype_is_quiet_torch()
