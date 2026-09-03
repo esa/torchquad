@@ -91,6 +91,9 @@ Source = "https://github.com/esa/torchquad/"
 [tool.setuptools]
 packages = ["torchquad", "torchquad.integration", "torchquad.utils"]
 
+[tool.setuptools.package-data]
+"torchquad.integration" = ["lattice-33002-1024-1048576.npz"]
+
 [tool.ruff]
 line-length = 100
 # .vulture_whitelist.py is a vulture artifact (bare-name references), not runnable code
