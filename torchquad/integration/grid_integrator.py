@@ -1,12 +1,13 @@
+from autoray import infer_backend
+from autoray import numpy as anp
 from loguru import logger
-from autoray import numpy as anp, infer_backend
 
 from .base_integrator import BaseIntegrator
-from .integration_grid import IntegrationGrid, grid_func
+from .integration_grid import IntegrationGrid, _per_dimension_counts, grid_func
 from .utils import (
-    expand_func_values_and_squeeze_integral,
     _setup_integration_domain,
     _torch_trace_without_warnings,
+    expand_func_values_and_squeeze_integral,
 )
 
 
@@ -37,7 +38,7 @@ class GridIntegrator(BaseIntegrator):
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
-            N (int): Total number of sample points to use for the integration.
+            N (int or sequence of int): Total number of sample points, or the number of points to use in each dimension.
             integration_domain (list or backend tensor): Integration domain, e.g. [[-1,1],[0,1]]. It can also determine the numerical backend.
             backend (string): Numerical backend. Ignored if it can be inferred from integration_domain.
             args (list or tuple, optional): Extra arguments passed to the integrand as ``fn(points, *args)``. Defaults to None.
@@ -51,7 +52,7 @@ class GridIntegrator(BaseIntegrator):
 
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)
         backend = infer_backend(integration_domain)
-        self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
+        self._check_grid_inputs(dim, N, integration_domain)
 
         grid_points, hs, n_per_dim = self.calculate_grid(N, integration_domain)
 
@@ -79,7 +80,7 @@ class GridIntegrator(BaseIntegrator):
         """
         # Reshape the output to be [integrand_dim,N,N,...] points instead of [integrand_dim,dim*N] points
         integrand_shape = function_values.shape[1:]
-        dim_shape = [n_per_dim] * dim
+        dim_shape = [n_per_dim] * dim if isinstance(n_per_dim, int) else list(n_per_dim)
         new_shape = [*integrand_shape, *dim_shape]
         # We need to use einsum instead of just reshape here because reshape does not move the axis - it only reshapes.
         # So the first line generates a character string for einsum, followed by moving the first dimension i.e `dim*N`
@@ -116,9 +117,13 @@ class GridIntegrator(BaseIntegrator):
         Returns:
             backend tensor: Grid points
             backend tensor: Grid widths
-            int: Number of grid slices per dimension
+            int or tuple of int: Number of grid points per dimension.
         """
-        N = self._adjust_N(dim=integration_domain.shape[0], N=N)
+        dim = integration_domain.shape[0]
+        counts = _per_dimension_counts(N, dim)
+        if counts is not None:
+            N = counts
+        N = self._adjust_N(dim=dim, N=N)
 
         # Log with lazy to avoid redundant synchronisations with certain
         # backends
@@ -137,6 +142,14 @@ class GridIntegrator(BaseIntegrator):
         return grid.points, grid.h, grid._N
 
     @staticmethod
+    def _check_grid_inputs(dim, N, integration_domain):
+        """Validate scalar or per-dimension grid sizes."""
+        counts = _per_dimension_counts(N, dim)
+        BaseIntegrator._check_inputs(
+            dim=dim, N=N if counts is None else None, integration_domain=integration_domain
+        )
+
+    @staticmethod
     def _adjust_N(dim, N):
         # Nothing to do by default
         return N
@@ -149,7 +162,7 @@ class GridIntegrator(BaseIntegrator):
 
         Args:
             dim (int): Dimensionality of the integration domain.
-            N (int, optional): Total number of sample points to use for the integration. See the integrate method documentation for more details.
+            N (int or sequence of int, optional): Total number of sample points, or the number of points in each dimension. See the integrate method documentation for more details.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
             backend (string, optional): Numerical backend. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
 
@@ -164,7 +177,10 @@ class GridIntegrator(BaseIntegrator):
             N = self._get_minimal_N(dim)
 
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)
-        self._check_inputs(dim=dim, N=N, integration_domain=integration_domain)
+        self._check_grid_inputs(dim, N, integration_domain)
+        counts = _per_dimension_counts(N, dim)
+        if counts is not None:
+            N = counts
         backend = infer_backend(integration_domain)
         if backend in ["tensorflow", "jax"]:
             # Tensorflow and JAX automatically recompile functions if
@@ -198,12 +214,15 @@ class GridIntegrator(BaseIntegrator):
 
             def compiled_integrate(fn, integration_domain):
                 grid_points, hs, n_per_dim = jit_calculate_grid(N, integration_domain)
+                if not isinstance(n_per_dim, int):
+                    if getattr(n_per_dim, "ndim", None) == 0:
+                        n_per_dim = int(n_per_dim)
+                    else:
+                        n_per_dim = tuple(int(count) for count in n_per_dim)
                 function_values, _ = self.evaluate_integrand(
                     fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
                 )
-                return jit_calculate_result(
-                    function_values, dim, int(n_per_dim), hs, integration_domain
-                )
+                return jit_calculate_result(function_values, dim, n_per_dim, hs, integration_domain)
 
             return compiled_integrate
 
@@ -213,11 +232,8 @@ class GridIntegrator(BaseIntegrator):
                 # Define traceable first and third steps
                 def step1(integration_domain):
                     grid_points, hs, n_per_dim = self.calculate_grid(N, integration_domain)
-                    return (
-                        grid_points,
-                        hs,
-                        anp.array([n_per_dim], like="torch"),
-                    )  # n_per_dim is constant
+                    counts = [n_per_dim] if isinstance(n_per_dim, int) else list(n_per_dim)
+                    return grid_points, hs, anp.array(counts, like="torch")
 
                 dim = int(integration_domain.shape[0])
 
@@ -231,7 +247,8 @@ class GridIntegrator(BaseIntegrator):
 
                 # Get example input for the third step
                 grid_points, hs, n_per_dim = step1(integration_domain)
-                n_per_dim = int(n_per_dim)
+                counts = tuple(int(count) for count in n_per_dim)
+                n_per_dim = counts[0] if len(counts) == 1 else counts
                 function_values, _ = self.evaluate_integrand(
                     example_integrand,
                     grid_points,

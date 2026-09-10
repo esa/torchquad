@@ -1,13 +1,36 @@
-from autoray import numpy as anp
-from autoray import infer_backend, astype, to_backend_dtype
+from operator import index
 from time import perf_counter
+
+from autoray import astype, infer_backend, to_backend_dtype
+from autoray import numpy as anp
 from loguru import logger
 
 from .utils import (
     _check_integration_domain,
-    _setup_integration_domain,
     _linspace_with_grads,
+    _setup_integration_domain,
 )
+
+
+def _per_dimension_counts(N, dim):
+    """Return validated per-dimension point counts, or None for scalar N."""
+    if isinstance(N, (str, bytes)) or not hasattr(N, "__iter__"):
+        return None
+    if getattr(N, "ndim", None) == 0:
+        return None
+
+    counts = tuple(N)
+    if len(counts) != dim:
+        raise ValueError(f"Per-dimension N must contain {dim} values, got {len(counts)}.")
+
+    try:
+        counts = tuple(index(count) for count in counts)
+    except TypeError as error:
+        raise ValueError("Per-dimension N values have to be integers.") from error
+
+    if any(count < 1 for count in counts):
+        raise ValueError("Per-dimension N values have to be positive integers.")
+    return counts
 
 
 def grid_func(integration_domain, N, requires_grad=False, backend=None):
@@ -52,7 +75,7 @@ class IntegrationGrid:
         """Creates an integration grid of N points in the passed domain. Dimension will be len(integration_domain)
 
         Args:
-            N (int): Total desired number of points in the grid (will take next lower root depending on dim)
+            N (int or sequence of int): Total desired number of points in the grid, or the number of points for each dimension. Scalar values use the next lower root depending on dim.
             integration_domain (list or backend tensor): Domain to choose points in, e.g. [[-1,1],[0,1]]. It also determines the numerical backend (if it is a list, the backend is "torch").
             grid_func (function): function for generating a grid of points over which to integrate (arguments: integration_domain, N, requires_grad, backend)
             disable_integration_domain_check (bool): Disbaling integration domain checks (default False)
@@ -74,11 +97,15 @@ class IntegrationGrid:
 
         self._dim = integration_domain.shape[0]
 
-        # TODO Add that N can be different for each dimension
-        # A rounding error occurs for certain numbers with certain powers,
-        # e.g. (4**3)**(1/3) = 3.99999... Because int() floors the number,
-        # i.e. int(3.99999...) -> 3, a little error term is useful
-        self._N = int(N ** (1.0 / self._dim) + 1e-8)  # convert to points per dim
+        counts = _per_dimension_counts(N, self._dim)
+        if counts is None:
+            # A rounding error occurs for certain numbers with certain powers,
+            # e.g. (4**3)**(1/3) = 3.99999... Because int() floors the number,
+            # i.e. int(3.99999...) -> 3, a little error term is useful.
+            self._N = int(N ** (1.0 / self._dim) + 1e-8)
+            counts = (self._N,) * self._dim
+        else:
+            self._N = counts
 
         logger.opt(lazy=True).debug(
             "Creating {dim}-dimensional integration grid with {N} points over {dom}",
@@ -99,7 +126,7 @@ class IntegrationGrid:
             grid_1d.append(
                 grid_func(
                     integration_domain[dim],
-                    self._N,
+                    counts[dim],
                     requires_grad=requires_grad,
                     backend=backend,
                 )
@@ -127,6 +154,12 @@ class IntegrationGrid:
             dim = len(integration_domain)
         else:
             dim = _check_integration_domain(integration_domain)
+
+        counts = _per_dimension_counts(N, dim)
+        if counts is not None:
+            if any(count < 2 for count in counts):
+                raise ValueError("Each per-dimension N value has to be > 1.")
+            return
 
         if N < 2:
             raise ValueError("N has to be > 1.")
