@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- NumPy Monte Carlo integrals of integer and Boolean integrands retain their
+  fractional values instead of being cast back to the integrand's discrete dtype.
+
 ## [0.6.0] - 2026-08-23
 
 The 0.6 line is a modernization and credibility release: modern tooling, honest
