@@ -1,9 +1,11 @@
 import pytest
+from autoray import numpy as anp, to_backend_dtype, to_numpy
 
 import torchquad.integration.gaussian as gaussian_module
 from torchquad.integration.gaussian import (
     MAX_NODES_PER_DIMENSION,
     GaussLegendre,
+    Gaussian,
 )
 from helper_functions import (
     compute_integration_test_errors,
@@ -138,6 +140,38 @@ def _run_gaussian_tests(backend, _precision):
             assert error < 1e-5
 
 
+def _run_default_node_tests(backend, _precision):
+    """N=None uses the documented three Gaussian nodes per dimension."""
+    for integrator_class in [Gaussian, GaussLegendre]:
+        for dim in [1, 3]:
+            integrator = integrator_class()
+            value = integrator.integrate(
+                lambda points: points[:, 0] ** 4,
+                dim=dim,
+                N=None,
+                integration_domain=[[-1.0, 1.0]] * dim,
+                backend=backend,
+            )
+            assert abs(float(to_numpy(value)) - 2**dim / 5) < 1e-12
+            assert integrator._nr_of_fevals == 3**dim
+
+
+def _run_default_jit_node_tests(backend, _precision):
+    """The compiled Gaussian factory works without an explicit N argument."""
+    integrate = GaussLegendre().get_jit_compiled_integrate(dim=1, backend=backend)
+    for endpoint in [1.0, 2.0]:
+        domain = anp.array(
+            [[0.0, endpoint]], like=backend, dtype=to_backend_dtype("float64", like=backend)
+        )
+        value = integrate(lambda points: points[:, 0] ** 4, domain)
+        assert abs(float(to_numpy(value)) - endpoint**5 / 5) < 1e-12
+
+
+def _run_default_jit_factory_tests(backend, _precision):
+    """The default node count can be resolved before TensorFlow tracing."""
+    assert callable(GaussLegendre().get_jit_compiled_integrate(dim=1, backend=backend))
+
+
 def _run_node_limit_tests(backend, _precision):
     """Too many nodes per dimension must raise before allocating, on every backend.
 
@@ -192,6 +226,21 @@ test_integrate_numpy = setup_test_for_backend(_run_gaussian_tests, "numpy", "flo
 test_integrate_torch = setup_test_for_backend(_run_gaussian_tests, "torch", "float64")
 test_integrate_jax = setup_test_for_backend(_run_gaussian_tests, "jax", "float64")
 test_integrate_tensorflow = setup_test_for_backend(_run_gaussian_tests, "tensorflow", "float64")
+
+test_default_nodes_numpy = setup_test_for_backend(_run_default_node_tests, "numpy", "float64")
+test_default_nodes_torch = setup_test_for_backend(_run_default_node_tests, "torch", "float64")
+test_default_nodes_jax = setup_test_for_backend(_run_default_node_tests, "jax", "float64")
+test_default_nodes_tensorflow = setup_test_for_backend(
+    _run_default_node_tests, "tensorflow", "float64"
+)
+
+test_default_jit_nodes_torch = setup_test_for_backend(
+    _run_default_jit_node_tests, "torch", "float64"
+)
+test_default_jit_nodes_jax = setup_test_for_backend(_run_default_jit_node_tests, "jax", "float64")
+test_default_jit_factory_tensorflow = setup_test_for_backend(
+    _run_default_jit_factory_tests, "tensorflow", "float64"
+)
 
 test_node_limit_numpy = setup_test_for_backend(_run_node_limit_tests, "numpy", "float64")
 test_node_limit_torch = setup_test_for_backend(_run_node_limit_tests, "torch", "float64")
