@@ -50,7 +50,7 @@ as you go.
       `pixi.toml` do not contradict it.
 - [ ] Every dependency floor is high enough for the features actually being shipped, not
       just high enough to import the package.
-- [ ] `requires-python` matches the tested matrix (`>=3.10, <4` against CI 3.10–3.12) and
+- [ ] `requires-python` matches the tested matrix (`>=3.11, <4` against CI 3.11–3.12) and
       the `Programming Language :: Python ::` classifiers list exactly those versions.
 - [ ] Build locally and check the output for packaging warnings: `uv build`
       (or `python -m build`). As of 0.6.0 this is clean — **any** warning is new
@@ -62,7 +62,7 @@ as you go.
 ### 4. Verify (CI is the gate — do not re-run green jobs by hand)
 
 - [ ] `Running tests` workflow green on the release branch: `lint`,
-      `test (all backends, py3.10|3.11|3.12)`, `test (jax isolated)`,
+      `test (all backends, py3.11|3.12)`, `test (jax isolated)`,
       `test (tensorflow isolated)`, `wheel-smoke`, `docs-build`.
 - [ ] `dead_code` workflow green (the `vulture` job, 100%-confidence tier).
 - [ ] [Release testing](https://github.com/esa/torchquad/actions/workflows/release_testing.yml)
