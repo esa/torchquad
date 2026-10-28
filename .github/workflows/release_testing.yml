@@ -40,7 +40,7 @@ jobs:
       # Keep going so one Python version failing still reports the others.
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.11", "3.12"]
     name: release-tests (py${{ matrix.python-version }}, latest backends)
     steps:
       - uses: actions/checkout@v4

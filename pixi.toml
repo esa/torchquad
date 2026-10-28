@@ -14,7 +14,7 @@ platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 # keep them in sync with pyproject (bump both together) — pyproject stays the
 # single source of truth for the pip/uv install.
 [dependencies]
-python = ">=3.10"
+python = ">=3.11"
 autoray = ">=0.5.0"
 loguru = ">=0.5.3"
 scipy = ">=1.7.2"

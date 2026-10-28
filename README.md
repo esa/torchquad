@@ -99,7 +99,7 @@ Note that torchquad also works on the CPU; however, it is optimized for GPU usag
 
 For a detailed list of required packages and packages for numerical backends,
 please refer to the conda environment files [environment.yml](/environment.yml) and [environment_all_backends.yml](/environment_all_backends.yml).
-torchquad requires Python 3.10 or newer. Its CI suite runs on Python 3.12 with JAX 0.4.35, NumPy 2.3, PyTorch 2.5 and TensorFlow 2.18 on Linux; other versions of the backends should work as well but some may require additional setup on other platforms such as Windows.
+torchquad requires Python 3.11 or newer. Its CI suite runs on Python 3.12 with JAX 0.4.35, NumPy 2.3, PyTorch 2.5 and TensorFlow 2.18 on Linux; other versions of the backends should work as well but some may require additional setup on other platforms such as Windows.
 
 
 ### Installation
