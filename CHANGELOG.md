@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   floors move to `>=1.23.2` and `>=1.9.2`, the oldest releases with Python 3.11
   wheels.
 
+### Fixed
+- `RNG("torch", torch_save_state=True)` uses an independent generator on its
+  construction device. CPU sampling after CUDA initializes no longer shares the
+  global CPU stream or reseeds unrelated generators.
+
 ## [0.6.0] - 2026-08-23
 
 The 0.6 line is a modernization and credibility release: modern tooling, honest
