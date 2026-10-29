@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   floors move to `>=1.23.2` and `>=1.9.2`, the oldest releases with Python 3.11
   wheels.
 
+### Fixed
+- Resolve the documented three-node-per-dimension default for Gaussian rules
+  when `N=None`, including the default JIT factory's node count.
+
 ## [0.6.0] - 2026-08-23
 
 The 0.6 line is a modernization and credibility release: modern tooling, honest

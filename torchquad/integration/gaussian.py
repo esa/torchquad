@@ -53,6 +53,11 @@ class Gaussian(GridIntegrator):
         """
         return super().integrate(fn, dim, N, integration_domain, backend, args=args)
 
+    @staticmethod
+    def _get_minimal_N(dim):
+        """Use the documented default of three Gaussian nodes per dimension."""
+        return 3**dim
+
     def _weights(self, N, dim, backend, requires_grad=False):
         """return the weights, broadcast across the dimensions, generated from the polynomial of choice
 
