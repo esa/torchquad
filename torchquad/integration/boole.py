@@ -1,5 +1,6 @@
-from autoray import numpy as anp
 import warnings
+
+from autoray import numpy as anp
 from loguru import logger
 
 from .newton_cotes import NewtonCotes
@@ -17,7 +18,7 @@ class Boole(NewtonCotes):
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
-            N (int, optional): Total number of sample points to use for the integration. N has to be such that N^(1/dim) - 1 % 4 == 0. Defaults to 5 points per dimension if None is given.
+            N (int or sequence of int, optional): Total number of sample points, or the number of points in each dimension. N has to be such that N^(1/dim) - 1 % 4 == 0. Defaults to 5 points per dimension if None is given.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
             backend (string, optional): Numerical backend. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
             args (list or tuple, optional): Extra arguments passed to the integrand as ``fn(points, *args)``. Defaults to None.
@@ -62,24 +63,29 @@ class Boole(NewtonCotes):
             N (int): Total number of sample points to use for the integration.
 
         Returns:
-            int: An N satisfying N^(1/dim) - 1 % 4 == 0.
+            int or tuple of int: An N satisfying N^(1/dim) - 1 % 4 == 0.
         """
-        n_per_dim = int(N ** (1.0 / dim) + 1e-8)
         logger.debug("Checking if N per dim is >=5 and N = 1 + 4n, where n is a positive integer.")
 
-        # Boole's rule requires N per dim >=5 and N = 1 + 4n,
-        # where n is a positive integer, for correctness.
-        if n_per_dim < 5:
-            warnings.warn(
-                "N per dimension cannot be lower than 5. N per dim will now be changed to 5."
-            )
-            N = 5**dim
-        elif (n_per_dim - 1) % 4 != 0:
-            new_n_per_dim = n_per_dim - ((n_per_dim - 1) % 4)
-            warnings.warn(
-                "N per dimension must be N = 1 + 4n with n a positive integer due to necessary subdivisions. "
-                "N per dim will now be changed to the next lower N satisfying this, i.e. "
-                f"{n_per_dim} -> {new_n_per_dim}."
-            )
-            N = (new_n_per_dim) ** (dim)
-        return N
+        def adjust_count(count):
+            if count < 5:
+                warnings.warn(
+                    "N per dimension cannot be lower than 5. N per dim will now be changed to 5."
+                )
+                return 5
+            if (count - 1) % 4 != 0:
+                new_count = count - ((count - 1) % 4)
+                warnings.warn(
+                    "N per dimension must be N = 1 + 4n with n a positive integer due to necessary subdivisions. "
+                    "N per dim will now be changed to the next lower N satisfying this, i.e. "
+                    f"{count} -> {new_count}."
+                )
+                return new_count
+            return count
+
+        if isinstance(N, tuple):
+            return tuple(adjust_count(count) for count in N)
+
+        n_per_dim = int(N ** (1.0 / dim) + 1e-8)
+        adjusted_count = adjust_count(n_per_dim)
+        return adjusted_count**dim
