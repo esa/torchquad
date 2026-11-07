@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Correct Boolean integrands in Newton-Cotes rules by converting samples to
+  integers before weighted addition.
+
 ### Changed
 - Raised the Python floor to `>=3.11`; Python 3.10 reaches end of life in
   October 2026, and current Pillow and Keras releases (pulled in by the dev
