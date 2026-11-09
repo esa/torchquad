@@ -1,0 +1,74 @@
+name: GPU tests (simulated H100)
+
+# Optional, non-required check. The hosted runners have no GPU, so the main
+# test job only exercises the CPU path of the torch backend. This installs the
+# CUDA build of PyTorch and runs the test suite on a simulated NVIDIA H100
+# (https://github.com/pantheongpu/pantheonsim), so torch.cuda.is_available() is
+# true and set_up_backend("torch") puts the torch tests on the CUDA device. A
+# simulator cannot reproduce hardware-specific behavior or timing, so it
+# complements real-GPU testing and does not replace it.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "torchquad/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - ".github/workflows/gpu-sim.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gpu-sim:
+    name: torch CUDA 13.0, simulated H100
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up the simulated GPU and CUDA toolkit
+        uses: pantheongpu/setup-pantheonsim@ca87fe3143b29166822b923d6050945c5179408c # v0.1.5
+        with:
+          gpu: nvidia/h100
+          cuda-toolkit: "13.0"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install torch (CUDA 13.0 wheel) and torchquad
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          source "$RUNNER_TEMP/venv/bin/activate"
+          pip install torch --index-url https://download.pytorch.org/whl/cu130
+          pip install -e . pytest
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+
+      # Plain `vgpu run python` fails with error 103 because the torch wheel
+      # has an RPATH to its own CUDA runtime; --preload makes the simulator's
+      # libraries win. The tests import torchquad from the checkout, so they
+      # run from tests/ as in the main workflow.
+      # monte_carlo_test.py::test_integrate_torch is deselected: its seeded
+      # JIT Monte Carlo case has error bounds tuned to one GPU's random
+      # stream. torch.rand with a fixed seed gives different values for 50000
+      # or more elements depending on the device (the simulated RTX 3060
+      # profile reproduces a real RTX 3060 exactly, the H100 profile does
+      # not), and on the H100 profile one error comes out as 35.08 against a
+      # bound of 35.0. The test passes on CPU and on a real RTX 3060.
+      - name: Run the tests on the simulated H100
+        working-directory: tests
+        run: |
+          vgpu run --preload --gpu nvidia/h100 python -c \
+            "import torch; assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0))"
+          vgpu run --preload --gpu nvidia/h100 python -m pytest -ra --durations=15 \
+            --deselect tests/monte_carlo_test.py::test_integrate_torch .
