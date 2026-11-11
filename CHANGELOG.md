@@ -44,13 +44,18 @@ integrator was set up with under Gaussian quadrature.
   October 2026, and current Pillow and Keras releases (pulled in by the dev
   tooling and the TensorFlow extra) no longer support it. The NumPy and SciPy
   floors move to `>=1.23.2` and `>=1.9.2`, the oldest releases with Python 3.11
-  wheels.
+  wheels. The conda and pixi environment files carry the same floors.
 - The quadrature weights are no longer truncated to the integrand's dtype, and a
   mismatch now warns instead of passing silently. An integrand returning
   `float32` under `float64` precision yields a `float64` result rather than
   discarding the weights' precision.
 
 ### Fixed
+- `Sobol` can no longer return a point exactly equal to 1 on the NumPy, JAX and
+  TensorFlow backends in `float32`. The points are generated in double
+  precision, and rounding a value just below 1 put the sample on the upper
+  domain boundary, which `RNG` never does. All samplers now clamp to the largest
+  value below 1. Points below that are unchanged.
 - Correct Boolean integrands in Newton-Cotes rules by converting samples to
   integers before weighted addition.
 - `evaluate_integrand` applies the quadrature weights out of place, so it no
