@@ -1,6 +1,7 @@
+import warnings
+
 from autoray import numpy as anp
 from loguru import logger
-import warnings
 
 from .newton_cotes import NewtonCotes
 
@@ -17,7 +18,7 @@ class Simpson(NewtonCotes):
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
-            N (int, optional): Total number of sample points to use for the integration. Should be odd. Defaults to 3 points per dimension if None is given.
+            N (int or sequence of int, optional): Total number of sample points, or the number of points in each dimension. Should be odd. Defaults to 3 points per dimension if None is given.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim. It can also determine the numerical backend.
             backend (string, optional): Numerical backend. Defaults to integration_domain's backend if it is a tensor and otherwise to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
             args (list or tuple, optional): Extra arguments passed to the integrand as ``fn(points, *args)``. Defaults to None.
@@ -60,23 +61,28 @@ class Simpson(NewtonCotes):
             N (int): Total number of sample points to use for the integration.
 
         Returns:
-            int: An odd N >3.
+            int or tuple of int: An odd N >3.
         """
-        n_per_dim = int(N ** (1.0 / dim) + 1e-8)
         logger.debug("Checking if N per dim is >=3 and odd.")
 
-        # Simpson's rule requires odd N per dim >3 for correctness. There is a more
-        # complex rule that works for even N as well but it is not implemented here.
-        if n_per_dim < 3:
-            warnings.warn(
-                "N per dimension cannot be lower than 3. N per dim will now be changed to 3."
-            )
-            N = 3**dim
-        elif n_per_dim % 2 != 1:
-            warnings.warn(
-                "N per dimension cannot be even due to necessary subdivisions. "
-                "N per dim will now be changed to the next lower integer, i.e. "
-                f"{n_per_dim} -> {n_per_dim - 1}."
-            )
-            N = (n_per_dim - 1) ** (dim)
-        return N
+        def adjust_count(count):
+            if count < 3:
+                warnings.warn(
+                    "N per dimension cannot be lower than 3. N per dim will now be changed to 3."
+                )
+                return 3
+            if count % 2 != 1:
+                warnings.warn(
+                    "N per dimension cannot be even due to necessary subdivisions. "
+                    "N per dim will now be changed to the next lower integer, i.e. "
+                    f"{count} -> {count - 1}."
+                )
+                return count - 1
+            return count
+
+        if isinstance(N, tuple):
+            return tuple(adjust_count(count) for count in N)
+
+        n_per_dim = int(N ** (1.0 / dim) + 1e-8)
+        adjusted_count = adjust_count(n_per_dim)
+        return adjusted_count**dim
