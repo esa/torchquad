@@ -25,6 +25,7 @@ from .integration.base_integrator import BaseIntegrator
 
 from .integration.rng import RNG
 from .integration.qmc import Halton
+from .integration.qmc import RandomizedLatinHypercube
 from .integration.qmc import Sobol
 from .integration.qmc import Lattice
 
@@ -58,6 +59,7 @@ __all__ = [
     "Halton",
     "Sobol",
     "Lattice",
+    "RandomizedLatinHypercube",
     "enable_cuda",
     "set_precision",
     "set_log_level",

@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `MonteCarlo.integrate(..., rng=Halton(...))`. Unlike `Sobol` and `Lattice` it
   places no constraint on `N`. Generated natively on the device for PyTorch and
   through SciPy for the other backends (#140).
+- `RandomizedLatinHypercube` sampler, usable via
+  `MonteCarlo.integrate(..., rng=RandomizedLatinHypercube(...))`. It stratifies
+  every one-dimensional marginal for any `N`, which reduces variance for
+  integrands dominated by additive terms (#140).
 
 ### Changed
 - Raised the Python floor to `>=3.11`; Python 3.10 reaches end of life in
