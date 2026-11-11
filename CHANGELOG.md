@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Grid-based integrators (`Trapezoid`, `Simpson`, `Boole`, `GaussLegendre`) and
+  `IntegrationGrid` accept one point count per dimension, e.g. `N=(5, 33, 17)`,
+  in `integrate` and `get_jit_compiled_integrate`. A scalar `N` behaves as before
+  (#123).
+
 ### Changed
 - Raised the Python floor to `>=3.11`; Python 3.10 reaches end of life in
   October 2026, and current Pillow and Keras releases (pulled in by the dev
