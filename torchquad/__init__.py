@@ -2,15 +2,12 @@ import os
 
 from loguru import logger
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 # Disable torchquad's own log records by default so importing the library never
 # adds output to a host application's loguru configuration (issue #184).
 # set_log_level() re-enables them when the user opts into logging.
 logger.disable("torchquad")
-
-# Set for release builds
-TORCHQUAD_DISABLE_LOGGING = True
 
 # TODO: Currently this is the way to expose to the docs
 # hopefully changes with setup.py
@@ -27,8 +24,10 @@ from .integration.grid_integrator import GridIntegrator
 from .integration.base_integrator import BaseIntegrator
 
 from .integration.rng import RNG
+from .integration.qmc import Halton
 from .integration.qmc import RandomizedLatinHypercube
 from .integration.qmc import Sobol
+from .integration.qmc import Lattice
 
 
 from .utils.set_log_level import set_log_level
@@ -57,7 +56,9 @@ __all__ = [
     "GaussLegendre",
     "Gaussian",
     "RNG",
+    "Halton",
     "Sobol",
+    "Lattice",
     "RandomizedLatinHypercube",
     "enable_cuda",
     "set_precision",
@@ -65,6 +66,11 @@ __all__ = [
     "set_up_backend",
 ]
 
-if not TORCHQUAD_DISABLE_LOGGING:
-    set_log_level(os.environ.get("TORCHQUAD_LOG_LEVEL", "WARNING"))
+# Opt in to logging from the environment. Only a non-empty TORCHQUAD_LOG_LEVEL
+# turns torchquad's records on, so the library stays silent by default;
+# set_log_level() does the same thing at runtime. The value is tested rather
+# than the key because `TORCHQUAD_LOG_LEVEL=` is the usual shell and CI idiom
+# for "not set", and passing "" on to loguru would abort the import.
+if os.environ.get("TORCHQUAD_LOG_LEVEL"):
+    set_log_level(os.environ["TORCHQUAD_LOG_LEVEL"])
     logger.info("Initializing torchquad.")

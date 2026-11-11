@@ -6,11 +6,14 @@ This runs in isolation to avoid TensorFlow device configuration conflicts.
 
 import sys
 import json
-import time
 import gc
 import warnings
 
 warnings.filterwarnings("ignore")
+
+# Sibling module. This worker is launched as a script, so its own directory is
+# already sys.path[0] -- the same assumption modular_benchmark.py makes.
+from timing import time_integration
 
 
 def setup_backend(backend_name: str, device: str):
@@ -170,28 +173,18 @@ def run_backend_benchmark(
                 # Clear caches
                 gc.collect()
 
-                start_time = time.perf_counter()
+                # Only the seed varies between methods; build it rather than
+                # duplicating the whole argument list per branch.
+                extra = {"seed": 42 + run} if method_name == "monte_carlo" else {}
 
-                # Run integration
-                if method_name == "monte_carlo":
-                    result = integrator.integrate(
-                        test_func, dim=1, N=n_points, integration_domain=domain, seed=42 + run
+                # Materializing the result inside the timed region is what makes
+                # this measure the integration rather than kernel-launch latency
+                # on the asynchronous GPU backends.
+                elapsed, result_value = time_integration(
+                    lambda: integrator.integrate(
+                        test_func, dim=1, N=n_points, integration_domain=domain, **extra
                     )
-                else:
-                    result = integrator.integrate(
-                        test_func, dim=1, N=n_points, integration_domain=domain
-                    )
-
-                end_time = time.perf_counter()
-                elapsed = end_time - start_time
-
-                # Extract result value (backend-agnostic)
-                if hasattr(result, "item"):
-                    result_value = result.item()
-                elif hasattr(result, "numpy"):
-                    result_value = float(result.numpy())
-                else:
-                    result_value = float(result)
+                )
 
                 error = abs(result_value - reference)
                 error = max(error, 1e-16)

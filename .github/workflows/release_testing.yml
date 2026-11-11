@@ -4,12 +4,37 @@ name: Release testing
 # in the wild (see release_testing/README.md). Unlike the per-PR test suite these
 # install the *latest* released backend versions instead of the pinned CI
 # environment, so a release cannot silently ship broken against a new PyTorch,
-# JAX, or TensorFlow. Run manually before a release and automatically once a
-# GitHub release is created.
+# JAX, or TensorFlow.
+#
+# The push trigger is what makes this a *pre*-ship gate. workflow_dispatch alone
+# was not enough: GitHub only registers a workflow that exists on the default
+# branch or has already run, so a suite introduced on develop cannot be
+# dispatched at all until it reaches main -- which for the first release meant
+# the only run happened on `release: created`, after shipping. push is evaluated
+# from the workflow file in the ref being pushed, so it needs no registration and
+# fires immediately.
+#
+# There is deliberately no pull_request trigger. A release branch already matches
+# push, and a push run reports as a check on the PR opened from that branch, so
+# pull_request only ran the whole matrix a second time. It also fired on
+# Dependabot, which targets main because main is the default branch. A hotfix
+# branch not named release-* therefore needs a manual workflow_dispatch; the
+# release checklist says so.
 on:
+  push:
+    branches:
+      - "release-*"
+      - "release/**"
   workflow_dispatch:
   release:
     types: [created]
+
+# Only one event type now reaches a given branch, so grouping by ref no longer
+# double-counts the same commit -- it just cancels a run superseded by a newer
+# push to the same release branch.
+concurrency:
+  group: release-testing-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release-tests:
@@ -18,7 +43,7 @@ jobs:
       # Keep going so one Python version failing still reports the others.
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.11", "3.12"]
     name: release-tests (py${{ matrix.python-version }}, latest backends)
     steps:
       - uses: actions/checkout@v4

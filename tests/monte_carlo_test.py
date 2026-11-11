@@ -1,11 +1,30 @@
 import torch
 import pytest
+import numpy as np
 
 from torchquad.integration.monte_carlo import MonteCarlo
 from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
 )
+
+
+@pytest.mark.parametrize("dtype", [np.bool_, np.int8, np.int64, np.uint64])
+@pytest.mark.parametrize("domain_dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("vectorized", [False, True])
+def test_numpy_discrete_integrand(dtype, domain_dtype, vectorized):
+    """Integer and Boolean values still have fractional integrals."""
+    domain = np.array([[0.0, 0.5]], dtype=domain_dtype)
+
+    def integrand(points):
+        if vectorized:
+            return np.broadcast_to(np.array([1, 3], dtype=dtype), (len(points), 2))
+        return np.ones(len(points), dtype=dtype)
+
+    result = MonteCarlo().integrate(integrand, dim=1, N=16, integration_domain=domain, seed=0)
+    expected = [0.5, 0.5 if dtype is np.bool_ else 1.5] if vectorized else 0.5
+    np.testing.assert_allclose(result, expected)
+    assert result.dtype.kind == "f"
 
 
 def _run_monte_carlo_tests(backend, _precision):

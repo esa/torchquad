@@ -42,8 +42,10 @@ Minimal working example
         backend="torch",
     )
 
-To set the default logger verbosity, change the ``TORCHQUAD_LOG_LEVEL``
-environment variable; for example ``export TORCHQUAD_LOG_LEVEL=DEBUG``.
+torchquad is silent by default. To see its log records, set the
+``TORCHQUAD_LOG_LEVEL`` environment variable before importing it -- for example
+``export TORCHQUAD_LOG_LEVEL=DEBUG`` -- or call
+:func:`torchquad.set_log_level` at runtime.
 A :ref:`later section <tutorial_backend_selection>` in this tutorial shows how
 to choose a different numerical backend.
 
@@ -119,6 +121,13 @@ Imports
 
 Now let's get started! First, the general imports:
 
+.. note::
+
+   This tutorial uses ``matplotlib`` for its plots and ``scipy`` for benchmark
+   comparisons. ``scipy`` is a torchquad dependency and is already present, but
+   ``matplotlib`` is not — install it with ``pip install matplotlib`` if you are
+   following along in your own environment.
+
 .. code:: python
 
     import scipy
@@ -146,6 +155,14 @@ Now let's get started! First, the general imports:
 
     # Use this to enable GPU support and set the floating point precision
     set_up_backend("torch", data_type="float32")
+
+.. note::
+
+   On a GPU machine this also makes CUDA the default device for newly created
+   tensors. If you build your own tensors alongside torchquad's, use
+   ``torch.tensor(...)`` rather than the legacy ``torch.Tensor(...)``, which
+   ignores that default and allocates on the CPU — see
+   :ref:`this note <tensor_vs_Tensor>`.
 
 
 
@@ -355,9 +372,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.596974849700928
-            Abs. Error: 2.38418579e-06
-            Rel. Error: 5.18642082e-07
+    **Output:** Results: 4.596975326538086
+            Abs. Error: 1.90734863e-06
+            Rel. Error: 4.14913643e-07
             
 
 
@@ -370,9 +387,9 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.598303318023682
-            Abs. Error: 1.32608414e-03
-            Rel. Error: 2.88468727e-04
+    **Output:** Results: 4.6036553382873535
+            Abs. Error: 6.67810440e-03
+            Rel. Error: 1.45271642e-03
 
 .. code:: python
 
@@ -383,13 +400,24 @@ We are working on giving the user more flexibility on this point.
 
 .. parsed-literal::
 
-    **Output:** Results: 4.598696708679199
-            Abs. Error: 1.71947479e-03
-            Rel. Error: 3.74044670e-04
+    **Output:** Results: 4.598339080810547
+            Abs. Error: 1.36184692e-03
+            Rel. Error: 2.96248356e-04
 
-Note that the Monte Carlo methods are much more competitive in this case. 
-The bad convergence properties of the trapezoid method are visible while Simpson's 
-and Boole's rule are still OK given the comparatively smooth integrand. 
+Note that the Monte Carlo methods are much more competitive in this case.
+The bad convergence properties of the trapezoid method are visible while Simpson's
+and Boole's rule are still OK given the comparatively smooth integrand.
+
+.. note::
+
+   Do not expect the last digits of the two stochastic results above to match on
+   your machine. ``VEGAS`` is called without a ``seed`` here, so it draws a fresh
+   sample every run and its value moves in the third decimal from one call to the
+   next. ``MonteCarlo`` *is* seeded, and a seeded run is reproducible bit-for-bit
+   — but only against one backend version: PyTorch does not promise a stable
+   random bit-stream across releases, so the printed digits drift when you
+   upgrade. The deterministic rules are stable except in the last float32 digits.
+   Judge these numbers by their order of magnitude, not by their digits.
 
 If you have been repeating the examples from this tutorial on your own computer, you 
 might get ``RuntimeError: CUDA out of memory`` if you have a small GPU.
@@ -779,7 +807,7 @@ sample points for both functions:
 
     # The integration domain, dimensionality and number of evaluations
     # For the calculate_grid method we need a Tensor and not a list.
-    integration_domain = torch.Tensor([[0.0, 1.0], [-1.0, 1.0]])
+    integration_domain = torch.tensor([[0.0, 1.0], [-1.0, 1.0]])
     dim = 2
     N = 9409
 
@@ -871,15 +899,15 @@ As an example, here we evaluate a similar integrand many times for different val
 
     a_params = torch.arange(40)
     b_params = torch.arange(10, 20)
-    integration_domain = torch.Tensor([[0, 1]])
+    integration_domain = torch.tensor([[0.0, 1.0]])
     simp = Simpson()
-    result = torch.stack([torch.Tensor([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
+    result = torch.stack([torch.stack([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
 
 Now let's see how to do this a bit more simply, and in a way that provides signficant speedup as the size of the integrand's ``grid`` grows:
 
 .. code:: python
 
-    grid = torch.stack([torch.Tensor([a + b for a in a_params]) for b in b_params])
+    grid = (b_params[:, None] + a_params[None, :]).to(torch.get_default_dtype())
 
     def integrand(x):
         return torch.sqrt(torch.cos(torch.sin(torch.einsum("i,jk->ijk", x.flatten(), grid))))
@@ -890,6 +918,19 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
 
 .. note::
     VEGAS does not support multi-dimensional integrands.  If you would like this, please consider opening an issue or PR.
+
+.. _tensor_vs_Tensor:
+
+.. note::
+    Build helper tensors with ``torch.tensor(...)``, not the legacy
+    ``torch.Tensor(...)`` constructor. On a GPU machine
+    :func:`torchquad.set_up_backend` calls ``torch.set_default_device("cuda")``,
+    which ``torch.tensor`` honours and ``torch.Tensor`` ignores — the latter
+    always allocates on the CPU. Mixing the two gives ``RuntimeError: Expected all
+    tensors to be on the same device`` as soon as the helper meets the sample
+    points. The same applies to combining per-integration results:
+    ``torch.stack`` keeps them on their original device, while wrapping them in
+    ``torch.Tensor([...])`` moves them to the CPU.
 
 Parametric Integration with Variable Domains
 --------------------------------------------
