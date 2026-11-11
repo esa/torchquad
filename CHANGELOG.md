@@ -44,8 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when `N=None`, including the default JIT factory's node count.
 - `Trapezoid` accepts `N=None` (two points per dimension), so its
   `get_jit_compiled_integrate` no longer fails when called without `N`.
-
-### Fixed
 - NumPy Monte Carlo integrals of integer and Boolean integrands retain their
   fractional values instead of being cast back to the integrand's discrete dtype.
 
