@@ -46,8 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `get_jit_compiled_integrate` no longer fails when called without `N`.
 - NumPy Monte Carlo integrals of integer and Boolean integrands retain their
   fractional values instead of being cast back to the integrand's discrete dtype.
-
-### Fixed
 - `RNG("torch", torch_save_state=True)` uses an independent generator on its
   construction device. CPU sampling after CUDA initializes no longer shares the
   global CPU stream or reseeds unrelated generators.
