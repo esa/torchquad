@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It needs a power-of-two `N` between 2^10 and 2^20, and `tent=True` applies the
   baker's transform, which recovers the convergence rate on non-periodic
   integrands (#140).
+- `Halton` quasi-Monte Carlo sampler with optional digit scrambling, usable via
+  `MonteCarlo.integrate(..., rng=Halton(...))`. Unlike `Sobol` and `Lattice` it
+  places no constraint on `N`. Generated natively on the device for PyTorch and
+  through SciPy for the other backends (#140).
 
 ### Changed
 - Raised the Python floor to `>=3.11`; Python 3.10 reaches end of life in
