@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-11
+
+This release adds three samplers for `MonteCarlo` and per-dimension grid sizes,
+and fixes a set of bugs found since 0.6.0, among them broken autograd through
+`GaussLegendre`.
+
+**Numerical results are unchanged for floating-point and complex integrands**
+with a scalar `N` and a given seed, and no existing test tolerance was loosened.
+Three cases now return different, corrected values, each described below:
+Boolean integrands in the Newton-Cotes rules, integer and Boolean integrands in
+NumPy Monte Carlo, and integrands that return a lower precision than the
+integrator was set up with under Gaussian quadrature.
+
 ### Added
 - Grid-based integrators (`Trapezoid`, `Simpson`, `Boole`, `GaussLegendre`) and
   `IntegrationGrid` accept one point count per dimension, e.g. `N=(5, 33, 17)`,
@@ -268,7 +281,8 @@ now raises on impossible node counts instead of exhausting memory.
 - Early public releases with the core Newton-Cotes, Monte Carlo, and VEGAS
   integrators on PyTorch.
 
-[Unreleased]: https://github.com/esa/torchquad/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/esa/torchquad/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/esa/torchquad/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/esa/torchquad/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/esa/torchquad/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/esa/torchquad/compare/v0.4.0...v0.4.1
