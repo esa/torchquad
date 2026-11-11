@@ -1,4 +1,12 @@
-from torchquad.integration.gaussian import GaussLegendre
+import pytest
+from autoray import numpy as anp, to_backend_dtype, to_numpy
+
+import torchquad.integration.gaussian as gaussian_module
+from torchquad.integration.gaussian import (
+    MAX_NODES_PER_DIMENSION,
+    GaussLegendre,
+    Gaussian,
+)
 from helper_functions import (
     compute_integration_test_errors,
     setup_test_for_backend,
@@ -132,10 +140,119 @@ def _run_gaussian_tests(backend, _precision):
             assert error < 1e-5
 
 
+def _run_default_node_tests(backend, _precision):
+    """N=None uses the documented three Gaussian nodes per dimension."""
+    for integrator_class in [Gaussian, GaussLegendre]:
+        for dim in [1, 3]:
+            integrator = integrator_class()
+            value = integrator.integrate(
+                lambda points: points[:, 0] ** 4,
+                dim=dim,
+                N=None,
+                integration_domain=[[-1.0, 1.0]] * dim,
+                backend=backend,
+            )
+            assert abs(float(to_numpy(value)) - 2**dim / 5) < 1e-12
+            assert integrator._nr_of_fevals == 3**dim
+
+
+def _run_default_jit_node_tests(backend, _precision):
+    """The compiled Gaussian factory works without an explicit N argument."""
+    integrate = GaussLegendre().get_jit_compiled_integrate(dim=1, backend=backend)
+    for endpoint in [1.0, 2.0]:
+        domain = anp.array(
+            [[0.0, endpoint]], like=backend, dtype=to_backend_dtype("float64", like=backend)
+        )
+        value = integrate(lambda points: points[:, 0] ** 4, domain)
+        assert abs(float(to_numpy(value)) - endpoint**5 / 5) < 1e-12
+
+
+def _run_default_jit_factory_tests(backend, _precision):
+    """The default node count can be resolved before TensorFlow tracing."""
+    assert callable(GaussLegendre().get_jit_compiled_integrate(dim=1, backend=backend))
+
+
+def _run_node_limit_tests(backend, _precision):
+    """Too many nodes per dimension must raise before allocating, on every backend.
+
+    The nodes are the eigenvalues of an ``n x n`` companion matrix. Asking for
+    ``dim=1, N=10**6`` used to reach NumPy and fail with a bare
+    ``MemoryError: Unable to allocate 7450.6 GiB``, which names neither the
+    argument at fault nor a way forward -- and only after an unbounded wait.
+    """
+    gauss = GaussLegendre()
+    domain = [[0.0, 1.0]]
+
+    with pytest.raises(ValueError) as excinfo:
+        gauss.integrate(lambda x: x[:, 0], dim=1, N=10**6, integration_domain=domain)
+
+    message = str(excinfo.value)
+    # The message has to carry enough to act on: the offending count, the limit,
+    # the reason, and the fact that N is per-dimension rather than total.
+    assert "1000000" in message, message
+    assert str(MAX_NODES_PER_DIMENSION) in message, message
+    assert "per dimension" in message, message
+    assert "GiB" in message, message
+
+
+def _run_node_limit_boundary_tests(backend, _precision):
+    """The limit counts nodes per dimension, not in total, and is inclusive.
+
+    A total-N check would wrongly reject a high-dimensional call: at ``dim=3``,
+    an ``N`` far above the limit is only ``N**(1/3)`` nodes along each axis.
+    """
+    gauss = GaussLegendre()
+
+    # A million points in total, but only 100 nodes per dimension, so allowed.
+    value = gauss.integrate(lambda x: x[:, 0], dim=3, N=100**3, integration_domain=[[0.0, 1.0]] * 3)
+    assert abs(float(value) - 0.5) < 1e-10, value
+
+    # Lower the limit to probe the boundary itself. Testing it at the real value
+    # would mean diagonalizing a 10000 x 10000 matrix just to prove an
+    # off-by-one, so the constant is patched instead of the assertion weakened.
+    original_limit = gaussian_module.MAX_NODES_PER_DIMENSION
+    gaussian_module.MAX_NODES_PER_DIMENSION = 50
+    try:
+        at_limit = GaussLegendre()._cached_points_and_weights(50)
+        assert len(at_limit[0]) == 50, "the limit must be inclusive"
+
+        with pytest.raises(ValueError, match="above the limit of 50"):
+            GaussLegendre()._cached_points_and_weights(51)
+    finally:
+        gaussian_module.MAX_NODES_PER_DIMENSION = original_limit
+
+
 test_integrate_numpy = setup_test_for_backend(_run_gaussian_tests, "numpy", "float64")
 test_integrate_torch = setup_test_for_backend(_run_gaussian_tests, "torch", "float64")
 test_integrate_jax = setup_test_for_backend(_run_gaussian_tests, "jax", "float64")
 test_integrate_tensorflow = setup_test_for_backend(_run_gaussian_tests, "tensorflow", "float64")
+
+test_default_nodes_numpy = setup_test_for_backend(_run_default_node_tests, "numpy", "float64")
+test_default_nodes_torch = setup_test_for_backend(_run_default_node_tests, "torch", "float64")
+test_default_nodes_jax = setup_test_for_backend(_run_default_node_tests, "jax", "float64")
+test_default_nodes_tensorflow = setup_test_for_backend(
+    _run_default_node_tests, "tensorflow", "float64"
+)
+
+test_default_jit_nodes_torch = setup_test_for_backend(
+    _run_default_jit_node_tests, "torch", "float64"
+)
+test_default_jit_nodes_jax = setup_test_for_backend(_run_default_jit_node_tests, "jax", "float64")
+test_default_jit_factory_tensorflow = setup_test_for_backend(
+    _run_default_jit_factory_tests, "tensorflow", "float64"
+)
+
+test_node_limit_numpy = setup_test_for_backend(_run_node_limit_tests, "numpy", "float64")
+test_node_limit_torch = setup_test_for_backend(_run_node_limit_tests, "torch", "float64")
+test_node_limit_jax = setup_test_for_backend(_run_node_limit_tests, "jax", "float64")
+test_node_limit_tensorflow = setup_test_for_backend(_run_node_limit_tests, "tensorflow", "float64")
+
+test_node_limit_boundary_numpy = setup_test_for_backend(
+    _run_node_limit_boundary_tests, "numpy", "float64"
+)
+test_node_limit_boundary_torch = setup_test_for_backend(
+    _run_node_limit_boundary_tests, "torch", "float64"
+)
 
 
 if __name__ == "__main__":
@@ -144,3 +261,9 @@ if __name__ == "__main__":
     test_integrate_torch()
     test_integrate_jax()
     test_integrate_tensorflow()
+    test_node_limit_numpy()
+    test_node_limit_torch()
+    test_node_limit_jax()
+    test_node_limit_tensorflow()
+    test_node_limit_boundary_numpy()
+    test_node_limit_boundary_torch()

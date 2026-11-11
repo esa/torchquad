@@ -43,7 +43,7 @@ pytest release_testing/ -v -ra --durations=15
 In CI this is the **Release testing** workflow
 (`.github/workflows/release_testing.yml`), triggered manually
 (`workflow_dispatch`) or automatically when a GitHub release is created. It runs a
-Python 3.10 / 3.11 / 3.12 matrix against the latest released backends. Running it
+Python 3.11 / 3.12 matrix against the latest released backends. Running it
 is a step in the release checklist (`.github/ISSUE_TEMPLATE/release.md`).
 
 ## Adding a scenario
