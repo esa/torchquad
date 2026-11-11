@@ -112,6 +112,7 @@ torchquad/
 | `IntegrationGrid`               | Tensor-product grid generator (used by Newton–Cotes)         |
 | `BaseIntegrator`, `GridIntegrator` | Subclassing entry points for new methods                  |
 | `RNG`                           | Backend-agnostic RNG wrapper                                 |
+| `Sobol`, `Halton`, `Lattice`, `RandomizedLatinHypercube` | Samplers passed as `rng=` to `MonteCarlo` (`integration/qmc.py`) |
 | `set_up_backend`, `enable_cuda`, `set_precision`, `set_log_level` | Setup helpers |
 
 ### Integrator hierarchy
