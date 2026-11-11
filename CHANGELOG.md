@@ -7,10 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- Correct Boolean integrands in Newton-Cotes rules by converting samples to
-  integers before weighted addition.
-
 ### Changed
 - Raised the Python floor to `>=3.11`; Python 3.10 reaches end of life in
   October 2026, and current Pillow and Keras releases (pulled in by the dev
@@ -23,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   discarding the weights' precision.
 
 ### Fixed
+- Correct Boolean integrands in Newton-Cotes rules by converting samples to
+  integers before weighted addition.
 - `evaluate_integrand` applies the quadrature weights out of place, so it no
   longer mutates the tensor the integrand returned. The in-place multiply broke
   PyTorch autograd through `GaussLegendre` and any `Gaussian` subclass for
