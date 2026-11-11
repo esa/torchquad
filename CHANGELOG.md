@@ -13,6 +13,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tooling and the TensorFlow extra) no longer support it. The NumPy and SciPy
   floors move to `>=1.23.2` and `>=1.9.2`, the oldest releases with Python 3.11
   wheels.
+- The quadrature weights are no longer truncated to the integrand's dtype, and a
+  mismatch now warns instead of passing silently. An integrand returning
+  `float32` under `float64` precision yields a `float64` result rather than
+  discarding the weights' precision.
+
+### Fixed
+- `evaluate_integrand` applies the quadrature weights out of place, so it no
+  longer mutates the tensor the integrand returned. The in-place multiply broke
+  PyTorch autograd through `GaussLegendre` and any `Gaussian` subclass for
+  integrands whose backward pass reads its own output (`exp`, `sqrt`, `tanh`,
+  `sigmoid`, `div`, `pow`), including gradients with respect to the integration
+  domain. Newton–Cotes, Monte Carlo and JAX were unaffected. Present since
+  Gaussian quadrature arrived in 0.4.0 (#141). Integration results are otherwise
+  unchanged.
+- The tutorial's vectorized-integrand example crashed with `RuntimeError: Expected
+  all tensors to be on the same device` on any CUDA machine. It built its helper
+  tensors with the legacy `torch.Tensor(...)` constructor, which — unlike
+  `torch.tensor(...)` — ignores the `torch.set_default_device("cuda")` that
+  `set_up_backend` performs, so the helpers stayed on the CPU while the sample
+  points were on the GPU. A note now explains the distinction, since it bites in
+  user code as readily as in the docs.
+- The tutorial's import block used `matplotlib`, which is not a torchquad runtime
+  dependency, so it failed after the installation the README documents. Called out
+  as a prerequisite rather than added as a dependency.
+- The README logo and five file links used repository-relative paths, which PyPI
+  resolves against `pypi.org`, so the logo did not render and the links 404ed on
+  the project page. All are now absolute URLs, matching the performance figures.
+- Resolve the documented three-node-per-dimension default for Gaussian rules
+  when `N=None`, including the default JIT factory's node count.
+- `Trapezoid` accepts `N=None` (two points per dimension), so its
+  `get_jit_compiled_integrate` no longer fails when called without `N`.
+- NumPy Monte Carlo integrals of integer and Boolean integrands retain their
+  fractional values instead of being cast back to the integrand's discrete dtype.
 
 ### Fixed
 - `RNG("torch", torch_save_state=True)` uses an independent generator on its

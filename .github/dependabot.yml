@@ -4,6 +4,12 @@ updates:
   # action bumps arrive in a single weekly PR instead of one per action.
   - package-ecosystem: "github-actions"
     directory: "/"
+    # Without this Dependabot opens against the default branch, main. main takes
+    # releases, hotfixes and doc fixes only, and every action bump merged there
+    # puts main ahead of develop -- which the first step of the release checklist
+    # requires not to be the case. Note Dependabot reads this file from the
+    # default branch, so the retarget only takes effect once it reaches main.
+    target-branch: "develop"
     schedule:
       interval: "weekly"
     groups:
