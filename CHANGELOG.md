@@ -40,10 +40,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The README logo and five file links used repository-relative paths, which PyPI
   resolves against `pypi.org`, so the logo did not render and the links 404ed on
   the project page. All are now absolute URLs, matching the performance figures.
-
-### Fixed
 - Resolve the documented three-node-per-dimension default for Gaussian rules
   when `N=None`, including the default JIT factory's node count.
+- `Trapezoid` accepts `N=None` (two points per dimension), so its
+  `get_jit_compiled_integrate` no longer fails when called without `N`.
 
 ## [0.6.0] - 2026-08-23
 
