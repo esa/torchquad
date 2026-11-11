@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Raised the Python floor to `>=3.11`; Python 3.10 reaches end of life in
+  October 2026, and current Pillow and Keras releases (pulled in by the dev
+  tooling and the TensorFlow extra) no longer support it. The NumPy and SciPy
+  floors move to `>=1.23.2` and `>=1.9.2`, the oldest releases with Python 3.11
+  wheels.
 - The quadrature weights are no longer truncated to the integrand's dtype, and a
   mismatch now warns instead of passing silently. An integrand returning
   `float32` under `float64` precision yields a `float64` result rather than

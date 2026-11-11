@@ -31,7 +31,7 @@ The CI/CD pipeline consists of six main workflows:
      (``ruff format --check``) and code quality (``ruff check``), plus
      `pydoclint <https://github.com/jsh9/pydoclint>`_ Google-style docstring
      checks.
-   * **test**: all four backends installed across a Python 3.10/3.11/3.12
+   * **test**: all four backends installed across a Python 3.11/3.12
      matrix (``fail-fast: false``). Skipped tests are errors
      (``--error-for-skips``), so a silently-missing backend fails the build.
      The 3.12 leg enforces the coverage floor (``--cov-fail-under``) and posts
@@ -87,13 +87,15 @@ The CI/CD pipeline consists of six main workflows:
 
 5. **Release Testing** (``release_testing.yml``)
 
-   **Triggers**: Manual workflow dispatch, GitHub releases
+   **Triggers**: Any push to a ``release-*`` or ``release/**`` branch, manual
+   workflow dispatch, and GitHub releases. A hotfix branch named otherwise has to
+   be dispatched by hand.
 
    The slower end-to-end suite in ``release_testing/``, run against the *latest
    released* backends rather than the versions pinned in CI, so a release cannot
    silently break on a new torch/JAX/TensorFlow:
 
-   * Python 3.10/3.11/3.12 matrix
+   * Python 3.11/3.12 matrix
    * Accuracy, seeded determinism, autodiff and JIT-vs-eager parity checks
 
 6. **Documentation** (``draft-pdf.yml``)
