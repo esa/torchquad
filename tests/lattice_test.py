@@ -19,8 +19,8 @@ therefore no dedicated test here for malformed ``size`` components (e.g. bools
 or non-whole floats).
 
 The remaining tests target properties that are specific to the rank-1 lattice
-construction: the closed-form point formula, the one-shot random shift (drawn
-once and reused for the sampler's lifetime), the optional Baker's transform
+construction: the closed-form point formula, the random shift (redrawn on
+every call, reproducibly when seeded), the optional Baker's transform
 (``tent=True``), and input validation on N and dim. These run on the torch
 backend only -- the per-backend tests above already cover cross-backend
 correctness at the integration level.
@@ -507,3 +507,17 @@ if __name__ == "__main__":
     test_lattice_tent_reaches_exact_upper_bound_at_midpoint()
     test_lattice_tent_changes_points()
     print("All Lattice tests passed!")
+
+
+@pytest.mark.parametrize("seed", [None, 0])
+def test_lattice_shift_leaves_global_torch_rng_untouched(seed):
+    """Drawing the shift must not seed or advance PyTorch's global generator.
+
+    Regression test: the shift used the global-state RNG mode, so every call to
+    ``uniform`` reseeded the generator the rest of the user's program draws from.
+    """
+    with torch.random.fork_rng(), torch.device("cpu"):
+        torch.manual_seed(987)
+        state_before = torch.get_rng_state().clone()
+        Lattice(backend="torch", seed=seed).uniform([_N, _DIM], torch.float64)
+        assert torch.equal(state_before, torch.get_rng_state())

@@ -1,13 +1,11 @@
 import warnings
-
-from autoray import numpy as anp
-
+from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
-from pathlib import Path
-from .rng import RNG
+from autoray import numpy as anp
 
-from functools import lru_cache
+from .rng import RNG
 
 _VALID_BACKENDS = ("torch", "numpy", "jax", "tensorflow")
 
@@ -334,7 +332,12 @@ class Lattice:
         points = anp.astype(mod, dtype) / number_of_points
 
         if self._shift:
-            shift_values = RNG(backend=self._backend, seed=self._seed).uniform([dim], dtype)
+            # torch_save_state gives the shift its own generator; without it
+            # RNG seeds PyTorch's global generator, which would disturb every
+            # unrelated random draw in the caller's program.
+            shift_values = RNG(
+                backend=self._backend, seed=self._seed, torch_save_state=True
+            ).uniform([dim], dtype)
             points = (points + shift_values[None, :]) % 1.0
 
         if self._tent:
