@@ -58,7 +58,7 @@ class Simpson(NewtonCotes):
 
         Args:
             dim (int): Dimensionality of the integration domain.
-            N (int): Total number of sample points to use for the integration.
+            N (int or tuple of int): Total number of sample points, or the number of points in each dimension.
 
         Returns:
             int or tuple of int: An odd N >3.

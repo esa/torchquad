@@ -16,7 +16,8 @@ def _per_dimension_counts(N, dim):
     """Return validated per-dimension point counts, or None for scalar N."""
     if isinstance(N, (str, bytes)) or not hasattr(N, "__iter__"):
         return None
-    if getattr(N, "ndim", None) == 0:
+    # A zero-dimensional array or tensor is a scalar N, although it has __iter__.
+    if hasattr(N, "ndim") and N.ndim == 0:
         return None
 
     counts = tuple(N)

@@ -5,18 +5,36 @@ from loguru import logger
 
 from .utils import _check_integration_domain
 
-# Mantissa width of each supported dtype. A complex type carries the precision of
-# its real component, so complex128 is as precise as float64 and pairing the two
-# loses nothing. Anything absent is treated as unknown and left alone rather than
-# guessed at.
+# Storage bits per real component of each floating dtype, used to rank them by
+# precision. A complex type carries the precision of its real component, so
+# complex128 is as precise as float64 and pairing the two loses nothing.
 _DTYPE_PRECISION_BITS = {
     "float16": 16,
     "bfloat16": 16,
     "float32": 32,
     "float64": 64,
+    "float128": 128,
     "complex64": 32,
     "complex128": 64,
+    "complex256": 128,
 }
+
+
+def _is_less_precise(value_dtype_name, weight_dtype_name):
+    """Tell whether integrand values carry less precision than the quadrature weights.
+
+    Integer and Boolean values are exact, so they never count as less precise.
+
+    Args:
+        value_dtype_name (str): Dtype name of the integrand's return value.
+        weight_dtype_name (str): Dtype name of the quadrature weights.
+
+    Returns:
+        bool: True if the values are floating point with fewer bits than the weights.
+    """
+    if value_dtype_name.startswith(("int", "uint", "bool")):
+        return False
+    return _DTYPE_PRECISION_BITS[value_dtype_name] < _DTYPE_PRECISION_BITS[weight_dtype_name]
 
 
 class BaseIntegrator:
@@ -117,9 +135,7 @@ class BaseIntegrator:
                 weights = anp.repeat(
                     anp.expand_dims(weights, axis=1), anp.prod(integrand_shape)
                 ).reshape((weights.shape[0], *(integrand_shape)))
-            result_bits = _DTYPE_PRECISION_BITS.get(get_dtype_name(result))
-            weight_bits = _DTYPE_PRECISION_BITS.get(get_dtype_name(weights))
-            if result_bits is not None and weight_bits is not None and result_bits < weight_bits:
+            if _is_less_precise(get_dtype_name(result), get_dtype_name(weights)):
                 warnings.warn(
                     f"The passed function returned {get_dtype_name(result)} values while the "
                     f"quadrature weights are {get_dtype_name(weights)}. The result is promoted to "
