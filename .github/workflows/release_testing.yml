@@ -6,29 +6,32 @@ name: Release testing
 # environment, so a release cannot silently ship broken against a new PyTorch,
 # JAX, or TensorFlow.
 #
-# The push and pull_request triggers are what make this a *pre*-ship gate.
-# workflow_dispatch alone was not enough: GitHub only registers a workflow that
-# exists on the default branch or has already run, so a suite introduced on
-# develop cannot be dispatched at all until it reaches main -- which for the
-# first release meant the only run happened on `release: created`, after
-# shipping. push and pull_request are evaluated from the workflow file in the
-# ref being tested, so they need no registration and fire immediately.
+# The push trigger is what makes this a *pre*-ship gate. workflow_dispatch alone
+# was not enough: GitHub only registers a workflow that exists on the default
+# branch or has already run, so a suite introduced on develop cannot be
+# dispatched at all until it reaches main -- which for the first release meant
+# the only run happened on `release: created`, after shipping. push is evaluated
+# from the workflow file in the ref being pushed, so it needs no registration and
+# fires immediately.
+#
+# There is deliberately no pull_request trigger. A release branch already matches
+# push, and a push run reports as a check on the PR opened from that branch, so
+# pull_request only ran the whole matrix a second time. It also fired on
+# Dependabot, which targets main because main is the default branch. A hotfix
+# branch not named release-* therefore needs a manual workflow_dispatch; the
+# release checklist says so.
 on:
   push:
     branches:
       - "release-*"
       - "release/**"
-  pull_request:
-    # Only releases and hotfixes target main, so this stays off ordinary PRs;
-    # installing three backends across three Python versions is not cheap.
-    branches:
-      - main
   workflow_dispatch:
   release:
     types: [created]
 
-# A release branch with an open PR into main matches both push and
-# pull_request. One run per ref is the point; a second is waste.
+# Only one event type now reaches a given branch, so grouping by ref no longer
+# double-counts the same commit -- it just cancels a run superseded by a newer
+# push to the same release branch.
 concurrency:
   group: release-testing-${{ github.ref }}
   cancel-in-progress: true
