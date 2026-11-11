@@ -74,8 +74,13 @@ class MonteCarlo(BaseIntegrator):
         # Integral = V / N * sum(func values)
         N = function_values.shape[0]
         integral = volume * anp.sum(function_values, axis=0) / N
-        # NumPy automatically casts to float64 when dividing by N
-        if infer_backend(integration_domain) == "numpy" and function_values.dtype != integral.dtype:
+        # Restore inexact precision after NumPy promotion, but retain the
+        # fractional result when integrating integer or Boolean values.
+        if (
+            infer_backend(integration_domain) == "numpy"
+            and function_values.dtype.kind in "fc"
+            and function_values.dtype != integral.dtype
+        ):
             integral = integral.astype(function_values.dtype)
         logger.opt(lazy=True).info("Computed integral: {result}", result=lambda: str(integral))
         return integral
