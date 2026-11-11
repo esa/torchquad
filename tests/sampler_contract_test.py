@@ -34,6 +34,8 @@ RANGE_CASES = [
 @pytest.mark.parametrize("sampler_class", SAMPLERS)
 def test_points_stay_below_one(backend, dtype_name, sampler_class):
     """No sampler may return exactly 1.0, in particular not in float32."""
+    # The single-backend CI jobs install one framework each.
+    pytest.importorskip(backend)
     dtype = ar.to_backend_dtype(dtype_name, like=backend)
     largest = 0.0
     # Several seeds: a rounding failure hits a few percent of the draws.
@@ -75,13 +77,20 @@ def test_lattice_points_exact_in_jax_32_bit_mode():
     is harmless only because the number of points is a power of two; the
     unshifted points must therefore equal the NumPy (int64) ones bit for bit.
     """
-    from jax.experimental import disable_x64
+    jax = pytest.importorskip("jax")
 
     size = [NUMBER_OF_POINTS, 6]
     reference = Lattice(backend="numpy", shift=False).uniform(size, np.float32)
-    # Earlier tests may have enabled x64 globally; force the 32-bit mode here.
-    with disable_x64():
-        points = Lattice(backend="jax", shift=False).uniform(
-            size, ar.to_backend_dtype("float32", like="jax")
+    # Earlier tests may have enabled x64 globally; force the 32-bit mode here
+    # and put the setting back afterwards.
+    x64_was_enabled = jax.config.jax_enable_x64
+    jax.config.update("jax_enable_x64", False)
+    try:
+        points = ar.to_numpy(
+            Lattice(backend="jax", shift=False).uniform(
+                size, ar.to_backend_dtype("float32", like="jax")
+            )
         )
-    np.testing.assert_array_equal(ar.to_numpy(points), reference)
+    finally:
+        jax.config.update("jax_enable_x64", x64_was_enabled)
+    np.testing.assert_array_equal(points, reference)
