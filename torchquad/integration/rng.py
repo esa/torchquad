@@ -34,7 +34,7 @@ class RNG:
         Args:
             backend (string): Numerical backend, e.g. "torch".
             seed (int or None, optional): Random number generation seed. If set to None, the RNG is seeded randomly. Defaults to None.
-            torch_save_state (Bool, optional): If True, maintain a separate RNG state for PyTorch. This argument can be helpful to avoid problems with integrand functions which set PyTorch's RNG seed. Unused unless backend is "torch". Defaults to False.
+            torch_save_state (Bool, optional): If True, maintain a separate PyTorch generator on the default device at construction. This argument can be helpful to avoid problems with integrand functions which set PyTorch's RNG seed. Unused unless backend is "torch". Defaults to False.
         """
         if backend == "numpy":
             import numpy as np
@@ -85,38 +85,16 @@ class RNG:
         import torch
 
         if save_state:
-            # Set and restore the global RNG state before and after
-            # generating random numbers
-
-            if torch.cuda.is_initialized():
-                # RNG state functions for the current CUDA device
-                get_state = torch.cuda.get_rng_state
-                set_state = torch.cuda.set_rng_state
-            else:
-                # RNG state functions for the Host
-                get_state = torch.get_rng_state
-                set_state = torch.set_rng_state
-
-            previous_rng_state = get_state()
+            # Seeding and swapping global states also affects unrelated devices.
+            # A local generator isolates draws even after CUDA initializes.
+            self._rng = torch.Generator(device=torch.empty(0).device)
             if seed is None:
-                torch.random.seed()
+                self._rng.seed()
             else:
-                torch.random.manual_seed(seed)
-            self._rng_state = get_state()
-            set_state(previous_rng_state)
-
-            def uniform_func(size, dtype):
-                # Swap the state
-                previous_rng_state = get_state()
-                set_state(self._rng_state)
-                # Generate numbers
-                random_values = torch.rand(size=size, dtype=dtype)
-                # Swap the state back
-                self._rng_state = get_state()
-                set_state(previous_rng_state)
-                return random_values
-
-            self.uniform = uniform_func
+                self._rng.manual_seed(seed)
+            self.uniform = lambda size, dtype: torch.rand(
+                size=size, dtype=dtype, device=self._rng.device, generator=self._rng
+            )
         else:
             # Use the global RNG state for random number generation
             if seed is None:

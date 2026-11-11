@@ -17,7 +17,7 @@ Torchquad uses GitHub Actions for CI/CD with the following key objectives:
 GitHub Actions Workflows
 -------------------------
 
-The CI/CD pipeline consists of five main workflows:
+The CI/CD pipeline consists of six main workflows:
 
 1. **Test Suite** (``run_tests.yml``)
 
@@ -31,7 +31,7 @@ The CI/CD pipeline consists of five main workflows:
      (``ruff format --check``) and code quality (``ruff check``), plus
      `pydoclint <https://github.com/jsh9/pydoclint>`_ Google-style docstring
      checks.
-   * **test**: all four backends installed across a Python 3.10/3.11/3.12
+   * **test**: all four backends installed across a Python 3.11/3.12
      matrix (``fail-fast: false``). Skipped tests are errors
      (``--error-for-skips``), so a silently-missing backend fails the build.
      The 3.12 leg enforces the coverage floor (``--cov-fail-under``) and posts
@@ -70,14 +70,14 @@ The CI/CD pipeline consists of five main workflows:
    
    Production deployment to PyPI:
    
-   * Python 3.10 environment
+   * Python 3.11 environment
    * Builds source distribution and wheel packages
    * Uploads to PyPI using stored authentication token
    * Manual trigger ensures controlled releases
 
 4. **Test PyPI Deployment** (``deploy_to_test_pypi.yml``)
    
-   **Triggers**: Manual workflow dispatch, GitHub releases
+   **Triggers**: Manual workflow dispatch only
    
    Test deployment for validation:
    
@@ -85,7 +85,20 @@ The CI/CD pipeline consists of five main workflows:
    * Targets Test PyPI for safe testing
    * Used to validate packages before production release
 
-5. **Documentation** (``draft-pdf.yml``)
+5. **Release Testing** (``release_testing.yml``)
+
+   **Triggers**: Any push to a ``release-*`` or ``release/**`` branch, manual
+   workflow dispatch, and GitHub releases. A hotfix branch named otherwise has to
+   be dispatched by hand.
+
+   The slower end-to-end suite in ``release_testing/``, run against the *latest
+   released* backends rather than the versions pinned in CI, so a release cannot
+   silently break on a new torch/JAX/TensorFlow:
+
+   * Python 3.11/3.12 matrix
+   * Accuracy, seeded determinism, autodiff and JIT-vs-eager parity checks
+
+6. **Documentation** (``draft-pdf.yml``)
    
    **Triggers**: Changes to paper directory
    
@@ -345,7 +358,7 @@ Common CI Failures
    
    * Update ``environment_all_backends.yml`` for new dependencies
    * Check for version conflicts between backends
-   * Verify micromamba cache invalidation
+   * Verify the ``uv`` cache is invalidated when ``uv.lock`` changes
 
 Building Documentation Locally
 ------------------------------
