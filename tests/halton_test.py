@@ -8,15 +8,13 @@ bit-for-bit for a fixed seed -- exactly the same contract as Sobol (see
 mirrored below with Halton-appropriate bounds and sample sizes.
 
 On top of that, this file adds tests for properties that are SPECIFIC to
-Halton and worth guarding against regression, because each of them corresponds
-to a real bug found and fixed during development of the torch backend:
+Halton and worth guarding against regression:
 
     - no power-of-two requirement (unlike Sobol);
-    - the (0,m,1)-net stratification property, verified independently per
-      dimension/base -- this is the exact test that caught an early bug where
-      a single digit count `m` shared across all dimensions (driven by the
-      smallest base) silently broke equidistribution for the other,
-      larger-base dimensions;
+    - the (0,m,1)-net stratification property, checked independently per
+      dimension/base: a single digit count `m` shared across all dimensions
+      (driven by the smallest base) would silently break equidistribution for
+      the larger-base dimensions;
     - agreement between the pure-PyTorch construction and SciPy's reference
       implementation when scrambling is OFF: since both compute the exact
       same classical van der Corput sequence, they should match to within
@@ -85,13 +83,13 @@ def _halton_collection_test(backend, dtype_name=None):
     the Halton class docstring, so it is expected to be less accurate at
     equal N.
 
-    NOTE: the bounds below are a starting point based on the general
-    Halton-vs-Sobol relationship, not values measured against the actual
-    collection -- tighten or loosen them after a first real run against the
-    live test-function collection.
+    The bounds are about twice the largest error measured with seed=0 across
+    the four backends: 2.2e-2 (1-D), 5.0e-3 (3-D) and 6.9e-2 (10-D). The worst
+    case is always the high-order polynomial, whose integral is large, so
+    these absolute errors correspond to small relative ones.
     """
     mc = MonteCarlo()
-    cases = [(1, 2**16, 6e-2), (3, 2**16, 3e-2), (10, 2**15, 0.15)]
+    cases = [(1, 2**16, 4.5e-2), (3, 2**16, 1.2e-2), (10, 2**15, 0.14)]
     for integration_dim, N, bound in cases:
         errors, funcs = compute_integration_test_errors(
             mc.integrate,

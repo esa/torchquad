@@ -9,9 +9,9 @@ gradient tests are mirrored below.
 Unlike Sobol and Halton, there is no "beats plain Monte Carlo" test here: LHS
 and plain Monte Carlo are both randomized uniform sampling methods, so a
 single-draw comparison between them has no principled basis -- either can
-"win" by chance on any given seed (measured during development: LHS won only
-~21/30 individual seeds against MC on a moderately interacting integrand,
-despite a real ~7x average advantage), making a strict less-than assertion
+"win" by chance on any given seed (LHS wins only about 21 of 30 individual
+seeds against MC on a moderately interacting integrand, despite a ~7x average
+advantage), making a strict less-than assertion
 between two random draws inherently unreliable.
 
 On top of that, this file adds tests for properties SPECIFIC to LHS:
@@ -27,9 +27,9 @@ On top of that, this file adds tests for properties SPECIFIC to LHS:
       an arbitrary single-draw comparison, and averaged over several seeds so
       it isn't subject to the same single-draw unreliability noted above;
     - `seed=None` must give independently randomised draws on every call. This
-      guards against a real bug found during development: an un-seeded
-      `torch.Generator()` has a FIXED default internal state (verified: two
-      fresh, un-seeded generators produced the identical draw), so forgetting
+      matters because an un-seeded `torch.Generator()` has a FIXED default
+      internal state (two fresh, un-seeded generators produce the identical
+      draw), so forgetting
       to call `.seed()` in that branch would silently make every `seed=None`
       call return the exact same "random" sample.
 
@@ -99,15 +99,14 @@ def _lhs_collection_test(backend, dtype_name=None):
     sequence), so it should not be expected to reach anywhere near Sobol's
     ~1e-6 at equal N.
 
-    Bounds were widened during development after observing real run-to-run
-    variance on functions with strong cross-dimensional interaction (e.g.
-    ProductFunction at dim=3 measured 8.19e-04, 3.24e-03 and 1.14e-02 across
-    different runs/backends) -- LHS's per-axis stratification does not
-    constrain multi-dimensional interaction terms, so a single seed's error
-    on such functions is noticeably less stable than for Sobol/Halton.
+    The bounds are about twice the largest error measured with seed=0 across
+    the four backends: 6.1e-2 (1-D), 1.1e-2 (3-D) and 2.8e-2 (10-D). LHS's
+    per-axis stratification does not constrain interaction terms, so the 3-D
+    worst case is the product function and it varies more between backends
+    (2.4e-3 to 1.1e-2) than for Sobol or Halton.
     """
     mc = MonteCarlo()
-    cases = [(1, 2**12, 0.15), (3, 2**12, 4e-2), (10, 2**11, 8e-2)]
+    cases = [(1, 2**12, 0.12), (3, 2**12, 2.4e-2), (10, 2**11, 5.6e-2)]
     for integration_dim, N, bound in cases:
         errors, funcs = compute_integration_test_errors(
             mc.integrate,
@@ -199,9 +198,7 @@ def test_lhs_exact_stratification():
     Unlike Halton's (0,m,1)-net check, this is checked for EXACT equality, no
     tolerance: LHS coordinates are a direct k/n division (k and n both plain
     integers), not a multi-digit base-b reconstruction, so there is no
-    equivalent of Halton's float64 representability caveat here -- verified
-    directly: 4 dimensions, n=5000, all four columns give a perfect bijection
-    onto {0, ..., n-1}.
+    equivalent of Halton's float64 representability caveat here.
     """
     n, dim = 5000, 4
     points = RandomizedLatinHypercube(backend="torch", seed=7).uniform([n, dim], torch.float64)
@@ -218,7 +215,7 @@ def test_lhs_crushes_mc_on_additive_integrand():
     (see `_additive_integrand`), LHS should beat plain MC by orders of
     magnitude, not just modestly.
 
-    Measured during development: ~1200x lower mean squared error than plain
+    The measured value is about 1200x lower mean squared error than plain
     MC over 30 independent trials at N=200, dim=5. This threshold (100x) is
     set well below that measurement to leave comfortable margin while still
     being a real, specific, theory-motivated check -- much stronger evidence
@@ -251,10 +248,9 @@ def test_lhs_crushes_mc_on_additive_integrand():
 def test_lhs_seed_none_randomizes_every_call():
     """`seed=None` must give independently randomised draws on every call.
 
-    Regression guard for a real bug found during development: a fresh,
-    un-seeded `torch.Generator()` has a FIXED default internal state (two
-    freshly constructed, never-seeded generators were found to produce the
-    identical draw), so forgetting the `.seed()` call in the `seed is None`
+    A fresh, un-seeded `torch.Generator()` has a FIXED default internal state
+    (two freshly constructed, never-seeded generators produce the identical
+    draw), so forgetting the `.seed()` call in the `seed is None`
     branch would silently make every unseeded call return the same "random"
     sample -- exactly the same category of bug previously found and fixed for
     the `Lattice` sampler's shift.

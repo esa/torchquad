@@ -34,10 +34,10 @@ from autoray import numpy as anp
 from torchquad.integration.monte_carlo import MonteCarlo
 from torchquad.integration.qmc import (
     Lattice,
-    load_lattice_vector,
+    _load_full_generating_vector,
+    _load_lattice_vector,
     _MIN_POINTS,
     _MAX_POINTS,
-    _max_dimension,
 )
 from torchquad.utils.set_up_backend import set_up_backend
 from helper_functions import setup_test_for_backend, compute_integration_test_errors
@@ -84,15 +84,31 @@ def _lattice_collection_test(backend, dtype_name=None):
     """Lattice-based MC must integrate the shared analytic test-function
     collection accurately, at each dimension it covers.
 
-    Bounds were derived empirically across all four backends (numpy, torch,
-    tensorflow, jax) with seed=0.
+    The collection is not periodic, so the plain rule (``tent=False``) is far
+    from its best here, most of all in 1-D: the largest errors measured with
+    seed=0 across the four backends are 3.8e-1 (1-D), 6.3e-2 (3-D) and 4.6e-4
+    (10-D), always on the high-order polynomial. With the baker's transform
+    they drop to 4.5e-3, 7.7e-6 and 1.9e-3. The bounds sit just above the
+    measured values, so the ``tent=True`` rows are the sharp check of the
+    point construction.
     """
     mc = MonteCarlo()
-    cases = [(1, 2**12, 0.5), (3, 2**12, 0.07), (10, 2**11, 6e-4)]
-    for integration_dim, N, bound in cases:
+    cases = [
+        (1, 2**12, False, 0.5),
+        (3, 2**12, False, 0.07),
+        (10, 2**11, False, 6e-4),
+        (1, 2**12, True, 9e-3),
+        (3, 2**12, True, 1.6e-5),
+        (10, 2**11, True, 3.8e-3),
+    ]
+    for integration_dim, N, tent, bound in cases:
         errors, funcs = compute_integration_test_errors(
             mc.integrate,
-            {"N": N, "dim": integration_dim, "rng": Lattice(backend=backend, seed=0)},
+            {
+                "N": N,
+                "dim": integration_dim,
+                "rng": Lattice(backend=backend, seed=0, tent=tent),
+            },
             integration_dim=integration_dim,
             use_complex=True,
             backend=backend,
@@ -100,7 +116,7 @@ def _lattice_collection_test(backend, dtype_name=None):
         for error, test_function in zip(errors, funcs):
             assert test_function.get_order() > 0 or error == 0.0
             assert error < bound, (
-                f"Lattice dim={integration_dim} error {error} exceeds {bound} "
+                f"Lattice dim={integration_dim} tent={tent} error {error} exceeds {bound} "
                 f"for {type(test_function).__name__}"
             )
 
@@ -253,7 +269,7 @@ def test_lattice_matches_closed_form_without_shift():
     dim = 4
     n = 1024  # smallest supported N, keeps the manual computation cheap
 
-    z = load_lattice_vector(d=dim).astype(np.int64)
+    z = _load_lattice_vector(dim).astype(np.int64)
     i = np.arange(n, dtype=np.int64)
     expected = ((i[:, None] * z[None, :]) % n) / n
 
@@ -375,11 +391,10 @@ def test_lattice_rejects_out_of_range_dimensions():
     """dim below 1 or above the generating vector file's max must raise, near
     the boundary or far outside it.
 
-    Not parametrized: the upper bound is derived from the actual data file
-    via ``_max_dimension()``, which must run inside a test function rather
-    than at module collection time, to avoid loading the file on import.
+    Not parametrized: the upper bound is read from the data file, which
+    should happen inside a test function rather than at collection time.
     """
-    max_dim = _max_dimension()
+    max_dim = _load_full_generating_vector().shape[0]
     for bad_dim in [0, -1, max_dim + 1, max_dim + 10000]:
         with pytest.raises(ValueError):
             Lattice(backend="torch").uniform([1024, bad_dim], torch.float64)

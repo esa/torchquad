@@ -3,11 +3,31 @@ from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
+from autoray import get_dtype_name
 from autoray import numpy as anp
 
 from .rng import RNG
 
 _VALID_BACKENDS = ("torch", "numpy", "jax", "tensorflow")
+
+
+def _below_one(points):
+    """Clamp points to the largest value below 1 that their dtype can represent.
+
+    The samplers construct points in ``[0, 1)`` in exact or double precision
+    arithmetic, but rounding to a narrower dtype can turn a value just below 1
+    into exactly 1.0 (in float32, any value above ``1 - 2**-25``). The integrand
+    would then be evaluated on the upper domain boundary, which ``RNG`` never
+    does. Values already below 1 are returned unchanged.
+
+    Args:
+        points (backend tensor): Points in ``[0, 1]``.
+
+    Returns:
+        backend tensor: The same points, none of them equal to 1.
+    """
+    largest = float(np.nextafter(np.dtype(get_dtype_name(points)).type(1.0), 0.0))
+    return anp.clip(points, 0.0, largest)
 
 
 class Sobol:
@@ -89,7 +109,7 @@ class Sobol:
             # SobolEngine always draws on the CPU; move the points onto the
             # current default device (e.g. CUDA) so they line up with the
             # integration domain, matching what torch.rand does in RNG.
-            return points.to(torch.empty(0).device)
+            return _below_one(points.to(torch.empty(0).device))
 
         # numpy / jax / tensorflow: generate with SciPy (a hard dependency) and
         # move the constant points onto the requested backend.
@@ -97,10 +117,10 @@ class Sobol:
 
         sampler = qmc.Sobol(d=dim, scramble=self._scramble, seed=self._seed)
         points = sampler.random(number_of_points)
-        return anp.array(points, dtype=dtype, like=self._backend)
+        return _below_one(anp.array(points, dtype=dtype, like=self._backend))
 
 
-DATA_DIR = Path(__file__).resolve().parent
+_DATA_DIR = Path(__file__).resolve().parent
 
 
 _MIN_POINTS = 1024
@@ -109,54 +129,36 @@ _LATTICE_FILE = "lattice-33002-1024-1048576.npz"
 
 
 @lru_cache(maxsize=None)
-def _load_full_generating_vector(filename):
-    """Load and cache the full generating vector array from disk (once)."""
-    path = DATA_DIR / filename
-    with np.load(path) as data:
+def _load_full_generating_vector():
+    """Load the bundled generating vector from disk, once."""
+    with np.load(_DATA_DIR / _LATTICE_FILE) as data:
         generating_vector = data["generating_vector"]
     return generating_vector.astype(np.uint64)
 
 
-def _max_dimension(filename=_LATTICE_FILE):
-    """Return the largest dimension supported by the generating vector file."""
-    return _load_full_generating_vector(filename).shape[0]
-
-
-def load_lattice_vector(d, filename=_LATTICE_FILE):
-    """Load the first d components of the generating vector z from a
-    generating vectors file for rank-1 lattice rules.
-
-    The full array is loaded from disk only once (cached); each call
-    afterwards just slices the already-loaded array. The valid range for
-    ``d`` is derived from the file itself, not hard-coded. The file must
-    contain a single array ``generating_vector`` with one component per
-    dimension.
+def _load_lattice_vector(dim):
+    """Return the first ``dim`` components of the bundled generating vector.
 
     Args:
-        d (int): Desired dimension.
-        filename (str, optional): Path to the generating vectors ``.npz``
-            file. Defaults to ``_LATTICE_FILE``.
+        dim (int): Desired dimension.
 
     Returns:
-        np.ndarray: Array [z1, z2, ..., zd] with dtype uint64.
+        np.ndarray: Array ``[z_1, ..., z_dim]`` with dtype uint64.
 
     Raises:
-        ValueError: If d is not strictly positive, or if d exceeds the
-            number of components available in the file.
+        ValueError: If dim is not strictly positive, or exceeds the number of
+            components in the bundled file.
     """
-    if d <= 0:
-        raise ValueError("The dimension d must be strictly positive.")
+    if dim <= 0:
+        raise ValueError("The dimension must be strictly positive.")
 
-    generating_vector = _load_full_generating_vector(filename)
-
-    max_d = generating_vector.shape[0]
-
-    if d > max_d:
+    generating_vector = _load_full_generating_vector()
+    max_dim = generating_vector.shape[0]
+    if dim > max_dim:
         raise ValueError(
-            f"Requested dimension d={d}, but the file contains only {max_d} components."
+            f"Requested dimension {dim}, but the generating vector has only {max_dim} components."
         )
-
-    return generating_vector[:d]
+    return generating_vector[:dim]
 
 
 class Lattice:
@@ -234,12 +236,10 @@ class Lattice:
     placement differs.
 
     Notes:
-        - The dimension must be a whole number, and no larger than what the
-          loaded generating vector file supports (currently 9125; see
-          :func:`load_lattice_vector`, which derives this bound from the file
-          itself rather than a hard-coded constant).
-        - The number of points must be a whole number between
-          :data:`_MIN_POINTS` and :data:`_MAX_POINTS`, inclusive.
+        - The dimension must be a whole number no larger than the number of
+          components in the bundled generating vector (9125).
+        - The number of points must be a whole number between 1024 and
+          1048576, inclusive.
         - The number of points must be a power of two for the simple
           construction above to be valid for this extensible lattice rule.
         - This sampler targets the eager :meth:`MonteCarlo.integrate` path, not
@@ -304,10 +304,9 @@ class Lattice:
             ``tent=True``.
 
         Raises:
-            ValueError: If the number of points is not between
-                :data:`_MIN_POINTS` and :data:`_MAX_POINTS`, is not a power of
-                2, or if the dimension is invalid for the loaded generating
-                vector file (see :func:`load_lattice_vector`).
+            ValueError: If the number of points is not between 1024 and
+                1048576, is not a power of 2, or if the dimension is not
+                between 1 and the length of the bundled generating vector.
         """
         number_of_points, dim = int(size[0]), int(size[1])
 
@@ -324,10 +323,20 @@ class Lattice:
                 "requested."
             )
 
-        z_np = load_lattice_vector(d=dim, filename=_LATTICE_FILE)
+        z_np = _load_lattice_vector(dim)
 
-        z = anp.astype(anp.array(z_np, like=self._backend), "int64")
-        index = anp.astype(anp.arange(number_of_points, like=self._backend), "int64")
+        # index * z reaches 2**40, which needs 64-bit integers. JAX only has
+        # them with x64 enabled; in its default 32-bit mode the product wraps
+        # modulo 2**32 instead. The points are still exact there, because the
+        # number of points is a power of two (checked above) and therefore
+        # divides 2**32, so the wraparound vanishes under the modulo. Relaxing
+        # the power-of-two check would silently break this.
+        integer_dtype = "int64"
+        if self._backend == "jax":
+            # JAX's default integer type is int32 exactly when x64 is off.
+            integer_dtype = get_dtype_name(anp.arange(1, like="jax"))
+        z = anp.astype(anp.array(z_np.astype(np.int64), like=self._backend), integer_dtype)
+        index = anp.astype(anp.arange(number_of_points, like=self._backend), integer_dtype)
         mod = (index[:, None] * z[None, :]) % number_of_points
         points = anp.astype(mod, dtype) / number_of_points
 
@@ -368,8 +377,7 @@ def _digits_needed(base, n_points):
     """Number of digits m such that base^m > largest index (n_points-1).
     Computed with pure integer arithmetic: math.log(x, base) can round to
     just above an exact integer (e.g. log(15625,5) = 6.000000000000001),
-    tipping math.ceil to 7 instead of 6 -- caught and fixed during
-    development."""
+    tipping math.ceil to 7 instead of 6."""
     if n_points <= 1:
         return 1
     m = 1
@@ -386,8 +394,8 @@ def _hash_mix(seed, dim_idx, depth, prefix):
     This is a simplification of full Owen scrambling (which would allow any
     permutation at each node): here, only a cyclic shift mod base is applied
     at each node. A cyclic shift IS a genuine bijection of Z_base (so it
-    preserves equidistribution properties exactly -- checked below via a
-    stratification test), but it does not cover the full space of possible
+    preserves equidistribution properties exactly), but it does not cover the
+    full space of possible
     permutations for base > 2. For base=2 (Halton's first dimension),
     however, this is rigorously EQUIVALENT to full Owen scrambling, since
     there are only 2 possible permutations of a 2-element set (identity and
@@ -451,13 +459,13 @@ class Halton:
           same number of points, and sharing a single m (driven by the
           smallest base) would inject spurious scrambling noise into unused
           high-order digit positions of the other dimensions.
-        - Points are generated directly on the target backend/device, with no
-          NumPy round-trip -- unlike SobolEngine, this construction does not
-          require staying on CPU.
+        - On the ``torch`` backend the points are generated directly on the
+          default device, with no NumPy round-trip. The other backends
+          generate them with SciPy on the CPU and convert.
         - Floating-point caveat: coordinates equal to k / base^m are not
           always exactly representable in float64 when base != 2 (e.g.
-          46/729 does not round-trip exactly through float64, verified
-          independently of this implementation). This can occasionally shift
+          46/729 does not round-trip exactly through float64). This can
+          occasionally shift
           a point by one ULP across a stratum boundary if you recompute
           floor(x * n) downstream; it does not affect the validity of the
           point set for integration.
@@ -515,7 +523,10 @@ class Halton:
             device = torch.empty(0).device
             seed = self._seed
             if seed is None:
-                seed = int(torch.randint(0, 2**31 - 1, (1,)).item())
+                # Generator.seed() draws from the operating system's entropy,
+                # so an unseeded sampler does not advance PyTorch's global
+                # generator the way torch.randint would.
+                seed = torch.Generator().seed() & 0x7FFFFFFF
 
             primes = _first_n_primes(dim)
             idx_all = torch.arange(number_of_points, device=device, dtype=torch.int64)
@@ -527,8 +538,7 @@ class Halton:
                 # single m across all dimensions (driven by the smallest
                 # base) would inject spurious high-order scrambling noise
                 # into dimensions that don't need those extra digit
-                # positions -- verified to break equidistribution during
-                # development.
+                # positions, which breaks equidistribution.
                 m_j = _digits_needed(base, number_of_points)
 
                 idx = idx_all.clone()
@@ -555,12 +565,10 @@ class Halton:
                 # to float only once at the very end. Summing digit*weight
                 # terms one at a time in float64 instead would accumulate
                 # rounding error at every step (each weight base^-k is
-                # itself not exactly representable for base != 2) -- this
-                # was measured to mis-stratify roughly a third of points in
-                # a stress test; the single-division form reduces that to
-                # the fundamental float64 representability limit (~7%,
-                # confirmed independent of this code: plain Python
-                # `46/729*729 != 46`).
+                # itself not exactly representable for base != 2) and
+                # mis-stratify many more points than the single division,
+                # which is only subject to the float64 representability
+                # limit (plain Python: `46/729*729 != 46`).
                 acc = torch.zeros(number_of_points, dtype=torch.int64, device=device)
                 for r in range(m_j):
                     acc = acc * base + digits[:, r]
@@ -577,8 +585,7 @@ class Halton:
 
                 columns.append(col)
 
-            points = torch.stack(columns, dim=1).to(dtype)
-            return points
+            return _below_one(torch.stack(columns, dim=1).to(dtype))
 
         # numpy / jax / tensorflow: generate with SciPy (a hard dependency) and
         # move the constant points onto the requested backend.
@@ -586,7 +593,7 @@ class Halton:
 
         sampler = qmc.Halton(d=dim, scramble=self._scramble, seed=self._seed)
         points = sampler.random(number_of_points)
-        return anp.array(points, dtype=dtype, like=self._backend)
+        return _below_one(anp.array(points, dtype=dtype, like=self._backend))
 
 
 class RandomizedLatinHypercube:
@@ -616,9 +623,9 @@ class RandomizedLatinHypercube:
     integration domain; only the point *placement* differs.
 
     Notes:
-        - Points are guaranteed to lie in ``[0, 1)``: since ``U_i < 1``
-          always, ``(perm(i) + U_i) / n`` is always strictly below
-          ``(n - 1 + 1) / n = 1``, regardless of the draw.
+        - Points lie in ``[0, 1)``: ``(perm(i) + U_i) / n`` is below 1 in
+          exact arithmetic, and a value that rounding to the requested dtype
+          would turn into 1 is clamped to the largest value below it.
         - Unlike the low-discrepancy sequences in this module (Sobol, Halton),
           there is no notion of extensibility or balance properties tied to a
           particular sample size: any strictly positive ``n`` is valid.
@@ -686,16 +693,19 @@ class RandomizedLatinHypercube:
                 generator.manual_seed(int(self._seed))
             else:
                 # A fresh torch.Generator() otherwise keeps a fixed internal
-                # default seed (verified: two unseeded generators produce the
-                # SAME sequence), which would make every seed=None call
+                # default seed (two unseeded generators produce the same
+                # sequence), which would make every seed=None call
                 # identical instead of independently random.
                 generator.seed()
 
-            keys = torch.rand((dim, n), generator=generator, device=device, dtype=dtype)
+            # Built in float64 whatever the requested dtype: in float32 the
+            # spacing near a large n exceeds the jitter, so perm + U would
+            # round up to n and put points exactly on 1.
+            keys = torch.rand((dim, n), generator=generator, device=device, dtype=torch.float64)
             permutations = torch.argsort(keys, dim=-1)
-            U = torch.rand((dim, n), generator=generator, device=device, dtype=dtype)
-            result = (permutations.to(dtype) + U) / n
-            return result.transpose(0, 1)  # -> (n, dim)
+            U = torch.rand((dim, n), generator=generator, device=device, dtype=torch.float64)
+            result = (permutations.to(torch.float64) + U) / n
+            return _below_one(result.transpose(0, 1).to(dtype))  # -> (n, dim)
 
         # numpy / jax / tensorflow: generate with SciPy (a hard dependency) and
         # move the points onto the requested backend. `seed=` (rather than the
@@ -704,4 +714,4 @@ class RandomizedLatinHypercube:
 
         sampler = qmc.LatinHypercube(d=dim, scramble=True, seed=self._seed)
         points = sampler.random(n)
-        return anp.array(points, dtype=dtype, like=self._backend)
+        return _below_one(anp.array(points, dtype=dtype, like=self._backend))
