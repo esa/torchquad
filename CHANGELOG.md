@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   discarding the weights' precision.
 
 ### Fixed
+- Correct Boolean integrands in Newton-Cotes rules by converting samples to
+  integers before weighted addition.
 - `evaluate_integrand` applies the quadrature weights out of place, so it no
   longer mutates the tensor the integrand returned. The in-place multiply broke
   PyTorch autograd through `GaussLegendre` and any `Gaussian` subclass for

@@ -1,5 +1,5 @@
 from loguru import logger
-from autoray import numpy as anp, infer_backend
+from autoray import numpy as anp, infer_backend, get_dtype_name, astype
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid, grid_func
@@ -77,6 +77,12 @@ class GridIntegrator(BaseIntegrator):
         Returns:
             backend tensor: Quadrature result
         """
+        # Boolean addition can discard adjacent true samples in Newton-Cotes rules.
+        # int32 is wide enough, since the rules scale by the float grid spacing
+        # before summing, and unlike int64 it exists in JAX's default 32-bit mode.
+        if get_dtype_name(function_values) == "bool":
+            function_values = astype(function_values, "int32")
+
         # Reshape the output to be [integrand_dim,N,N,...] points instead of [integrand_dim,dim*N] points
         integrand_shape = function_values.shape[1:]
         dim_shape = [n_per_dim] * dim
