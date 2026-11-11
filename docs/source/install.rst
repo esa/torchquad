@@ -24,7 +24,7 @@ cannot select GPU wheels, and JAX/TensorFlow GPU builds are Linux/WSL2-only.
 For a detailed list of required packages and packages for numerical backends,
 please refer to the conda environment files `environment.yml <https://github.com/esa/torchquad/blob/main/environment.yml>`_ and
 `environment_all_backends.yml <https://github.com/esa/torchquad/blob/main/environment_all_backends.yml>`_.
-torchquad requires Python 3.10 or newer. Its CI suite runs on Python 3.12 with JAX 0.4.35, NumPy 2.3, PyTorch 2.5 and TensorFlow 2.18; other versions of the backends should work as well.
+torchquad requires Python 3.11 or newer. Its CI suite runs on Python 3.12 with JAX 0.4.35, NumPy 2.3, PyTorch 2.5 and TensorFlow 2.18; other versions of the backends should work as well.
 
 
 Installation

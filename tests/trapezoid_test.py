@@ -198,6 +198,29 @@ def test_trapezoid_calculate_result_error_handling():
     assert "function_values argument not found" in str(exc_info.value)
 
 
+def _run_minimal_point_tests(backend, _precision):
+    """N=None falls back to the two points per dimension the rule needs.
+
+    Regression test: Trapezoid lacked ``_get_minimal_N``, so ``N=None`` -- the
+    default of ``get_jit_compiled_integrate`` -- raised an AttributeError.
+    """
+    for dim in [1, 3]:
+        integrator = Trapezoid()
+        # Linear in every variable, so two points per dimension are exact.
+        value = integrator.integrate(
+            lambda points: points[:, 0] + 2.0,
+            dim=dim,
+            N=None,
+            integration_domain=[[0.0, 1.0]] * dim,
+            backend=backend,
+        )
+        assert abs(float(value) - 2.5) < 1e-14
+        assert integrator._nr_of_fevals == 2**dim
+    # NumPy has no JIT compilation, so there is no factory to build.
+    if backend != "numpy":
+        assert callable(Trapezoid().get_jit_compiled_integrate(dim=1, backend=backend))
+
+
 test_integrate_numpy = setup_test_for_backend(_run_trapezoid_tests, "numpy", "float64")
 test_integrate_torch = setup_test_for_backend(_run_trapezoid_tests, "torch", "float64")
 test_integrate_jax = setup_test_for_backend(_run_trapezoid_tests, "jax", "float64")
@@ -215,3 +238,10 @@ if __name__ == "__main__":
     test_trapezoid_calculate_result_kwargs()
     test_trapezoid_calculate_result_error_handling()
     print("All Trapezoid keyword argument tests passed!")
+
+test_minimal_points_numpy = setup_test_for_backend(_run_minimal_point_tests, "numpy", "float64")
+test_minimal_points_torch = setup_test_for_backend(_run_minimal_point_tests, "torch", "float64")
+test_minimal_points_jax = setup_test_for_backend(_run_minimal_point_tests, "jax", "float64")
+test_minimal_points_tensorflow = setup_test_for_backend(
+    _run_minimal_point_tests, "tensorflow", "float64"
+)
