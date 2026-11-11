@@ -850,6 +850,36 @@ to the integrand as ``fn(points, *args)``:
 ``args`` works with every integrator (``Trapezoid``, ``Simpson``, ``Boole``, ``GaussLegendre``,
 ``MonteCarlo`` and ``VEGAS``) and defaults to ``None`` (no extra arguments).
 
+Different numbers of points per dimension
+-----------------------------------------
+
+The grid-based integrators (``Trapezoid``, ``Simpson``, ``Boole`` and ``GaussLegendre``) normally
+split ``N`` evenly, using the same number of points along every dimension. If the integrand varies
+much faster along some dimensions than others, pass one point count per dimension instead:
+
+.. code:: python
+
+    import torch
+    from torchquad import Simpson, set_up_backend
+
+    set_up_backend("torch", "float64")
+
+    # Oscillates quickly along x_0 and is almost linear along x_1.
+    def anisotropic_integrand(x):
+        return torch.sin(20 * x[:, 0]) * (1 + 0.1 * x[:, 1])
+
+    simpson = Simpson()
+    result = simpson.integrate(
+        anisotropic_integrand,
+        dim=2,
+        N=(201, 5),                    # 201 points along x_0, 5 along x_1
+        integration_domain=[[0.0, 1.0], [0.0, 1.0]],
+    )
+
+Each count has to satisfy the rule's own constraint (odd for ``Simpson``, ``4n + 1`` for ``Boole``),
+and is otherwise adjusted with a warning exactly as a scalar ``N`` would be. The same argument works
+in ``get_jit_compiled_integrate``.
+
 Quasi-Monte Carlo with Sobol points
 -----------------------------------
 
@@ -881,6 +911,36 @@ evenly, pushing the error closer to :math:`O(1/N)`. Pass a :class:`~torchquad.So
 
 The sample points are constants, so gradients still flow through the integrand and the domain exactly
 as for plain Monte Carlo. Sobol points are reproducible for a fixed ``seed`` within a backend.
+
+**Other samplers**
+
+``Sobol`` is a good default, but three more samplers can be passed as ``rng`` in exactly the same way:
+
+* :class:`~torchquad.Halton` is a low-discrepancy sequence like Sobol that places no constraint on
+  ``N``. Use it when the number of points cannot be a power of two.
+* :class:`~torchquad.Lattice` is a randomly shifted rank-1 lattice rule. It needs a power-of-two ``N``
+  between ``2**10`` and ``2**20`` and is at its best in higher dimensions. On its own it is only
+  accurate for integrands that are periodic over the domain; pass ``tent=True`` to periodize any
+  other integrand.
+* :class:`~torchquad.RandomizedLatinHypercube` stratifies every single coordinate for any ``N``. It
+  is not a low-discrepancy sequence, so it keeps the Monte Carlo rate of :math:`O(1/\sqrt{N})`, but
+  it removes most of the variance of integrands that are close to a sum of one-dimensional terms.
+
+.. code:: python
+
+    from torchquad import Halton, Lattice, RandomizedLatinHypercube
+
+    for sampler in [
+        Halton(backend="torch", seed=0),
+        Lattice(backend="torch", seed=0, tent=True),
+        RandomizedLatinHypercube(backend="torch", seed=0),
+    ]:
+        result = mc.integrate(
+            smooth_integrand, dim=3, N=2**13, integration_domain=integration_domain, rng=sampler
+        )
+
+All four samplers work with every backend and are reproducible for a fixed ``seed`` within a
+backend, but not across backends.
 
 .. _multi_dim_integrand:
 

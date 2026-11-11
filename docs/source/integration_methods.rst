@@ -26,6 +26,24 @@ VEGAS Enhanced
    :members: integrate
    :noindex:
 
+Samplers for Monte Carlo
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Pass an instance of one of these as the ``rng`` argument of ``MonteCarlo.integrate`` to replace
+the pseudo-random sample points.
+
+.. autoclass:: torchquad.Sobol
+   :noindex:
+
+.. autoclass:: torchquad.Halton
+   :noindex:
+
+.. autoclass:: torchquad.Lattice
+   :noindex:
+
+.. autoclass:: torchquad.RandomizedLatinHypercube
+   :noindex:
+
 Deterministic Methods
 ----------------------
 
