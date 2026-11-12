@@ -1012,7 +1012,7 @@ Currently, torchquad doesn't have built-in support for parametric domains, but y
     import torch
     from loguru import logger
     from autoray import numpy as anp
-    from autoray import infer_backend
+    from autoray import get_dtype_name, infer_backend
     from torchquad import Gaussian
 
 
@@ -1083,8 +1083,9 @@ Currently, torchquad doesn't have built-in support for parametric domains, but y
             
             # Get Gaussian quadrature points and weights
             N = self._adjust_N(dim=1, N=N)
-            roots = self._roots(N, backend, integration_domain.requires_grad)
-            weights = self._weights(N, dim, backend)
+            dtype = get_dtype_name(integration_domain)
+            roots = self._roots(N, backend, integration_domain.requires_grad, dtype=dtype)
+            weights = self._weights(N, dim, backend, dtype=dtype)
             
             # Resize roots for all domains at once
             grid_points = self._resize_roots(integration_domain, roots)  # [batch_size, N]

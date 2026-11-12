@@ -1,5 +1,7 @@
+import math
+
 import pytest
-from autoray import numpy as anp, to_backend_dtype, to_numpy
+from autoray import numpy as anp, get_dtype_name, to_backend_dtype, to_numpy
 
 import torchquad.integration.gaussian as gaussian_module
 from torchquad.integration.gaussian import (
@@ -172,6 +174,38 @@ def _run_default_jit_factory_tests(backend, _precision):
     assert callable(GaussLegendre().get_jit_compiled_integrate(dim=1, backend=backend))
 
 
+def _float32_domain(backend):
+    return anp.array([[-1.0, 1.0]], like=backend, dtype=to_backend_dtype("float32", like=backend))
+
+
+# Integral of exp over [-1, 1]; the Gaussian base class always integrates over [-1, 1].
+_EXP_INTEGRAL = math.e - 1.0 / math.e
+
+
+def _run_float32_tests(backend, _precision):
+    """A float32 domain gives float32 points and a float32 result (#279)."""
+
+    def integrand(points):
+        assert get_dtype_name(points) == "float32"
+        return anp.exp(points[:, 0])
+
+    for integrator in [Gaussian(), GaussLegendre()]:
+        value = integrator.integrate(
+            integrand, dim=1, N=11, integration_domain=_float32_domain(backend), backend=backend
+        )
+        assert get_dtype_name(value) == "float32"
+        assert abs(float(to_numpy(value)) - _EXP_INTEGRAL) < 1e-6
+
+
+def _run_float32_jit_tests(backend, _precision):
+    """The compiled GaussLegendre integrator keeps a float32 domain's precision (#279)."""
+    integrate = GaussLegendre().get_jit_compiled_integrate(dim=1, N=11, backend=backend)
+    for _ in range(2):
+        value = integrate(lambda points: anp.exp(points[:, 0]), _float32_domain(backend))
+        assert get_dtype_name(value) == "float32"
+        assert abs(float(to_numpy(value)) - _EXP_INTEGRAL) < 1e-6
+
+
 def _run_node_limit_tests(backend, _precision):
     """Too many nodes per dimension must raise before allocating, on every backend.
 
@@ -241,6 +275,13 @@ test_default_jit_nodes_jax = setup_test_for_backend(_run_default_jit_node_tests,
 test_default_jit_factory_tensorflow = setup_test_for_backend(
     _run_default_jit_factory_tests, "tensorflow", "float64"
 )
+
+test_float32_numpy = setup_test_for_backend(_run_float32_tests, "numpy", "float32")
+test_float32_torch = setup_test_for_backend(_run_float32_tests, "torch", "float32")
+test_float32_jax = setup_test_for_backend(_run_float32_tests, "jax", "float32")
+test_float32_tensorflow = setup_test_for_backend(_run_float32_tests, "tensorflow", "float32")
+test_float32_jit_torch = setup_test_for_backend(_run_float32_jit_tests, "torch", "float32")
+test_float32_jit_jax = setup_test_for_backend(_run_float32_jit_tests, "jax", "float32")
 
 test_node_limit_numpy = setup_test_for_backend(_run_node_limit_tests, "numpy", "float64")
 test_node_limit_torch = setup_test_for_backend(_run_node_limit_tests, "torch", "float64")
