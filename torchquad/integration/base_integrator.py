@@ -5,18 +5,21 @@ from ..utils.library_logger import logger
 
 from .utils import _check_integration_domain
 
-# Storage bits per real component of each floating dtype, used to rank them by
-# precision. A complex type carries the precision of its real component, so
-# complex128 is as precise as float64 and pairing the two loses nothing.
+# Significand bits (including the implicit leading bit) of each floating dtype,
+# used to rank them by precision. Storage size would not do: bfloat16 and float16
+# both take 16 bits, but bfloat16 keeps only 8 significand bits against 11. A
+# complex type carries the precision of its real component, so complex128 is as
+# precise as float64 and pairing the two loses nothing. NumPy's float128 is the
+# 80-bit x87 extended format on the platforms that have it, hence 64 bits.
 _DTYPE_PRECISION_BITS = {
-    "float16": 16,
-    "bfloat16": 16,
-    "float32": 32,
-    "float64": 64,
-    "float128": 128,
-    "complex64": 32,
-    "complex128": 64,
-    "complex256": 128,
+    "bfloat16": 8,
+    "float16": 11,
+    "float32": 24,
+    "float64": 53,
+    "float128": 64,
+    "complex64": 24,
+    "complex128": 53,
+    "complex256": 64,
 }
 
 
@@ -30,7 +33,7 @@ def _is_less_precise(value_dtype_name, weight_dtype_name):
         weight_dtype_name (str): Dtype name of the quadrature weights.
 
     Returns:
-        bool: True if the values are floating point with fewer bits than the weights.
+        bool: True if the values are floating point with fewer significand bits than the weights.
     """
     if value_dtype_name.startswith(("int", "uint", "bool")):
         return False

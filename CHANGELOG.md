@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-11-11
+## [0.7.0] - 2026-11-12
 
 This release adds three samplers for `MonteCarlo` and per-dimension grid sizes,
 and fixes a set of bugs found since 0.6.0, among them broken autograd through
@@ -62,7 +62,8 @@ CUDA device, although it does on the CPU (#278). This predates 0.7.0.
 - The quadrature weights are no longer truncated to the integrand's dtype, and a
   mismatch now warns instead of passing silently. An integrand returning
   `float32` under `float64` precision yields a `float64` result rather than
-  discarding the weights' precision.
+  discarding the weights' precision. Precision is compared by significand
+  width, so `bfloat16` ranks below `float16`.
 
 ### Fixed
 - `set_up_backend("torch", ..., torch_enable_cuda=False)` is no longer ignored

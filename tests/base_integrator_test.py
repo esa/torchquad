@@ -5,7 +5,7 @@ import pytest
 from autoray import numpy as anp
 from autoray import to_backend_dtype, to_numpy
 
-from torchquad.integration.base_integrator import BaseIntegrator
+from torchquad.integration.base_integrator import BaseIntegrator, _is_less_precise
 from helper_functions import setup_test_for_backend
 
 NUM_POINTS = 16
@@ -169,6 +169,50 @@ test_matching_dtype_is_quiet_numpy = setup_test_for_backend(
 test_matching_dtype_is_quiet_torch = setup_test_for_backend(
     _run_matching_dtype_is_quiet_tests, "torch", "float64"
 )
+
+
+@pytest.mark.parametrize(
+    "value_dtype,weight_dtype,expected",
+    [
+        # Same storage size, different precision: bfloat16 keeps 8 significand
+        # bits, float16 keeps 11. Ranking by storage bits treated them as equal.
+        ("bfloat16", "float16", True),
+        ("float16", "bfloat16", False),
+        ("float16", "float32", True),
+        ("float32", "float64", True),
+        ("complex64", "float64", True),
+        # A complex type is as precise as its real component.
+        ("complex128", "float64", False),
+        ("float64", "float64", False),
+        ("float64", "float32", False),
+        # Integer and Boolean values are exact.
+        ("int8", "float64", False),
+        ("uint64", "float32", False),
+        ("bool", "float64", False),
+    ],
+)
+def test_precision_ranking(value_dtype, weight_dtype, expected):
+    """Dtypes are ranked by significand width, not by storage size."""
+    assert _is_less_precise(value_dtype, weight_dtype) is expected
+
+
+def test_bfloat16_integrand_with_float16_weights_warns():
+    """A bfloat16 integrand under float16 weights is the less precise of the two.
+
+    Regression test: both dtypes occupy 16 bits, so a ranking by storage size
+    let this pairing through without the less-precise-integrand warning.
+    """
+    import torch
+
+    points = torch.linspace(0.0, 1.0, 5, dtype=torch.float32).reshape(5, 1)
+    weights = torch.ones(5, dtype=torch.float16)
+    with pytest.warns(
+        UserWarning, match="bfloat16 values while the quadrature weights are float16"
+    ):
+        BaseIntegrator.evaluate_integrand(
+            lambda x: x[:, 0].to(torch.bfloat16), points, weights=weights
+        )
+
 
 if __name__ == "__main__":
     # used to run this test individually
