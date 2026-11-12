@@ -3,7 +3,7 @@ from time import perf_counter
 
 from autoray import astype, infer_backend, to_backend_dtype
 from autoray import numpy as anp
-from loguru import logger
+from ..utils.library_logger import logger
 
 from .utils import (
     _check_integration_domain,

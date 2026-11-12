@@ -45,12 +45,25 @@ integrator was set up with under Gaussian quadrature.
   tooling and the TensorFlow extra) no longer support it. The NumPy and SciPy
   floors move to `>=1.23.2` and `>=1.9.2`, the oldest releases with Python 3.11
   wheels. The conda and pixi environment files carry the same floors.
+- `set_log_level()` no longer registers a handler of its own, so its records
+  are printed in the format of the application's loguru handlers rather than
+  with a `TQ-` prefix, and the import-time "Initializing torchquad." record is
+  gone.
 - The quadrature weights are no longer truncated to the integrand's dtype, and a
   mismatch now warns instead of passing silently. An integrand returning
   `float32` under `float64` precision yields a `float64` result rather than
   discarding the weights' precision.
 
 ### Fixed
+- `set_log_level()` and `TORCHQUAD_LOG_LEVEL` now limit what is actually
+  printed. The level used to apply only to a handler torchquad added, so
+  loguru's default stderr handler still printed every record down to `DEBUG`,
+  and each admitted record appeared twice. The level is now applied where the
+  records are created: nothing below it is emitted, and each record reaches the
+  application's handlers once.
+- torchquad no longer logs from TensorFlow's compiled path while logging is off.
+  AutoGraph runs the library's code under a `tensorflow` module name, which
+  `logger.disable("torchquad")` did not cover.
 - `Sobol` can no longer return a point exactly equal to 1 on the NumPy, JAX and
   TensorFlow backends in `float32`. The points are generated in double
   precision, and rounding a value just below 1 put the sample on the upper

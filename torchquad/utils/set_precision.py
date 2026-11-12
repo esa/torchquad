@@ -1,4 +1,4 @@
-from loguru import logger
+from .library_logger import logger
 import os
 import sys
 

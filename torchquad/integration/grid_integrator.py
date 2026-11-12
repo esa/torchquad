@@ -1,6 +1,6 @@
 from autoray import astype, get_dtype_name, infer_backend
 from autoray import numpy as anp
-from loguru import logger
+from ..utils.library_logger import logger
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid, _per_dimension_counts, grid_func

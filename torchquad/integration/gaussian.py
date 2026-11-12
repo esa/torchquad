@@ -188,7 +188,8 @@ class GaussLegendre(Gaussian):
     --------
     >>> gl=torchquad.GaussLegendre()
     >>> integral = gl.integrate(lambda x:np.sin(x), dim=1, N=101, integration_domain=[[0,5]]) #integral from 0 to 5 of np.sin(x)
-    |TQ-INFO| Computed integral was 0.7163378000259399 #analytic result = 1-np.cos(5)"""
+    >>> integral  # analytic result = 1-np.cos(5)
+    tensor(0.7163, dtype=torch.float64)"""
 
     def __init__(self):
         super().__init__()

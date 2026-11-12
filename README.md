@@ -219,26 +219,13 @@ logging of the application using it. Turn its log records on in either of two wa
    torchquad.set_log_level("DEBUG")  # This will enable and configure logging
    ```
 
-torchquad only ever adds its own handler, filtered to its own records, and never
-removes one your application registered.
-
-One consequence is worth knowing: the level applies to torchquad's own handler,
-which is the only one it owns. Once records are enabled they also reach every
-other sink [loguru](https://github.com/Delgan/loguru) has registered — including
-loguru's default stderr handler, which is unfiltered and sits at `DEBUG`. So in a
-plain interpreter you will see torchquad's records twice, and below the level you
-asked for. That is loguru's global state, not something a library can change
-without disturbing its host ([#184](https://github.com/esa/torchquad/issues/184)).
-To control it, configure loguru yourself:
-
-```python
-from loguru import logger
-logger.remove()                      # drop loguru's default handler
-logger.add(sys.stderr, level="WARNING")
-
-import torchquad
-torchquad.set_log_level("WARNING")
-```
+The level is applied where torchquad creates its records, so it holds for every
+[loguru](https://github.com/Delgan/loguru) handler: records below it are never
+emitted, and the others reach each sink your application has registered exactly
+once. torchquad adds no handler of its own and never removes one
+([#184](https://github.com/esa/torchquad/issues/184)). In a plain interpreter the
+records therefore appear through loguru's default stderr handler; an application
+that has removed all handlers sees them once it adds one.
 
 ## Multi-GPU Usage
 

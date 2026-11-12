@@ -1,6 +1,6 @@
 from autoray import numpy as anp
 from autoray import infer_backend
-from loguru import logger
+from ..utils.library_logger import logger
 
 from .base_integrator import BaseIntegrator
 from .utils import (

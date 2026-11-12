@@ -1,7 +1,7 @@
 import warnings
 from autoray import numpy as anp
 from autoray import get_dtype_name, infer_backend
-from loguru import logger
+from ..utils.library_logger import logger
 
 from .utils import _check_integration_domain
 

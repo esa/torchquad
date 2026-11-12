@@ -1,4 +1,4 @@
-from loguru import logger
+from .library_logger import logger
 import warnings
 
 from .set_precision import set_precision
