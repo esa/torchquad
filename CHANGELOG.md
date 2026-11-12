@@ -48,6 +48,9 @@ CUDA device, although it does on the CPU (#278). This predates 0.7.0.
   tooling and the TensorFlow extra) no longer support it. The NumPy and SciPy
   floors move to `>=1.23.2` and `>=1.9.2`, the oldest releases with Python 3.11
   wheels. The conda and pixi environment files carry the same floors.
+- `set_precision()` raises a `ValueError` for a data type other than `float32`
+  or `float64` and for an unknown backend. It used to print an error and carry
+  on, falling back to `float32` in the first case.
 - `set_precision()` no longer changes PyTorch's default device. It used to move
   the default to CUDA whenever CUDA had been initialized by anything in the
   process. `enable_cuda()`, and `set_up_backend("torch", ...)` which calls it,

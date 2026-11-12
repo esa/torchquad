@@ -1,6 +1,5 @@
 from .library_logger import logger
 import os
-import sys
 
 
 def _get_precision(backend):
@@ -28,15 +27,21 @@ def set_precision(data_type="float32", backend="torch"):
     Args:
         data_type (str, optional): Data type to use, either "float32" or "float64". Defaults to "float32".
         backend (str, optional): Numerical backend for which the data type is changed. Defaults to "torch".
+
+    Raises:
+        ValueError: If data_type is neither "float32" nor "float64" (or their aliases
+            "float" and "double"), or if backend is not one of "torch", "jax",
+            "tensorflow" and "numpy".
     """
     # Backwards-compatibility: allow "float" and "double", optionally with
     # upper-case letters
     data_type = {"float": "float32", "double": "float64"}.get(data_type.lower(), data_type)
     if data_type not in ["float32", "float64"]:
-        error_msg = f'Invalid data type "{data_type}". Only float32 and float64 are supported. Setting the data type to float32.'
-        logger.error(error_msg)
-        print(f"ERROR: {error_msg}", file=sys.stderr)
-        data_type = "float32"
+        # Falling back to float32 here would be a silent precision downgrade
+        # for anyone who asked for more.
+        raise ValueError(
+            f'Invalid data type "{data_type}". Only float32 and float64 are supported.'
+        )
 
     if backend == "torch":
         import torch
@@ -68,6 +73,4 @@ def set_precision(data_type="float32", backend="torch"):
         os.environ["TORCHQUAD_DTYPE_NUMPY"] = data_type
         logger.info(f"NumPy default dtype set to {_get_precision('numpy')}")
     else:
-        error_msg = f"Changing the data type is not supported for backend {backend}"
-        logger.error(error_msg)
-        print(f"ERROR: {error_msg}", file=sys.stderr)
+        raise ValueError(f'Changing the data type is not supported for backend "{backend}".')

@@ -92,3 +92,29 @@ def test_set_up_backend_selects_the_gpu_by_default(restore_torch_defaults):
         lambda points: points[:, 0], dim=1, N=11, integration_domain=[[0.0, 1.0]]
     )
     assert result.device.type == expected
+
+
+@pytest.mark.parametrize("data_type", ["float16", "float128", "int32", ""])
+def test_set_precision_rejects_unsupported_data_types(restore_torch_defaults, data_type):
+    """An unsupported precision must raise instead of quietly becoming float32.
+
+    The fallback was a silent precision downgrade for anyone asking for more
+    than float32, announced only by a line on stderr.
+    """
+    torch.set_default_dtype(torch.float64)
+    with pytest.raises(ValueError, match="Only float32 and float64 are supported"):
+        set_precision(data_type)
+    assert torch.get_default_dtype() == torch.float64
+
+
+def test_set_precision_rejects_unknown_backends():
+    """An unknown backend must raise rather than print and carry on."""
+    with pytest.raises(ValueError, match="not supported for backend"):
+        set_precision("float64", backend="cupy")
+
+
+@pytest.mark.parametrize("alias,expected", [("double", torch.float64), ("Float", torch.float32)])
+def test_set_precision_keeps_the_legacy_aliases(restore_torch_defaults, alias, expected):
+    """ "float" and "double", in any case, stay accepted for backwards compatibility."""
+    set_precision(alias)
+    assert torch.get_default_dtype() == expected
