@@ -20,6 +20,9 @@ Boolean integrands in the Newton-Cotes rules, integer and Boolean integrands in
 NumPy Monte Carlo, and integrands that return a lower precision than the
 integrator was set up with under Gaussian quadrature.
 
+Known limitation: `VEGAS` does not reproduce bit for bit for a fixed seed on a
+CUDA device, although it does on the CPU (#278). This predates 0.7.0.
+
 ### Added
 - Grid-based integrators (`Trapezoid`, `Simpson`, `Boole`, `GaussLegendre`) and
   `IntegrationGrid` accept one point count per dimension, e.g. `N=(5, 33, 17)`,
