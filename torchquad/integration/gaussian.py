@@ -1,4 +1,5 @@
 import numpy
+from autoray import astype, get_dtype_name
 from autoray import numpy as anp
 
 from .grid_integrator import GridIntegrator
@@ -59,7 +60,7 @@ class Gaussian(GridIntegrator):
         """Use the documented default of three Gaussian nodes per dimension."""
         return 3**dim
 
-    def _weights(self, N, dim, backend, requires_grad=False):
+    def _weights(self, N, dim, backend, requires_grad=False, *, dtype):
         """return the weights, broadcast across the dimensions, generated from the polynomial of choice
 
         Args:
@@ -67,13 +68,15 @@ class Gaussian(GridIntegrator):
             dim (int): number of dimensions
             backend (string): which backend array to return
             requires_grad (bool, optional): whether the returned weights should track gradients (torch only). Defaults to False.
+            dtype (string): name of the floating point type of the integration grid, e.g. "float32". The weights are computed in float64 and returned in this type.
 
         Returns:
             backend tensor: the weights
         """
         counts = [N] * dim if isinstance(N, int) else list(N)
         weights = [
-            anp.array(self._cached_points_and_weights(count)[1], like=backend) for count in counts
+            astype(anp.array(self._cached_points_and_weights(count)[1], like=backend), dtype)
+            for count in counts
         ]
         if backend == "torch":
             for weight in weights:
@@ -81,18 +84,19 @@ class Gaussian(GridIntegrator):
         weight_grids = anp.meshgrid(*weights, indexing="ij")
         return anp.prod(anp.stack(list(weight_grids), like=backend, axis=0), axis=0).ravel()
 
-    def _roots(self, N, backend, requires_grad=False):
+    def _roots(self, N, backend, requires_grad=False, *, dtype):
         """return the roots generated from the polynomial of choice
 
         Args:
             N (int): number of nodes
             backend (string): which backend array to return
             requires_grad (bool, optional): whether the returned roots should track gradients (torch only). Defaults to False.
+            dtype (string): name of the floating point type of the integration domain, e.g. "float32". The roots are computed in float64 and returned in this type.
 
         Returns:
             backend tensor: the roots
         """
-        roots = anp.array(self._cached_points_and_weights(N)[0], like=backend)
+        roots = astype(anp.array(self._cached_points_and_weights(N)[0], like=backend), dtype)
         if requires_grad:
             roots.requires_grad = True
         return roots
@@ -104,7 +108,8 @@ class Gaussian(GridIntegrator):
         """
 
         def f(integration_domain, N, requires_grad, backend=None):
-            return self._resize_roots(integration_domain, self._roots(N, backend, requires_grad))
+            roots = self._roots(N, backend, requires_grad, dtype=get_dtype_name(integration_domain))
+            return self._resize_roots(integration_domain, roots)
 
         return f
 

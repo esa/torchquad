@@ -28,7 +28,7 @@ class GridIntegrator(BaseIntegrator):
         """
         return grid_func
 
-    def _weights(self, N, dim, backend, requires_grad=False):
+    def _weights(self, N, dim, backend, requires_grad=False, *, dtype):
         return None
 
     def integrate(self, fn, dim, N, integration_domain, backend, args=None):
@@ -64,7 +64,10 @@ class GridIntegrator(BaseIntegrator):
 
         logger.debug("Evaluating integrand on the grid.")
         function_values, num_points = self.evaluate_integrand(
-            fn, grid_points, weights=self._weights(n_per_dim, dim, backend), args=args
+            fn,
+            grid_points,
+            weights=self._weights(n_per_dim, dim, backend, dtype=get_dtype_name(grid_points)),
+            args=args,
         )
         self._nr_of_fevals = num_points
 
@@ -236,7 +239,11 @@ class GridIntegrator(BaseIntegrator):
                     else:
                         n_per_dim = tuple(int(count) for count in n_per_dim)
                 function_values, _ = self.evaluate_integrand(
-                    fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
+                    fn,
+                    grid_points,
+                    weights=self._weights(
+                        n_per_dim, dim, backend, dtype=get_dtype_name(grid_points)
+                    ),
                 )
                 return jit_calculate_result(function_values, dim, n_per_dim, hs, integration_domain)
 
@@ -268,7 +275,9 @@ class GridIntegrator(BaseIntegrator):
                 function_values, _ = self.evaluate_integrand(
                     example_integrand,
                     grid_points,
-                    weights=self._weights(n_per_dim, dim, backend),
+                    weights=self._weights(
+                        n_per_dim, dim, backend, dtype=get_dtype_name(grid_points)
+                    ),
                 )
 
                 # Trace the third step
@@ -280,7 +289,11 @@ class GridIntegrator(BaseIntegrator):
                 def compiled_integrate(fn, integration_domain):
                     grid_points, hs, _ = step1(integration_domain)
                     function_values, _ = self.evaluate_integrand(
-                        fn, grid_points, weights=self._weights(n_per_dim, dim, backend)
+                        fn,
+                        grid_points,
+                        weights=self._weights(
+                            n_per_dim, dim, backend, dtype=get_dtype_name(grid_points)
+                        ),
                     )
                     result = step3(function_values, hs, integration_domain)
                     return result

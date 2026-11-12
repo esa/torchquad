@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `GaussLegendre` and `Gaussian` compute in the precision of the integration
+  domain. With a float32 domain or a float32 global precision, their nodes,
+  weights, sample points and results were float64, because the nodes and
+  weights come from NumPy in float64. They are still computed in float64 and
+  then cast, so float32 results now differ from 0.7.0 by float32 rounding
+  (#279).
+
 ## [0.7.0] - 2026-11-12
 
 This release adds three samplers for `MonteCarlo` and per-dimension grid sizes,

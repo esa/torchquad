@@ -11,6 +11,7 @@ from itertools import product
 from torchquad.integration.trapezoid import Trapezoid
 from torchquad.integration.simpson import Simpson
 from torchquad.integration.boole import Boole
+from torchquad.integration.gaussian import GaussLegendre
 from torchquad.integration.monte_carlo import MonteCarlo
 from torchquad.integration.vegas import VEGAS
 from torchquad.utils.set_precision import set_precision
@@ -29,8 +30,8 @@ def _run_simple_integrations(backend):
     * MonteCarlo and the Newton Cotes composite integrators integrate a
       constant function (almost) exactly.
     """
-    integrators_all = [Trapezoid(), Simpson(), Boole(), MonteCarlo(), VEGAS()]
-    Ns_all = [13**2, 13**2, 13**2, 20, 1000]
+    integrators_all = [Trapezoid(), Simpson(), Boole(), GaussLegendre(), MonteCarlo(), VEGAS()]
+    Ns_all = [13**2, 13**2, 13**2, 13**2, 20, 1000]
 
     expected_dtype_name = None
 
