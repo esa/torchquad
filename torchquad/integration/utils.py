@@ -6,7 +6,7 @@ autoray, which are registered when importing this file
 from autoray import numpy as anp
 from autoray import infer_backend, register_function
 from functools import partial
-from loguru import logger
+from ..utils.library_logger import logger
 import warnings
 
 from ..utils.set_precision import _get_precision

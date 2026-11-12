@@ -7,6 +7,116 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-12
+
+This release adds three samplers for `MonteCarlo` and per-dimension grid sizes,
+and fixes a set of bugs found since 0.6.0, among them broken autograd through
+`GaussLegendre`.
+
+**Numerical results are unchanged for floating-point and complex integrands**
+with a scalar `N` and a given seed, and no existing test tolerance was loosened.
+Three cases now return different, corrected values, each described below:
+Boolean integrands in the Newton-Cotes rules, integer and Boolean integrands in
+NumPy Monte Carlo, and integrands that return a lower precision than the
+integrator was set up with under Gaussian quadrature.
+
+Known limitation: `VEGAS` does not reproduce bit for bit for a fixed seed on a
+CUDA device, although it does on the CPU (#278). This predates 0.7.0.
+
+### Added
+- Grid-based integrators (`Trapezoid`, `Simpson`, `Boole`, `GaussLegendre`) and
+  `IntegrationGrid` accept one point count per dimension, e.g. `N=(5, 33, 17)`,
+  in `integrate` and `get_jit_compiled_integrate`. A scalar `N` behaves as before
+  (#123).
+- `Lattice` quasi-Monte Carlo sampler: a randomly shifted rank-1 lattice rule
+  on all four backends, usable via `MonteCarlo.integrate(..., rng=Lattice(...))`.
+  It needs a power-of-two `N` between 2^10 and 2^20, and `tent=True` applies the
+  baker's transform, which recovers the convergence rate on non-periodic
+  integrands (#140).
+- `Halton` quasi-Monte Carlo sampler with optional digit scrambling, usable via
+  `MonteCarlo.integrate(..., rng=Halton(...))`. Unlike `Sobol` and `Lattice` it
+  places no constraint on `N`. Generated natively on the device for PyTorch and
+  through SciPy for the other backends (#140).
+- `RandomizedLatinHypercube` sampler, usable via
+  `MonteCarlo.integrate(..., rng=RandomizedLatinHypercube(...))`. It stratifies
+  every one-dimensional marginal for any `N`, which reduces variance for
+  integrands dominated by additive terms (#140).
+
+### Changed
+- Raised the Python floor to `>=3.11`; Python 3.10 reaches end of life in
+  October 2026, and current Pillow and Keras releases (pulled in by the dev
+  tooling and the TensorFlow extra) no longer support it. The NumPy and SciPy
+  floors move to `>=1.23.2` and `>=1.9.2`, the oldest releases with Python 3.11
+  wheels. The conda and pixi environment files carry the same floors.
+- `set_precision()` raises a `ValueError` for a data type other than `float32`
+  or `float64` and for an unknown backend. It used to print an error and carry
+  on, falling back to `float32` in the first case.
+- `set_precision()` no longer changes PyTorch's default device. It used to move
+  the default to CUDA whenever CUDA had been initialized by anything in the
+  process. `enable_cuda()`, and `set_up_backend("torch", ...)` which calls it,
+  now select the device themselves, so the usual setup calls behave as before.
+- `set_log_level()` no longer registers a handler of its own, so its records
+  are printed in the format of the application's loguru handlers rather than
+  with a `TQ-` prefix, and the import-time "Initializing torchquad." record is
+  gone.
+- The quadrature weights are no longer truncated to the integrand's dtype, and a
+  mismatch now warns instead of passing silently. An integrand returning
+  `float32` under `float64` precision yields a `float64` result rather than
+  discarding the weights' precision. Precision is compared by significand
+  width, so `bfloat16` ranks below `float16`.
+
+### Fixed
+- `set_up_backend("torch", ..., torch_enable_cuda=False)` is no longer ignored
+  once CUDA has been initialized: the default device stays where it is.
+- `enable_cuda(data_type=None)` makes CUDA the default device, as documented.
+  It initialized CUDA but left the default device on the CPU.
+- `set_log_level()` and `TORCHQUAD_LOG_LEVEL` now limit what is actually
+  printed. The level used to apply only to a handler torchquad added, so
+  loguru's default stderr handler still printed every record down to `DEBUG`,
+  and each admitted record appeared twice. The level is now applied where the
+  records are created: nothing below it is emitted, and each record reaches the
+  application's handlers once.
+- torchquad no longer logs from TensorFlow's compiled path while logging is off.
+  AutoGraph runs the library's code under a `tensorflow` module name, which
+  `logger.disable("torchquad")` did not cover.
+- `Sobol` can no longer return a point exactly equal to 1 on the NumPy, JAX and
+  TensorFlow backends in `float32`. The points are generated in double
+  precision, and rounding a value just below 1 put the sample on the upper
+  domain boundary, which `RNG` never does. All samplers now clamp to the largest
+  value below 1. Points below that are unchanged.
+- Correct Boolean integrands in Newton-Cotes rules by converting samples to
+  integers before weighted addition.
+- `evaluate_integrand` applies the quadrature weights out of place, so it no
+  longer mutates the tensor the integrand returned. The in-place multiply broke
+  PyTorch autograd through `GaussLegendre` and any `Gaussian` subclass for
+  integrands whose backward pass reads its own output (`exp`, `sqrt`, `tanh`,
+  `sigmoid`, `div`, `pow`), including gradients with respect to the integration
+  domain. Newton–Cotes, Monte Carlo and JAX were unaffected. Present since
+  Gaussian quadrature arrived in 0.4.0 (#141). Integration results are otherwise
+  unchanged.
+- The tutorial's vectorized-integrand example crashed with `RuntimeError: Expected
+  all tensors to be on the same device` on any CUDA machine. It built its helper
+  tensors with the legacy `torch.Tensor(...)` constructor, which — unlike
+  `torch.tensor(...)` — ignores the `torch.set_default_device("cuda")` that
+  `set_up_backend` performs, so the helpers stayed on the CPU while the sample
+  points were on the GPU. A note now explains the distinction, since it bites in
+  user code as readily as in the docs.
+- The tutorial's import block used `matplotlib`, which is not a torchquad runtime
+  dependency, so it failed after the installation the README documents. Called out
+  as a prerequisite rather than added as a dependency.
+- The README logo and five file links used repository-relative paths, which PyPI
+  resolves against `pypi.org`, so the logo did not render and the links 404ed on
+  the project page. All are now absolute URLs, matching the performance figures.
+- Resolve the documented three-node-per-dimension default for Gaussian rules
+  when `N=None`, including the default JIT factory's node count.
+- `Trapezoid` accepts `N=None` (two points per dimension), so its
+  `get_jit_compiled_integrate` no longer fails when called without `N`.
+- NumPy Monte Carlo integrals of integer and Boolean integrands retain their
+  fractional values instead of being cast back to the integrand's discrete dtype.
+- `RNG("torch", torch_save_state=True)` uses an independent generator on its
+  construction device. CPU sampling after CUDA initializes no longer shares the
+  global CPU stream or reseeds unrelated generators.
+
 ## [0.6.0] - 2026-08-23
 
 The 0.6 line is a modernization and credibility release: modern tooling, honest
@@ -204,7 +314,8 @@ now raises on impossible node counts instead of exhausting memory.
 - Early public releases with the core Newton-Cotes, Monte Carlo, and VEGAS
   integrators on PyTorch.
 
-[Unreleased]: https://github.com/esa/torchquad/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/esa/torchquad/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/esa/torchquad/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/esa/torchquad/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/esa/torchquad/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/esa/torchquad/compare/v0.4.0...v0.4.1

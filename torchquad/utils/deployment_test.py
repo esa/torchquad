@@ -12,7 +12,7 @@ from .enable_cuda import enable_cuda
 from .set_precision import set_precision
 from .set_log_level import set_log_level
 from .set_up_backend import set_up_backend
-from loguru import logger
+from .library_logger import logger
 import warnings
 
 

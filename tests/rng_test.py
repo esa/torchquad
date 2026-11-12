@@ -7,6 +7,65 @@ from torchquad.integration.rng import RNG
 from helper_functions import setup_test_for_backend
 
 
+@pytest.mark.parametrize("seed", [None, 123])
+def test_torch_local_rng_preserves_global_states(seed):
+    """CPU sampling must not disturb either generator after CUDA initializes."""
+    import torch
+
+    devices = list(range(torch.cuda.device_count()))
+    with torch.random.fork_rng(devices=devices), torch.device("cpu"):
+        torch.manual_seed(987)
+        cpu_state = torch.get_rng_state().clone()
+        cuda_states = torch.cuda.get_rng_state_all()
+        rng = RNG("torch", seed=seed, torch_save_state=True)
+        rng.uniform([5], torch.float64)
+        assert torch.equal(cpu_state, torch.get_rng_state())
+        assert all(
+            torch.equal(before, after)
+            for before, after in zip(cuda_states, torch.cuda.get_rng_state_all())
+        )
+
+
+def test_torch_local_rng_failed_draw_preserves_global_state():
+    """A rejected draw must not leave a local state installed globally."""
+    import torch
+
+    with torch.random.fork_rng(), torch.device("cpu"):
+        rng = RNG("torch", seed=123, torch_save_state=True)
+        torch.manual_seed(987)
+        cpu_state = torch.get_rng_state().clone()
+        with pytest.raises(RuntimeError):
+            rng.uniform([-1], torch.float64)
+        assert torch.equal(cpu_state, torch.get_rng_state())
+
+
+def test_torch_local_rng_reproduces_global_seeded_stream():
+    """The owned generator must emit the stream the global one gave for the same seed.
+
+    Up to 0.6.0 the saved-state mode seeded PyTorch's global generator, so a
+    fixed-seed MonteCarlo or VEGAS result is only unchanged if the owned
+    generator reproduces that stream bit for bit. Checked on the CPU and, where
+    there is one, on the CUDA device, whose generator is a different algorithm.
+    """
+    import torch
+
+    devices = ["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"]
+    for device in devices:
+        with torch.random.fork_rng(devices=list(range(torch.cuda.device_count()))):
+            with torch.device(device):
+                # Same call sequence on both sides: a CUDA generator advances
+                # per call, so one large draw is not two smaller ones.
+                torch.manual_seed(123)
+                expected_first = torch.rand(size=[600, 3], dtype=torch.float64)
+                expected_second = torch.rand(size=[400, 3], dtype=torch.float64)
+                rng = RNG("torch", seed=123, torch_save_state=True)
+                first = rng.uniform([600, 3], torch.float64)
+                second = rng.uniform([400, 3], torch.float64)
+        assert first.device.type == device
+        assert torch.equal(first, expected_first)
+        assert torch.equal(second, expected_second)
+
+
 def _run_RNG_tests(backend, dtype_name):
     """
     Test the random number generator with the given numerical backend

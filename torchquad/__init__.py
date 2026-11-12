@@ -2,7 +2,7 @@ import os
 
 from loguru import logger
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 # Disable torchquad's own log records by default so importing the library never
 # adds output to a host application's loguru configuration (issue #184).
@@ -24,7 +24,10 @@ from .integration.grid_integrator import GridIntegrator
 from .integration.base_integrator import BaseIntegrator
 
 from .integration.rng import RNG
+from .integration.qmc import Halton
+from .integration.qmc import RandomizedLatinHypercube
 from .integration.qmc import Sobol
+from .integration.qmc import Lattice
 
 
 from .utils.set_log_level import set_log_level
@@ -53,7 +56,10 @@ __all__ = [
     "GaussLegendre",
     "Gaussian",
     "RNG",
+    "Halton",
     "Sobol",
+    "Lattice",
+    "RandomizedLatinHypercube",
     "enable_cuda",
     "set_precision",
     "set_log_level",
@@ -67,4 +73,3 @@ __all__ = [
 # for "not set", and passing "" on to loguru would abort the import.
 if os.environ.get("TORCHQUAD_LOG_LEVEL"):
     set_log_level(os.environ["TORCHQUAD_LOG_LEVEL"])
-    logger.info("Initializing torchquad.")

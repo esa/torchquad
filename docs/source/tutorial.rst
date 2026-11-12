@@ -121,6 +121,13 @@ Imports
 
 Now let's get started! First, the general imports:
 
+.. note::
+
+   This tutorial uses ``matplotlib`` for its plots and ``scipy`` for benchmark
+   comparisons. ``scipy`` is a torchquad dependency and is already present, but
+   ``matplotlib`` is not — install it with ``pip install matplotlib`` if you are
+   following along in your own environment.
+
 .. code:: python
 
     import scipy
@@ -148,6 +155,14 @@ Now let's get started! First, the general imports:
 
     # Use this to enable GPU support and set the floating point precision
     set_up_backend("torch", data_type="float32")
+
+.. note::
+
+   On a GPU machine this also makes CUDA the default device for newly created
+   tensors. If you build your own tensors alongside torchquad's, use
+   ``torch.tensor(...)`` rather than the legacy ``torch.Tensor(...)``, which
+   ignores that default and allocates on the CPU — see
+   :ref:`this note <tensor_vs_Tensor>`.
 
 
 
@@ -792,7 +807,7 @@ sample points for both functions:
 
     # The integration domain, dimensionality and number of evaluations
     # For the calculate_grid method we need a Tensor and not a list.
-    integration_domain = torch.Tensor([[0.0, 1.0], [-1.0, 1.0]])
+    integration_domain = torch.tensor([[0.0, 1.0], [-1.0, 1.0]])
     dim = 2
     N = 9409
 
@@ -835,6 +850,36 @@ to the integrand as ``fn(points, *args)``:
 ``args`` works with every integrator (``Trapezoid``, ``Simpson``, ``Boole``, ``GaussLegendre``,
 ``MonteCarlo`` and ``VEGAS``) and defaults to ``None`` (no extra arguments).
 
+Different numbers of points per dimension
+-----------------------------------------
+
+The grid-based integrators (``Trapezoid``, ``Simpson``, ``Boole`` and ``GaussLegendre``) normally
+split ``N`` evenly, using the same number of points along every dimension. If the integrand varies
+much faster along some dimensions than others, pass one point count per dimension instead:
+
+.. code:: python
+
+    import torch
+    from torchquad import Simpson, set_up_backend
+
+    set_up_backend("torch", "float64")
+
+    # Oscillates quickly along x_0 and is almost linear along x_1.
+    def anisotropic_integrand(x):
+        return torch.sin(20 * x[:, 0]) * (1 + 0.1 * x[:, 1])
+
+    simpson = Simpson()
+    result = simpson.integrate(
+        anisotropic_integrand,
+        dim=2,
+        N=(201, 5),                    # 201 points along x_0, 5 along x_1
+        integration_domain=[[0.0, 1.0], [0.0, 1.0]],
+    )
+
+Each count has to satisfy the rule's own constraint (odd for ``Simpson``, ``4n + 1`` for ``Boole``),
+and is otherwise adjusted with a warning exactly as a scalar ``N`` would be. The same argument works
+in ``get_jit_compiled_integrate``.
+
 Quasi-Monte Carlo with Sobol points
 -----------------------------------
 
@@ -867,6 +912,36 @@ evenly, pushing the error closer to :math:`O(1/N)`. Pass a :class:`~torchquad.So
 The sample points are constants, so gradients still flow through the integrand and the domain exactly
 as for plain Monte Carlo. Sobol points are reproducible for a fixed ``seed`` within a backend.
 
+**Other samplers**
+
+``Sobol`` is a good default, but three more samplers can be passed as ``rng`` in exactly the same way:
+
+* :class:`~torchquad.Halton` is a low-discrepancy sequence like Sobol that places no constraint on
+  ``N``. Use it when the number of points cannot be a power of two.
+* :class:`~torchquad.Lattice` is a randomly shifted rank-1 lattice rule. It needs a power-of-two ``N``
+  between ``2**10`` and ``2**20`` and is at its best in higher dimensions. On its own it is only
+  accurate for integrands that are periodic over the domain; pass ``tent=True`` to periodize any
+  other integrand.
+* :class:`~torchquad.RandomizedLatinHypercube` stratifies every single coordinate for any ``N``. It
+  is not a low-discrepancy sequence, so it keeps the Monte Carlo rate of :math:`O(1/\sqrt{N})`, but
+  it removes most of the variance of integrands that are close to a sum of one-dimensional terms.
+
+.. code:: python
+
+    from torchquad import Halton, Lattice, RandomizedLatinHypercube
+
+    for sampler in [
+        Halton(backend="torch", seed=0),
+        Lattice(backend="torch", seed=0, tent=True),
+        RandomizedLatinHypercube(backend="torch", seed=0),
+    ]:
+        result = mc.integrate(
+            smooth_integrand, dim=3, N=2**13, integration_domain=integration_domain, rng=sampler
+        )
+
+All four samplers work with every backend and are reproducible for a fixed ``seed`` within a
+backend, but not across backends.
+
 .. _multi_dim_integrand:
 
 Multidimensional/Vectorized Integrands
@@ -884,15 +959,15 @@ As an example, here we evaluate a similar integrand many times for different val
 
     a_params = torch.arange(40)
     b_params = torch.arange(10, 20)
-    integration_domain = torch.Tensor([[0, 1]])
+    integration_domain = torch.tensor([[0.0, 1.0]])
     simp = Simpson()
-    result = torch.stack([torch.Tensor([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
+    result = torch.stack([torch.stack([simp.integrate(lambda x: parametrized_integrand(x, a, b), dim=1, N=101, integration_domain=integration_domain) for a in a_params]) for b in b_params])
 
 Now let's see how to do this a bit more simply, and in a way that provides signficant speedup as the size of the integrand's ``grid`` grows:
 
 .. code:: python
 
-    grid = torch.stack([torch.Tensor([a + b for a in a_params]) for b in b_params])
+    grid = (b_params[:, None] + a_params[None, :]).to(torch.get_default_dtype())
 
     def integrand(x):
         return torch.sqrt(torch.cos(torch.sin(torch.einsum("i,jk->ijk", x.flatten(), grid))))
@@ -903,6 +978,19 @@ Now let's see how to do this a bit more simply, and in a way that provides signf
 
 .. note::
     VEGAS does not support multi-dimensional integrands.  If you would like this, please consider opening an issue or PR.
+
+.. _tensor_vs_Tensor:
+
+.. note::
+    Build helper tensors with ``torch.tensor(...)``, not the legacy
+    ``torch.Tensor(...)`` constructor. On a GPU machine
+    :func:`torchquad.set_up_backend` calls ``torch.set_default_device("cuda")``,
+    which ``torch.tensor`` honours and ``torch.Tensor`` ignores — the latter
+    always allocates on the CPU. Mixing the two gives ``RuntimeError: Expected all
+    tensors to be on the same device`` as soon as the helper meets the sample
+    points. The same applies to combining per-integration results:
+    ``torch.stack`` keeps them on their original device, while wrapping them in
+    ``torch.Tensor([...])`` moves them to the CPU.
 
 Parametric Integration with Variable Domains
 --------------------------------------------

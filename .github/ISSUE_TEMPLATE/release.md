@@ -50,7 +50,7 @@ as you go.
       `pixi.toml` do not contradict it.
 - [ ] Every dependency floor is high enough for the features actually being shipped, not
       just high enough to import the package.
-- [ ] `requires-python` matches the tested matrix (`>=3.10, <4` against CI 3.10–3.12) and
+- [ ] `requires-python` matches the tested matrix (`>=3.11, <4` against CI 3.11–3.12) and
       the `Programming Language :: Python ::` classifiers list exactly those versions.
 - [ ] Build locally and check the output for packaging warnings: `uv build`
       (or `python -m build`). As of 0.6.0 this is clean — **any** warning is new
@@ -62,14 +62,15 @@ as you go.
 ### 4. Verify (CI is the gate — do not re-run green jobs by hand)
 
 - [ ] `Running tests` workflow green on the release branch: `lint`,
-      `test (all backends, py3.10|3.11|3.12)`, `test (jax isolated)`,
+      `test (all backends, py3.11|3.12)`, `test (jax isolated)`,
       `test (tensorflow isolated)`, `wheel-smoke`, `docs-build`.
 - [ ] `dead_code` workflow green (the `vulture` job, 100%-confidence tier).
 - [ ] [Release testing](https://github.com/esa/torchquad/actions/workflows/release_testing.yml)
       green on the release branch — this is the run against the *latest released*
       torch/JAX/TensorFlow rather than the pinned CI versions. It fires by itself on
-      any push to a `release-*` / `release/**` branch and on any PR into `main`, so
-      there is normally nothing to trigger; just confirm it passed. See
+      any push to a `release-*` / `release/**` branch, so there is normally nothing
+      to trigger; just confirm it passed. A hotfix branch named anything else has
+      to be dispatched by hand. See
       [`release_testing/README.md`](https://github.com/esa/torchquad/blob/develop/release_testing/README.md).
 - [ ] **GPU check — not covered by any CI.** In a CUDA runtime (e.g.
       [Colab](https://colab.research.google.com/drive/1lFpdtY5zV7VpW88aazedA3n4khedHDQP?usp=sharing)):
@@ -93,6 +94,12 @@ uploaded to Test PyPI can never be reused, so review comes first.
 
 - [ ] Finalize the release branch, then open PRs `release/X.Y.Z` → `main` **and**
       `release/X.Y.Z` → `develop`. Open both now; do not merge either yet.
+- [ ] In the `main` PR's body, repeat the keyword before **every** issue number:
+      `Closes #1, closes #2, closes #3`. GitHub links only the reference that
+      directly follows a closing keyword, so `Closes #1, #2, #3` silently closes
+      #1 and leaves the rest open — which is exactly what happened in 0.6.0.
+      Auto-closing works only from a PR merged into the default branch (`main`),
+      so put the list on that PR, not the `develop` one.
 - [ ] Review both against [`REVIEW.md`](https://github.com/esa/torchquad/blob/develop/REVIEW.md),
       and get the review addressed. The `main` PR is the one that matters — it is
       the exact tree that becomes the release.
@@ -108,11 +115,15 @@ uploaded to Test PyPI can never be reused, so review comes first.
 - [ ] Install and smoke-test the TestPyPI artifact in a clean environment:
       ```bash
       uv venv --python 3.12 /tmp/tq && source /tmp/tq/bin/activate
-      uv pip install --index-url https://test.pypi.org/simple/ \
-                     --extra-index-url https://pypi.org/simple torchquad
+      uv pip install --index-strategy unsafe-best-match \
+                     --index-url https://test.pypi.org/simple/ \
+                     --extra-index-url https://pypi.org/simple "torchquad==X.Y.Z"
       python -c "import torchquad; print(torchquad.__version__); torchquad._deployment_test()"
       ```
-      (`pip install` with the same two index URLs works identically.)
+      Pin the version and keep `--index-strategy unsafe-best-match`: uv otherwise
+      stops at the first index that has the package at all, which is real PyPI with
+      the previous release. (`pip install` with the same two index URLs needs no
+      extra flag.)
 - [ ] If this release adds or changes any non-Python package data, import something that
       reads that data here — `wheel-smoke` and `_deployment_test()` do not touch it, so a
       missing `[tool.setuptools.package-data]` entry is invisible until a user hits it.
@@ -143,12 +154,22 @@ uploaded to Test PyPI can never be reused, so review comes first.
       `recipe/meta.yaml` by hand. See
       https://conda-forge.org/docs/maintainer/updating_pkgs.html
 - [ ] Reconcile the feedstock's `host:`/`run:` requirements and its Python floor with
-      `[project]` in `pyproject.toml`, then merge.
+      `[project]` in `pyproject.toml`, then merge. The bot only bumps `version` and
+      `sha256`, so every dependency change made since the last release has to be
+      carried over by hand — including removals, which are easy to miss. `host:`
+      needs `setuptools >=77.0.3` for the PEP 639 license expression, or the build
+      fails outright. Note the recipe builds from the **GitHub tag tarball**, not
+      the PyPI sdist, so the tag must already be pushed.
 - [ ] Confirm `conda install torchquad -c conda-forge` resolves the new version.
 
 ### 9. Wrap up
 
 - [ ] Confirm Read the Docs built the new tag and that the version selector shows it.
+      Tag builds are not automatic: a version has to be activated in the RTD
+      dashboard (or matched by an automation rule for `v*`), otherwise
+      `/en/vX.Y.Z/` and `/en/stable/` 404 while `/en/main/` still renders.
 - [ ] Close the milestone and every issue this release fixes, linking the release notes.
+      Check them individually rather than trusting the PR's closing keywords — see
+      the note in section 5.
 - [ ] Thank contributors in the release notes (see the template).
 - [ ] Delete the release branch.

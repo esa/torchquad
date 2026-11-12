@@ -1,5 +1,6 @@
 import numpy
 from autoray import numpy as anp
+
 from .grid_integrator import GridIntegrator
 
 #: Largest number of nodes *per dimension* a Gaussian rule will build.
@@ -43,7 +44,7 @@ class Gaussian(GridIntegrator):
         Args:
             fn (func): The function to integrate over.
             dim (int): Dimensionality of the integration domain.
-            N (int, optional): Total number of sample points to use for the integration. Should be odd. Defaults to 3 points per dimension if None is given.
+            N (int or sequence of int, optional): Total number of sample points, or the number of points in each dimension. Uses 3 points per dimension if None is given. Defaults to 8, which is 8 points in 1-D and 2 per dimension in 2-D and 3-D.
             integration_domain (list or backend tensor, optional): Integration domain, e.g. [[-1,1],[0,1]]. Defaults to [-1,1]^dim.   It also determines the numerical backend if possible.
             backend (string, optional): Numerical backend. This argument is ignored if the backend can be inferred from integration_domain. Defaults to the backend from the latest call to set_up_backend or "torch" for backwards compatibility.
             args (list or tuple, optional): Extra arguments passed to the integrand as ``fn(points, *args)``. Defaults to None.
@@ -53,11 +54,16 @@ class Gaussian(GridIntegrator):
         """
         return super().integrate(fn, dim, N, integration_domain, backend, args=args)
 
+    @staticmethod
+    def _get_minimal_N(dim):
+        """Use the documented default of three Gaussian nodes per dimension."""
+        return 3**dim
+
     def _weights(self, N, dim, backend, requires_grad=False):
         """return the weights, broadcast across the dimensions, generated from the polynomial of choice
 
         Args:
-            N (int): number of nodes
+            N (int or sequence of int): Number of nodes per dimension.
             dim (int): number of dimensions
             backend (string): which backend array to return
             requires_grad (bool, optional): whether the returned weights should track gradients (torch only). Defaults to False.
@@ -65,21 +71,15 @@ class Gaussian(GridIntegrator):
         Returns:
             backend tensor: the weights
         """
-        weights = anp.array(self._cached_points_and_weights(N)[1], like=backend)
+        counts = [N] * dim if isinstance(N, int) else list(N)
+        weights = [
+            anp.array(self._cached_points_and_weights(count)[1], like=backend) for count in counts
+        ]
         if backend == "torch":
-            weights.requires_grad = requires_grad
-            return anp.prod(
-                anp.array(
-                    anp.stack(
-                        list(anp.meshgrid(*([weights] * dim), indexing="ij")), like=backend, dim=0
-                    )
-                ),
-                axis=0,
-            ).ravel()
-        else:
-            return anp.prod(
-                anp.stack(anp.meshgrid(*([weights] * dim), like=backend)), axis=0
-            ).ravel()
+            for weight in weights:
+                weight.requires_grad = requires_grad
+        weight_grids = anp.meshgrid(*weights, indexing="ij")
+        return anp.prod(anp.stack(list(weight_grids), like=backend, axis=0), axis=0).ravel()
 
     def _roots(self, N, backend, requires_grad=False):
         """return the roots generated from the polynomial of choice
@@ -188,7 +188,8 @@ class GaussLegendre(Gaussian):
     --------
     >>> gl=torchquad.GaussLegendre()
     >>> integral = gl.integrate(lambda x:np.sin(x), dim=1, N=101, integration_domain=[[0,5]]) #integral from 0 to 5 of np.sin(x)
-    |TQ-INFO| Computed integral was 0.7163378000259399 #analytic result = 1-np.cos(5)"""
+    >>> integral  # analytic result = 1-np.cos(5)
+    tensor(0.7163, dtype=torch.float64)"""
 
     def __init__(self):
         super().__init__()
