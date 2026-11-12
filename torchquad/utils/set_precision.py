@@ -17,7 +17,8 @@ def _get_precision(backend):
 
 def set_precision(data_type="float32", backend="torch"):
     """Set the default precision for floating-point numbers for the given numerical backend.
-    Call before declaring your variables.
+    Call before declaring your variables. This never changes PyTorch's default device; use
+    enable_cuda or set_up_backend for that.
 
     NumPy and doesn't have global dtypes:
     https://github.com/numpy/numpy/issues/6860
@@ -43,14 +44,14 @@ def set_precision(data_type="float32", backend="torch"):
         dtype_map = {"float32": torch.float32, "float64": torch.float64}
         torch.set_default_dtype(dtype_map[data_type])
 
-        # set_default_device changes only where new tensors are allocated; switch
-        # to CUDA solely when enable_cuda already initialized it, so importing
-        # torchquad never forces a device onto a CPU-only user.
-        if torch.cuda.is_initialized():
-            torch.set_default_device("cuda")
-            logger.info(f"Setting Torch's default dtype to {data_type} and device to CUDA.")
-        else:
-            logger.info(f"Setting Torch's default dtype to {data_type} (CPU).")
+        # Only the dtype is set here. The default device is enable_cuda's
+        # business: inferring it from torch.cuda.is_initialized() moved the
+        # default to CUDA whenever any earlier code had touched the GPU, even
+        # after set_up_backend(..., torch_enable_cuda=False).
+        logger.info(
+            f"Setting Torch's default dtype to {data_type}; "
+            f"the default device is {torch.empty(0).device}."
+        )
     elif backend == "jax":
         from jax import config
 

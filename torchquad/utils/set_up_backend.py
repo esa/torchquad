@@ -22,7 +22,7 @@ def set_up_backend(backend, data_type=None, torch_enable_cuda=True):
     Args:
         backend (string): Numerical backend, e.g. "torch"
         data_type ("float32", "float64" or None, optional): Data type which is passed to set_precision. If None, do not call set_precision except if CUDA is enabled for torch. Defaults to None.
-        torch_enable_cuda (Bool, optional): If True and backend is "torch", call enable_cuda. Defaults to True.
+        torch_enable_cuda (Bool, optional): If True and backend is "torch", call enable_cuda, which makes CUDA the default device when one is available. If False, PyTorch's default device is left as it is. Defaults to True.
     """
     if backend == "torch":
         if torch_enable_cuda:

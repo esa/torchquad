@@ -45,6 +45,10 @@ integrator was set up with under Gaussian quadrature.
   tooling and the TensorFlow extra) no longer support it. The NumPy and SciPy
   floors move to `>=1.23.2` and `>=1.9.2`, the oldest releases with Python 3.11
   wheels. The conda and pixi environment files carry the same floors.
+- `set_precision()` no longer changes PyTorch's default device. It used to move
+  the default to CUDA whenever CUDA had been initialized by anything in the
+  process. `enable_cuda()`, and `set_up_backend("torch", ...)` which calls it,
+  now select the device themselves, so the usual setup calls behave as before.
 - `set_log_level()` no longer registers a handler of its own, so its records
   are printed in the format of the application's loguru handlers rather than
   with a `TQ-` prefix, and the import-time "Initializing torchquad." record is
@@ -55,6 +59,10 @@ integrator was set up with under Gaussian quadrature.
   discarding the weights' precision.
 
 ### Fixed
+- `set_up_backend("torch", ..., torch_enable_cuda=False)` is no longer ignored
+  once CUDA has been initialized: the default device stays where it is.
+- `enable_cuda(data_type=None)` makes CUDA the default device, as documented.
+  It initialized CUDA but left the default device on the CPU.
 - `set_log_level()` and `TORCHQUAD_LOG_LEVEL` now limit what is actually
   printed. The level used to apply only to a handler torchquad added, so
   loguru's default stderr handler still printed every record down to `DEBUG`,

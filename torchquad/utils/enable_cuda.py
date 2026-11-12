@@ -7,6 +7,7 @@ from .set_precision import set_precision
 def enable_cuda(data_type="float32"):
     """This function sets torch's default device to CUDA if possible. Call before declaring any variables!
     The default precision can be set here initially, or using set_precision later.
+    Without a CUDA device it warns and leaves the default device unchanged.
 
     Args:
         data_type ("float32", "float64" or None, optional): Data type to use. If None, skip the call to set_precision. Defaults to "float32".
@@ -18,6 +19,8 @@ def enable_cuda(data_type="float32"):
         logger.info("CUDNN VERSION: " + str(torch.backends.cudnn.version()))
         logger.info("Number of CUDA Devices: " + str(torch.cuda.device_count()))
         logger.info("Active CUDA Device: GPU" + str(torch.cuda.current_device()))
+        # set_default_device changes only where new tensors are allocated.
+        torch.set_default_device("cuda")
         if data_type is not None:
             set_precision(data_type)
     else:
