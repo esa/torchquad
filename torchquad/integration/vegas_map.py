@@ -1,6 +1,6 @@
 from autoray import numpy as anp
 from autoray import astype, to_backend_dtype
-from loguru import logger
+from ..utils.library_logger import logger
 import warnings
 
 from .utils import _add_at_indices

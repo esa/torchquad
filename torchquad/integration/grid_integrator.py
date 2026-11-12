@@ -1,6 +1,6 @@
 from autoray import astype, get_dtype_name, infer_backend
 from autoray import numpy as anp
-from loguru import logger
+from ..utils.library_logger import logger
 
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid, _per_dimension_counts, grid_func
@@ -50,6 +50,12 @@ class GridIntegrator(BaseIntegrator):
         if N is None:
             N = self._get_minimal_N(dim)
 
+        # Normalise once, so a one-shot iterable is consumed a single time and
+        # everything below sees either an int or a tuple.
+        counts = _per_dimension_counts(N, dim)
+        if counts is not None:
+            N = counts
+
         integration_domain = _setup_integration_domain(dim, integration_domain, backend)
         backend = infer_backend(integration_domain)
         self._check_grid_inputs(dim, N, integration_domain)
@@ -71,7 +77,7 @@ class GridIntegrator(BaseIntegrator):
         Args:
             function_values (backend tensor): Output of the integrand
             dim (int): Dimensionality
-            n_per_dim (int): Number of grid slices per dimension
+            n_per_dim (int or sequence of int): Number of grid points per dimension, either one count shared by all dimensions or one count for each.
             hs (backend tensor): Distances between grid slices for each dimension
             integration_domain (backend tensor): Integration domain
 
@@ -116,7 +122,7 @@ class GridIntegrator(BaseIntegrator):
         """Calculate grid points, widths and N per dim
 
         Args:
-            N (int): Number of points
+            N (int or sequence of int): Total number of points, or the number of points in each dimension.
             integration_domain (backend tensor): Integration domain
             disable_integration_domain_check (bool): Disbaling integration domain checks (default False)
 
@@ -182,11 +188,12 @@ class GridIntegrator(BaseIntegrator):
         if N is None:
             N = self._get_minimal_N(dim)
 
-        integration_domain = _setup_integration_domain(dim, integration_domain, backend)
-        self._check_grid_inputs(dim, N, integration_domain)
         counts = _per_dimension_counts(N, dim)
         if counts is not None:
             N = counts
+
+        integration_domain = _setup_integration_domain(dim, integration_domain, backend)
+        self._check_grid_inputs(dim, N, integration_domain)
         backend = infer_backend(integration_domain)
         if backend in ["tensorflow", "jax"]:
             # Tensorflow and JAX automatically recompile functions if
@@ -221,7 +228,10 @@ class GridIntegrator(BaseIntegrator):
             def compiled_integrate(fn, integration_domain):
                 grid_points, hs, n_per_dim = jit_calculate_grid(N, integration_domain)
                 if not isinstance(n_per_dim, int):
-                    if getattr(n_per_dim, "ndim", None) == 0:
+                    # The compiled grid function returns the counts as arrays:
+                    # zero-dimensional for a scalar N, one entry per dimension
+                    # otherwise.
+                    if hasattr(n_per_dim, "ndim") and n_per_dim.ndim == 0:
                         n_per_dim = int(n_per_dim)
                     else:
                         n_per_dim = tuple(int(count) for count in n_per_dim)

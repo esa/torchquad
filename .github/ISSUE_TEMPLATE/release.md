@@ -115,11 +115,15 @@ uploaded to Test PyPI can never be reused, so review comes first.
 - [ ] Install and smoke-test the TestPyPI artifact in a clean environment:
       ```bash
       uv venv --python 3.12 /tmp/tq && source /tmp/tq/bin/activate
-      uv pip install --index-url https://test.pypi.org/simple/ \
-                     --extra-index-url https://pypi.org/simple torchquad
+      uv pip install --index-strategy unsafe-best-match \
+                     --index-url https://test.pypi.org/simple/ \
+                     --extra-index-url https://pypi.org/simple "torchquad==X.Y.Z"
       python -c "import torchquad; print(torchquad.__version__); torchquad._deployment_test()"
       ```
-      (`pip install` with the same two index URLs works identically.)
+      Pin the version and keep `--index-strategy unsafe-best-match`: uv otherwise
+      stops at the first index that has the package at all, which is real PyPI with
+      the previous release. (`pip install` with the same two index URLs needs no
+      extra flag.)
 - [ ] If this release adds or changes any non-Python package data, import something that
       reads that data here — `wheel-smoke` and `_deployment_test()` do not touch it, so a
       missing `[tool.setuptools.package-data]` entry is invisible until a user hits it.

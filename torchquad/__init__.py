@@ -2,7 +2,7 @@ import os
 
 from loguru import logger
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 # Disable torchquad's own log records by default so importing the library never
 # adds output to a host application's loguru configuration (issue #184).
@@ -73,4 +73,3 @@ __all__ = [
 # for "not set", and passing "" on to loguru would abort the import.
 if os.environ.get("TORCHQUAD_LOG_LEVEL"):
     set_log_level(os.environ["TORCHQUAD_LOG_LEVEL"])
-    logger.info("Initializing torchquad.")

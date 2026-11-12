@@ -1,22 +1,43 @@
 import warnings
 from autoray import numpy as anp
 from autoray import get_dtype_name, infer_backend
-from loguru import logger
+from ..utils.library_logger import logger
 
 from .utils import _check_integration_domain
 
-# Mantissa width of each supported dtype. A complex type carries the precision of
-# its real component, so complex128 is as precise as float64 and pairing the two
-# loses nothing. Anything absent is treated as unknown and left alone rather than
-# guessed at.
+# Significand bits (including the implicit leading bit) of each floating dtype,
+# used to rank them by precision. Storage size would not do: bfloat16 and float16
+# both take 16 bits, but bfloat16 keeps only 8 significand bits against 11. A
+# complex type carries the precision of its real component, so complex128 is as
+# precise as float64 and pairing the two loses nothing. NumPy's float128 is the
+# 80-bit x87 extended format on the platforms that have it, hence 64 bits.
 _DTYPE_PRECISION_BITS = {
-    "float16": 16,
-    "bfloat16": 16,
-    "float32": 32,
-    "float64": 64,
-    "complex64": 32,
-    "complex128": 64,
+    "bfloat16": 8,
+    "float16": 11,
+    "float32": 24,
+    "float64": 53,
+    "float128": 64,
+    "complex64": 24,
+    "complex128": 53,
+    "complex256": 64,
 }
+
+
+def _is_less_precise(value_dtype_name, weight_dtype_name):
+    """Tell whether integrand values carry less precision than the quadrature weights.
+
+    Integer and Boolean values are exact, so they never count as less precise.
+
+    Args:
+        value_dtype_name (str): Dtype name of the integrand's return value.
+        weight_dtype_name (str): Dtype name of the quadrature weights.
+
+    Returns:
+        bool: True if the values are floating point with fewer significand bits than the weights.
+    """
+    if value_dtype_name.startswith(("int", "uint", "bool")):
+        return False
+    return _DTYPE_PRECISION_BITS[value_dtype_name] < _DTYPE_PRECISION_BITS[weight_dtype_name]
 
 
 class BaseIntegrator:
@@ -117,9 +138,7 @@ class BaseIntegrator:
                 weights = anp.repeat(
                     anp.expand_dims(weights, axis=1), anp.prod(integrand_shape)
                 ).reshape((weights.shape[0], *(integrand_shape)))
-            result_bits = _DTYPE_PRECISION_BITS.get(get_dtype_name(result))
-            weight_bits = _DTYPE_PRECISION_BITS.get(get_dtype_name(weights))
-            if result_bits is not None and weight_bits is not None and result_bits < weight_bits:
+            if _is_less_precise(get_dtype_name(result), get_dtype_name(weights)):
                 warnings.warn(
                     f"The passed function returned {get_dtype_name(result)} values while the "
                     f"quadrature weights are {get_dtype_name(weights)}. The result is promoted to "
