@@ -16,6 +16,8 @@ level admits it, which holds for every handler and every module name.
 """
 
 import math
+from collections.abc import Iterator
+from contextlib import contextmanager
 
 from loguru import logger as _loguru_logger
 
@@ -45,6 +47,26 @@ def set_minimum_level(level_name):
         level_name (str): One of the keys of :data:`LEVEL_NUMBERS`.
     """
     _LevelGate.minimum_level_number = LEVEL_NUMBERS[level_name]
+
+
+@contextmanager
+def raised_minimum_level(level_name) -> Iterator[None]:
+    """Hold the gate at the given severity or higher while the block runs.
+
+    A level the user set higher than ``level_name`` stays in force.
+
+    Args:
+        level_name (str): One of the keys of :data:`LEVEL_NUMBERS`.
+
+    Yields:
+        None: Control to the block, with records below ``level_name`` dropped.
+    """
+    previous_level_number = _LevelGate.minimum_level_number
+    _LevelGate.minimum_level_number = max(previous_level_number, LEVEL_NUMBERS[level_name])
+    try:
+        yield
+    finally:
+        _LevelGate.minimum_level_number = previous_level_number
 
 
 class _GatedLogger:

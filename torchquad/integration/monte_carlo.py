@@ -4,6 +4,7 @@ from ..utils.library_logger import logger
 
 from .base_integrator import BaseIntegrator
 from .utils import (
+    _is_compiling,
     _setup_integration_domain,
     expand_func_values_and_squeeze_integral,
     _torch_trace_without_warnings,
@@ -82,7 +83,9 @@ class MonteCarlo(BaseIntegrator):
             and function_values.dtype != integral.dtype
         ):
             integral = integral.astype(function_values.dtype)
-        logger.opt(lazy=True).info("Computed integral: {result}", result=lambda: str(integral))
+        # A traced result is a symbolic placeholder with no value to report.
+        if not _is_compiling(integral):
+            logger.opt(lazy=True).info("Computed integral: {result}", result=lambda: str(integral))
         return integral
 
     def calculate_sample_points(self, N, integration_domain, seed=None, rng=None):

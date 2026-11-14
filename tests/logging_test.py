@@ -49,6 +49,27 @@ compiled = torchquad.Trapezoid().get_jit_compiled_integrate(
 compiled(lambda points: points[:, 0], domain)
 """
 
+# The compiled path of each backend, run for a grid rule and for Monte Carlo and
+# called twice, with the integrand a plain function that is not itself compiled.
+_COMPILED_PATH_SNIPPET = """
+import {framework}
+
+import torchquad
+
+torchquad.set_up_backend("{backend}", "float64")
+domain = {domain}
+for integrator in (torchquad.Trapezoid(), torchquad.MonteCarlo()):
+    compiled = integrator.get_jit_compiled_integrate(dim=1, N=11, integration_domain=domain)
+    for _ in range(2):
+        compiled(lambda points: points[:, 0], domain)
+"""
+
+_COMPILED_PATH_DOMAINS = {
+    "torch": "torch.tensor([[0.0, 1.0]], dtype=torch.float64)",
+    "jax": "jax.numpy.array([[0.0, 1.0]])",
+    "tensorflow": "tensorflow.constant([[0.0, 1.0]], dtype=tensorflow.float64)",
+}
+
 _INFO_MESSAGE = "Computed integral"
 _DEBUG_MESSAGE = "Checking inputs to Integrator."
 
@@ -235,3 +256,28 @@ def test_tensorflow_compiled_path_is_silent_by_default():
             f"torchquad emitted {leaked!r} from the compiled TensorFlow path while "
             f"silent; stderr was {stderr!r}"
         )
+
+
+@pytest.mark.parametrize("backend", ["torch", "jax", "tensorflow"])
+def test_compiled_path_logs_no_integral_while_tracing(backend):
+    """A compiled path must not log a result that only exists as a trace.
+
+    While a function is traced its result is a symbolic placeholder, so a record
+    carrying it has no value to show: JAX printed a tracer, and TensorFlow
+    printed a graph tensor under loguru's own module name, which a host's
+    logger.disable("torchquad") does not cover. PyTorch runs the traced function
+    several times, so every record came out repeated, with a value that was not
+    the one the call returned.
+    """
+    pytest.importorskip(backend)
+    snippet = _COMPILED_PATH_SNIPPET.format(
+        framework=backend, backend=backend, domain=_COMPILED_PATH_DOMAINS[backend]
+    )
+    stderr = _run_with_env(snippet, "INFO")
+
+    assert _INFO_MESSAGE not in stderr, (
+        f"the compiled {backend} path logged a traced result: {stderr!r}"
+    )
+    assert stderr.count("Integration grid created") <= 1, (
+        f"the compiled {backend} path repeated a record: {stderr!r}"
+    )

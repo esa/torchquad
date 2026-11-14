@@ -5,6 +5,7 @@ from ..utils.library_logger import logger
 from .base_integrator import BaseIntegrator
 from .integration_grid import IntegrationGrid, _per_dimension_counts, grid_func
 from .utils import (
+    _is_compiling,
     _setup_integration_domain,
     _torch_trace_without_warnings,
     expand_func_values_and_squeeze_integral,
@@ -110,7 +111,11 @@ class GridIntegrator(BaseIntegrator):
 
         result = self._apply_composite_rule(reshaped_function_values, dim, hs, integration_domain)
 
-        logger.opt(lazy=True).info("Computed integral: {result}", result=lambda: str(result))
+        # While a compiled function is being traced, the result is a symbolic
+        # placeholder: there is no value to report and the record would be
+        # emitted once per trace rather than once per call.
+        if not _is_compiling(result):
+            logger.opt(lazy=True).info("Computed integral: {result}", result=lambda: str(result))
         return result
 
     def calculate_grid(

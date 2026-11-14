@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- With logging switched on, the JIT-compiled integrate functions no longer log
+  a "Computed integral" record for a traced result: JAX printed a tracer and
+  TensorFlow a graph tensor under loguru's own module name, so a host's
+  `logger.disable("torchquad")` did not silence it. PyTorch no longer repeats
+  records once per trace (#281).
+
 ## [0.7.0] - 2026-11-12
 
 This release adds three samplers for `MonteCarlo` and per-dimension grid sizes,
