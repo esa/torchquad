@@ -6,7 +6,7 @@ autoray, which are registered when importing this file
 from autoray import numpy as anp
 from autoray import infer_backend, register_function
 from functools import partial
-from ..utils.library_logger import logger
+from ..utils.library_logger import logger, raised_minimum_level
 import warnings
 
 from ..utils.set_precision import _get_precision
@@ -314,9 +314,14 @@ def _torch_trace_without_warnings(*args, **kwargs):
     the Python3 control flow is not completely recorded.
     This function can be used to hide the warnings in situations where they are
     false positives.
+
+    Informational records are dropped while tracing: PyTorch runs the traced
+    function more than once (the trace itself and its consistency check), so
+    each record would be repeated, and the values in them belong to the trace
+    rather than to any call.
     """
     import torch
 
-    with warnings.catch_warnings():
+    with warnings.catch_warnings(), raised_minimum_level("WARNING"):
         warnings.filterwarnings("ignore", category=torch.jit.TracerWarning)
         return torch.jit.trace(*args, **kwargs)
