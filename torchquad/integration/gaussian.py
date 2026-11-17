@@ -1,5 +1,6 @@
 import numpy
 from autoray import numpy as anp
+from scipy.special import eval_legendre, roots_jacobi
 
 from .grid_integrator import GridIntegrator
 
@@ -198,3 +199,26 @@ class GaussLegendre(Gaussian):
         a = integration_domain[0]
         b = integration_domain[1]
         return ((b - a) / 2) * roots + ((a + b) / 2)
+
+
+class GaussLobattoLegendre(GaussLegendre):
+    """Integrate on a finite interval using both endpoints and Legendre interior nodes.
+
+    With n nodes per axis the rule integrates polynomials up to degree 2n - 3
+    exactly along that axis. The two-node rule is the trapezoid rule.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._root_fn = self._lobatto_nodes_and_weights
+
+    @staticmethod
+    def _lobatto_nodes_and_weights(n):
+        if n < 2:
+            raise ValueError(
+                "Gauss-Lobatto-Legendre quadrature requires at least two nodes per dimension."
+            )
+        interior = roots_jacobi(n - 2, 1, 1)[0] if n > 2 else []
+        nodes = numpy.concatenate(([-1.0], interior, [1.0]))
+        weights = 2.0 / (n * (n - 1) * eval_legendre(n - 1, nodes) ** 2)
+        return nodes, weights
