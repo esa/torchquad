@@ -80,3 +80,8 @@ Gaussian Quadrature
 .. autoclass:: torchquad.GaussLegendre
    :members: integrate
    :noindex:
+
+Gauss-Lobatto-Legendre
+----------------------
+
+.. autoclass:: torchquad.GaussLobattoLegendre

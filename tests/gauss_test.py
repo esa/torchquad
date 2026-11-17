@@ -5,6 +5,7 @@ import torchquad.integration.gaussian as gaussian_module
 from torchquad.integration.gaussian import (
     MAX_NODES_PER_DIMENSION,
     GaussLegendre,
+    GaussLobattoLegendre,
     Gaussian,
 )
 from helper_functions import (
@@ -267,3 +268,52 @@ if __name__ == "__main__":
     test_node_limit_tensorflow()
     test_node_limit_boundary_numpy()
     test_node_limit_boundary_torch()
+
+
+@pytest.mark.parametrize("n", [2, 3, 7])
+def test_lobatto_endpoints_and_exactness(n):
+    import numpy as np
+
+    method = GaussLobattoLegendre()
+    endpoints = []
+
+    def powers(x):
+        endpoints.extend(x[:, 0])
+        return x ** np.arange(2 * n - 2)
+
+    result = method.integrate(powers, dim=1, N=n, integration_domain=np.array([[0.0, 1.0]]))
+    assert endpoints[0] == 0.0 and endpoints[-1] == 1.0
+    np.testing.assert_allclose(result, 1 / np.arange(1, 2 * n - 1), rtol=1e-12)
+
+
+def test_lobatto_tensor_product():
+    import numpy as np
+
+    result = GaussLobattoLegendre().integrate(
+        lambda x: x[:, 0] * x[:, 1] ** 5,
+        dim=2,
+        N=(2, 4),
+        integration_domain=np.array([[0.0, 2.0], [0.0, 1.0]]),
+    )
+    np.testing.assert_allclose(result, 1 / 3, rtol=1e-12)
+
+
+def _run_lobatto_tests(backend, _precision):
+    rule = GaussLobattoLegendre()
+    for dim, count, tolerance in [(1, 32, 1e-9), (3, 32, 6e-3), (10, 3, 1e-7)]:
+        if dim == 10 and backend == "tensorflow":
+            continue  # TensorFlow does not implement 10D StridedSlice.
+        errors, _ = compute_integration_test_errors(
+            rule.integrate,
+            {"dim": dim, "N": (count,) * dim},
+            dim,
+            use_complex=True,
+            backend=backend,
+        )
+        assert max(errors) < tolerance
+
+
+test_lobatto_numpy = setup_test_for_backend(_run_lobatto_tests, "numpy", "float64")
+test_lobatto_torch = setup_test_for_backend(_run_lobatto_tests, "torch", "float64")
+test_lobatto_jax = setup_test_for_backend(_run_lobatto_tests, "jax", "float64")
+test_lobatto_tensorflow = setup_test_for_backend(_run_lobatto_tests, "tensorflow", "float64")

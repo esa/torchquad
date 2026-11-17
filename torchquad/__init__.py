@@ -18,7 +18,7 @@ from .integration.simpson import Simpson
 from .integration.boole import Boole
 from .integration.vegas import VEGAS
 from .integration.vegas_result import VEGASResult
-from .integration.gaussian import GaussLegendre
+from .integration.gaussian import GaussLegendre, GaussLobattoLegendre
 from .integration.gaussian import Gaussian
 from .integration.grid_integrator import GridIntegrator
 from .integration.base_integrator import BaseIntegrator
@@ -54,6 +54,7 @@ __all__ = [
     "VEGAS",
     "VEGASResult",
     "GaussLegendre",
+    "GaussLobattoLegendre",
     "Gaussian",
     "RNG",
     "Halton",
