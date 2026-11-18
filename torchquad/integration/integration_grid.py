@@ -57,6 +57,9 @@ def grid_func(integration_domain, N, requires_grad=False, backend=None):
     return _linspace_with_grads(a, b, N, requires_grad=requires_grad)
 
 
+_uniform_grid_func = grid_func
+
+
 class IntegrationGrid:
     """This class is used to store the integration grid for methods like Trapezoid or Simpsons, which require a grid."""
 
@@ -132,10 +135,18 @@ class IntegrationGrid:
                     backend=backend,
                 )
             )
-        self.h = anp.stack(
-            [grid_1d[dim][1] - grid_1d[dim][0] for dim in range(self._dim)],
-            like=integration_domain,
-        )
+        spacing = [axis_points[1] - axis_points[0] for axis_points in grid_1d]
+        if grid_func is _uniform_grid_func:
+            for dimension, count in enumerate(counts):
+                # Rounded coordinates may coincide. Use the nominal spacing unless
+                # the span overflows and linspace may still produce finite steps.
+                span = integration_domain[dimension, 1] - integration_domain[dimension, 0]
+                # NumPy 1.x can widen scalar division by a Python integer.
+                nominal_spacing = astype(span / (count - 1), spacing[dimension].dtype)
+                spacing[dimension] = anp.where(
+                    anp.isfinite(span), nominal_spacing, spacing[dimension]
+                )
+        self.h = anp.stack(spacing, like=integration_domain)
 
         logger.opt(lazy=True).debug("Grid mesh width is {h}", h=lambda: str(self.h))
 
