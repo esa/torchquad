@@ -11,7 +11,7 @@ import autoray as ar
 import pytest
 from autoray import numpy as anp
 
-from torchquad import Boole, GaussLegendre, Simpson, Trapezoid
+from torchquad import Boole, GaussLegendre, Simpson, Trapezoid, set_up_backend
 from helper_functions import compute_integration_test_errors, setup_test_for_backend
 
 INTEGRATORS = [Trapezoid, Simpson, Boole, GaussLegendre]
@@ -168,3 +168,23 @@ for _backend in ["numpy", "torch", "jax", "tensorflow"]:
         globals()[f"test_compiled_{_backend}"] = setup_test_for_backend(
             _run_compiled_tests, _backend, "float64"
         )
+
+
+@pytest.mark.parametrize("backend", ["numpy", "torch", "tensorflow", "jax"])
+def test_uniform_grid_spacing_on_offset_domain(backend, monkeypatch):
+    pytest.importorskip(backend)
+    if backend == "tensorflow":
+        # TensorFlow requires NumPy behavior. Restore torchquad's backend default
+        # after enabling it, and leave the framework's precision setting alone.
+        monkeypatch.setenv("TORCHQUAD_DEFAULT_BACKEND", backend)
+        set_up_backend(backend)
+    # The first two float32 nodes can round to the same coordinate, even
+    # though the domain has width eight and the grid has eight intervals.
+    domain = _domain([[2**24, 2**24 + 8], [0, 3]], backend, "float32")
+
+    def integrand(points):
+        ones = anp.ones_like(points[:, 0])
+        return anp.stack([ones, 2.0 * ones], axis=1, like=points)
+
+    result = Simpson().integrate(integrand, dim=2, N=(9, 5), integration_domain=domain)
+    assert ar.to_numpy(result) == pytest.approx([24.0, 48.0])

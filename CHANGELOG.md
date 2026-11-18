@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Uniform Newton-Cotes grids compute their spacing from the domain bounds and
+  point counts, avoiding incorrect integral scaling when the first two grid
+  coordinates round to the same value or to an inaccurate distance.
+
 ## [0.7.0] - 2026-11-12
 
 This release adds three samplers for `MonteCarlo` and per-dimension grid sizes,
