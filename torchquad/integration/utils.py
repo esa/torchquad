@@ -68,7 +68,12 @@ def _add_at_indices(target, indices, source, is_sorted=False):
     """
     backend = infer_backend(target)
     if backend == "torch":
-        target.scatter_add_(dim=0, index=indices, src=source)
+        if target.is_cuda and target.is_floating_point():
+            # On CUDA, scatter_add_ adds floating-point values with atomic operations in an
+            # order that changes between runs, so VEGAS would not reproduce for a fixed seed
+            _add_at_indices_in_order(target, indices, source, is_sorted)
+        else:
+            target.scatter_add_(dim=0, index=indices, src=source)
     elif backend == "numpy":
         # Use indicator matrices to reduce the Python interpreter overhead
         # Based on VegasFlow's consume_array_into_indices function
@@ -100,6 +105,35 @@ def _add_at_indices(target, indices, source, is_sorted=False):
             target[t1:t2] += anp.sum(anp.where(indicator, source[i1:i2], zero), axis=1)
     else:
         raise NotImplementedError(f"Unsupported numerical backend: {backend}")
+
+
+def _add_at_indices_in_order(target, indices, source, is_sorted=False):
+    """
+    Add source[i] to target at target[indices[i]] for each index i in-place, summing in a fixed order.
+
+    The values for each target index are added up in their order in ``source`` and the sum is
+    then added to ``target``, so the result is the same in every run, also on CUDA. Like
+    ``scatter_add_``, only the first ``len(indices)`` values of ``source`` are used.
+    This function supports only torch.
+
+    Args:
+        target (torch tensor): One-dimensional tensor to which the source values are added
+        indices (int torch tensor): Indices into target for each value in source
+        source (torch tensor): Values which are added to target
+        is_sorted (bool, optional): Set this to True if indices is monotonically increasing to skip the sorting step. Defaults to False.
+    """
+    source = source[: indices.shape[0]]
+    if not is_sorted:
+        indices, permutation = indices.sort(stable=True)
+        source = source[permutation]
+    # The values for target index k are source[offsets[k]:offsets[k + 1]]. Integer
+    # additions do not depend on their order, so scatter_add_ can count them.
+    counts = indices.new_zeros(target.shape[0] + 1)
+    counts.scatter_add_(0, indices + 1, anp.ones_like(indices))
+    offsets = anp.cumsum(counts, axis=0)
+    # unsafe=True skips a validation of the offsets, which are valid by construction,
+    # that would otherwise wait for the GPU
+    target += anp.segment_reduce(source, "sum", offsets=offsets, unsafe=True)
 
 
 def _setup_integration_domain(dim, integration_domain, backend):

@@ -1,5 +1,6 @@
 from autoray import numpy as anp
 from autoray import to_backend_dtype, astype
+import math
 import timeit
 import cProfile
 import pstats
@@ -199,6 +200,24 @@ def _run_vegas_special_case_checks(backend, dtype_name):
     assert anp.abs(integral - 1.0) < 0.1
 
 
+def _run_vegas_reproducibility_checks(backend, dtype_name):
+    """Test that VEGAS+ gives the same result for the same seed, also on CUDA (issue #278)"""
+    print(f"Testing VEGAS+ reproducibility with {backend}, {dtype_name}")
+    results = set()
+    for _ in range(3):
+        integrator = VEGAS()
+        integral = integrator.integrate(
+            lambda x: anp.prod(anp.cos(x * (math.pi / 2)), axis=1),
+            3,
+            N=100000,
+            integration_domain=[[0.0, 1.0]] * 3,
+            seed=11,
+            backend=backend,
+        )
+        results.add((float(integral), integrator._nr_of_fevals))
+    assert len(results) == 1, results
+
+
 def _run_vegas_tests(backend, dtype_name):
     """Test if VEGAS+ works with example functions and is accurate as expected"""
     _run_vegas_accuracy_checks(backend, dtype_name)
@@ -208,6 +227,12 @@ def _run_vegas_tests(backend, dtype_name):
 
 test_integrate_numpy = setup_test_for_backend(_run_vegas_tests, "numpy", "float64")
 test_integrate_torch = setup_test_for_backend(_run_vegas_tests, "torch", "float64")
+test_reproducibility_torch_float32 = setup_test_for_backend(
+    _run_vegas_reproducibility_checks, "torch", "float32"
+)
+test_reproducibility_torch_float64 = setup_test_for_backend(
+    _run_vegas_reproducibility_checks, "torch", "float64"
+)
 
 
 if __name__ == "__main__":

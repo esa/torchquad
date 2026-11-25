@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `VEGAS` now reproduces bit for bit for a fixed seed on CUDA devices, as on the CPU.
+  Its map and stratification sums no longer use CUDA atomic additions, whose order
+  changed between runs. CPU results are unchanged (#278).
+
 ## [0.7.0] - 2026-11-12
 
 This release adds three samplers for `MonteCarlo` and per-dimension grid sizes,
