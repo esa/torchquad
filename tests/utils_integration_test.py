@@ -2,11 +2,13 @@ from autoray import numpy as anp
 from autoray import infer_backend, get_dtype_name, to_backend_dtype
 import importlib
 import pytest
+import random
 import warnings
 
 from torchquad.integration.utils import (
     _linspace_with_grads,
     _add_at_indices,
+    _add_at_indices_in_order,
     _setup_integration_domain,
     _is_compiling,
     expand_func_values_and_squeeze_integral,
@@ -119,6 +121,37 @@ def _run_add_at_indices_tests(dtype_name, backend):
 def test_add_at_indices():
     """Test _add_at_indices with all possible configurations"""
     _run_tests_with_all_backends(_run_add_at_indices_tests)
+
+
+def _run_add_at_indices_in_order_tests(dtype_name, backend):
+    """
+    Test that _add_at_indices_in_order adds the same values as scatter_add_ (issue #278)
+    """
+    if backend != "torch":
+        return
+    dtype_backend = to_backend_dtype(dtype_name, like=backend)
+    generator = random.Random(278)
+    # Index 7 receives no values, and the last source value has no index
+    indices = anp.array([generator.randrange(7) for _ in range(300)], like=backend)
+    # Integer values are summed exactly in any order
+    source = [float(generator.randrange(-50, 50)) for _ in range(301)]
+    source = anp.array(source, dtype=dtype_backend, like=backend)
+    initial = [float(generator.randrange(-50, 50)) for _ in range(8)]
+    initial = anp.array(initial, dtype=dtype_backend, like=backend)
+    expected = initial.clone().scatter_add_(0, indices, source)
+    for is_sorted in [False, True]:
+        if is_sorted:
+            indices, permutation = indices.sort(stable=True)
+            source = anp.concatenate([source[:-1][permutation], source[-1:]])
+        target = initial.clone()
+        _add_at_indices_in_order(target, indices, source, is_sorted=is_sorted)
+        assert target.dtype == dtype_backend
+        assert anp.max(anp.abs(target - expected)) == 0.0
+
+
+def test_add_at_indices_in_order():
+    """Test _add_at_indices_in_order with all backends and precisions"""
+    _run_tests_with_all_backends(_run_add_at_indices_in_order_tests)
 
 
 def _run_setup_integration_domain_tests(dtype_name, backend):
@@ -250,6 +283,7 @@ if __name__ == "__main__":
         # used to run this test individually
         test_linspace_with_grads()
         test_add_at_indices()
+        test_add_at_indices_in_order()
         test_setup_integration_domain()
         test_is_compiling()
         test_expand_func_values_and_squeeze_integral_kwargs()
